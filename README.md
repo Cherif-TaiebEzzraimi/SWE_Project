@@ -64,4 +64,4 @@ It provides a transparent environment with a **rating system**, **admin mediatio
 ## 🧩 How to Use This Repository
 1. Clone this repo:
    ```bash
-   git clone https://github.com/Cherif-TaiebEzzraimi/SWE-Project.git
+   git clone https://github.com/Cherif-TaiebEzzraimi/SWE_Project.git
