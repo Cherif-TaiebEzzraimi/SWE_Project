@@ -1,0 +1,23 @@
+# Node/Vite artifacts
+Frontend/node_modules/
+Frontend/dist/
+
+# Python / Django artifacts
+Backend/.venv/
+Backend/__pycache__/
+Backend/*.sqlite3
+Backend/staticfiles/
+
+# Environment files
+.env
+Backend/.env
+Backend/.env.*
+Backend/env.local
+
+# OS/Editor cruft
+.DS_Store
+Thumbs.db
+*.log
+.idea/
+.vscode/
+

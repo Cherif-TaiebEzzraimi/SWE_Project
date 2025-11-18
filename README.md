@@ -1,67 +1,75 @@
-# Freelancing Platform 
+# Freelancing Platform
 
-## Overview
-This repository contains the **Software Requirements Specification (SRS)** document for the **Freelancing Platform** — a web-based system that connects **clients** with **freelancers** to collaborate on projects efficiently and securely.
-
-The SRS defines the system’s purpose, functional and non-functional requirements, user roles, and overall system behavior.
+React + Django scaffold that backs the Freelancing Platform described in the SRS.
 
 ---
 
-## Project Description
-The **Freelancing Platform** enables:
-- Clients to **post projects**, **review proposals**, and **hire freelancers**.
-- Freelancers to **create profiles**, **apply for jobs**, and **deliver completed work**.
-- The platform to manage ** reviews, and dispute resolution** securely.
+## Repository Contents
 
-It provides a transparent environment with a **rating system**, **admin mediation**, and **verified profiles** to ensure trust between users.
+- `SRS_SWE.pdf` – original Software Requirements Specification
+- `Frontend/` – Vite + React + TypeScript single-page app scaffold
+- `Backend/` – Django 5 project configured for REST development
+- `README.md` – project overview and setup instructions
 
----
+Directory structure:
 
-## Contents
-- `SRS_SWE.pdf` — Main SRS document 
-- `README.md` — This file
-
----
-
-## 👥 User Roles
-- **Admin:** Manages users, reviews, and disputes.
-- **Client:** Posts projects, reviews freelancer profiles + hire them.
-- **Freelancer:** Applies to projects, completes tasks, and receives ratings.
-- **Company** : Posts Job offers / internships, reviews freelancer profiles + hire them.
+```
+SWE_Project/
+├── Frontend/         # React client (Vite)
+├── Backend/          # Django REST backend
+├── README.md
+└── .gitignore
+```
 
 ---
 
-## ⚙️ Key Features (from SRS)
-- FR-1: User authentication and role-based access
-- FR-2: Project creation and management
-- FR-3: Real-time messaging between client and freelancer
-- FR-4: Admin dashboard and analytics
-- FR-5: Rating and feedback system
-- FR-6.2: Display aggregated rating and verified badges
-- FR-6.3: Mechanism to contest reviews with admin mediation
+## Getting Started
 
+### 1. Frontend (React)
+
+```
+cd Frontend
+npm install
+npm run dev
+```
+
+The dev server runs on `http://localhost:5173` by default. Environment-specific values can be defined in `Frontend/.env` (Vite convention) as needed.
+
+### 2. Backend (Django + DRF)
+
+```
+cd Backend
+python -m venv .venv
+.venv\Scripts\activate      # Windows PowerShell
+pip install -r requirements.txt
+copy env.example .env       # or configure manually
+python manage.py migrate
+python manage.py runserver
+```
+
+Key features of the backend scaffold:
+
+- `platform_api` app mounted at `http://localhost:8000/api/`
+- `/api/health/` endpoint for availability checks
+- `django-rest-framework` and `django-cors-headers` preconfigured
+- `.env` driven settings (secret key, debug flag, hosts, Postgres credentials, frontend URL)
+- Defaults to SQLite for local dev; switches to PostgreSQL automatically when `POSTGRES_*` vars are provided
 
 ---
 
-## 📊 Non-Functional Requirements
-- **Performance:** Fast response time under normal load
-- **Security:** Data encryption, password hashing, and secure APIs
-- **Usability:** Simple and responsive user interface
-- **Scalability:** Supports a growing number of users and projects
-- **Accessibility:** Follows WCAG AA guidelines
+## Roadmap Snapshot
+
+- Authentication / role management (admin, client, freelancer, company)
+- Requests, negotiations, projects, and deliverables
+- Reviews, community posts, notifications, reports, offers, and help desk
+- Media management for uploads across modules
+- Comprehensive API layer aligning with the SRS tables and endpoints described in the system design document
 
 ---
 
-## 🧱 Tech Stack (Planned)
-- **Frontend:** React.js (SPA)
-- **Backend:** TBD
-- **Database:** TBD (PostgreSQL)
-- **Hosting:** Render / Vercel (for demo purposes)
-- **Version Control:** GitHub
+## Next Steps
 
----
-
-## 🧩 How to Use This Repository
-1. Clone this repo:
-   ```bash
-   git clone https://github.com/Cherif-TaiebEzzraimi/SWE_Project.git
+1. Flesh out database models in `Backend/platform_api/models.py` following the schema in the design doc.
+2. Build REST serializers + viewsets that expose the detailed API endpoints already listed in the SRS.
+3. Implement React layouts, routing, and shared state management that consume those endpoints.
+4. Add CI/CD, linting, and testing workflows once business logic lands in the repo.
