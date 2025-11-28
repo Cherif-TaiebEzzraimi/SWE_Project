@@ -59,7 +59,7 @@ class User(AbstractBaseUser, PermissionsMixin):
 
 # Admin Model -------------------------------------------
 class Admin(models.Model):
-    user_id = models.OneToOneField(User, on_delete=models.CASCADE, primary_key=True, related_name='admin_profile')
+    user = models.OneToOneField(User, on_delete=models.CASCADE, primary_key=True, related_name='admin_profile')
     profile_picture = models.ImageField(upload_to='user_photos/', null=True, blank=True)
 
     phone_number = models.CharField(max_length=15, blank=True, null=True)
@@ -68,12 +68,12 @@ class Admin(models.Model):
         db_table = 'admins'
     
     def __str__(self):
-        return f"Admin: {self.user_id.email}"
+        return f"Admin: {self.user.email}"
 
 
 # Company Model --------------------------------------------
 class Company(models.Model):
-    user_id = models.OneToOneField(User, on_delete=models.CASCADE, related_name='company_profile')
+    user= models.OneToOneField(User, on_delete=models.CASCADE, related_name='company_profile')
     registration_number = models.CharField(max_length=120, unique=True)
     tax_id = models.CharField(max_length=50, blank=True, null=True)
     representative = models.TextField(max_length=65535, blank=True, null=True)
@@ -89,12 +89,12 @@ class Company(models.Model):
         verbose_name_plural = 'Companies'
     
     def __str__(self):
-        return f"Company: {self.user_id.email}"
+        return f"Company: {self.user.email}"
 
 
 # Client Model -----------------------------------------
 class Client(models.Model):
-    user_id = models.OneToOneField(User, on_delete=models.CASCADE, primary_key=True, related_name='client_profile')
+    user = models.OneToOneField(User, on_delete=models.CASCADE, primary_key=True, related_name='client_profile')
     profile_picture = models.ImageField(upload_to='user_photos/', null=True, blank=True)
     phone_number = models.CharField(max_length=15, blank=True, null=True)
     city = models.CharField(max_length=120, blank=True, null=True)
@@ -104,12 +104,12 @@ class Client(models.Model):
         db_table = 'clients'
     
     def __str__(self):
-        return f"Client: {self.user_id.email}"
+        return f"Client: {self.user.email}"
 
 
 # Freelancer Model ------------------------
 class Freelancer(models.Model):
-    user_id = models.OneToOneField(User, on_delete=models.CASCADE, primary_key=True, related_name='freelancer_profile')
+    user = models.OneToOneField(User, on_delete=models.CASCADE, primary_key=True, related_name='freelancer_profile')
     profile_picture = models.ImageField(upload_to='user_photos/', null=True, blank=True)
     phone_number = models.CharField(max_length=15, blank=True, null=True)
     description = models.TextField(max_length=65535, blank=True, null=True)
@@ -135,7 +135,7 @@ class Freelancer(models.Model):
         db_table = 'freelancers'
     
     def __str__(self):
-        return f"Freelancer: {self.user_id.email}"
+        return f"Freelancer: {self.user.email}"
 
 # FAQ Model ----------------------------------------------
 class FAQ(models.Model):
@@ -189,12 +189,12 @@ class Category(models.Model):
 
 class Review(models.Model):
     """Reviews given by clients to freelancers"""
-    client_id = models.ForeignKey(
+    client= models.ForeignKey(
         Client,
         on_delete=models.CASCADE,
         related_name='reviews_given'
     )
-    freelancer_id = models.ForeignKey(
+    freelancer = models.ForeignKey(
         Freelancer,
         on_delete=models.CASCADE,
         related_name='reviews'
@@ -209,10 +209,10 @@ class Review(models.Model):
     class Meta:
         db_table = 'reviews'
         ordering = ['-created_at']
-        unique_together = ['client_id', 'freelancer_id']  
+        unique_together = ['client', 'freelancer']  
     
     def __str__(self):
-        return f"Review by {self.client_id.user.username} for {self.freelancer_id.user.username} - {self.rating}★"
+        return f"Review by {self.client.user.username} for {self.freelancer.user.username} - {self.rating}★"
     
     def save(self, *args, **kwargs):
         """Override save to update freelancer rating"""
@@ -235,7 +235,7 @@ class MediaFile(models.Model):
         ('phase_deliverable', 'Phase Deliverable'),
     ]
     
-    owner_id = models.ForeignKey(
+    owner = models.ForeignKey(
         'User',
         on_delete=models.CASCADE,
         related_name='media_files'
@@ -256,7 +256,7 @@ class MediaFile(models.Model):
         ordering = ['-created_at']
         indexes = [
             models.Index(fields=['entity_type', 'entity_id']),
-            models.Index(fields=['owner_id', 'created_at']),
+            models.Index(fields=['owner', 'created_at']),
         ]
     
     def __str__(self):
@@ -275,7 +275,7 @@ class Report(models.Model):
         ('request', 'Request Report'),
     ]
     
-    reporter_id = models.ForeignKey(
+    reporter = models.ForeignKey(
         'User',
         on_delete=models.CASCADE,
         related_name='reports_made'
@@ -294,11 +294,11 @@ class Report(models.Model):
         ordering = ['-created_at']
         indexes = [
             models.Index(fields=['type', 'created_at']),
-            models.Index(fields=['reporter_id', 'created_at']),
+            models.Index(fields=['reporter', 'created_at']),
         ]
     
     def __str__(self):
-        return f"Report by {self.reporter_id.username}: {self.type} (ID: {self.target_id})"
+        return f"Report by {self.reporter.username}: {self.type} (ID: {self.target_id})"
 
 
 # Notifications Model -----------------------------------------------
@@ -306,7 +306,7 @@ class Report(models.Model):
 
 class Notification(models.Model):
     """Notifications for users"""
-    receiver_id = models.ForeignKey(
+    receiver = models.ForeignKey(
         'User',
         on_delete=models.CASCADE,
         related_name='notifications'
@@ -319,12 +319,12 @@ class Notification(models.Model):
         db_table = 'notifications'
         ordering = ['-created_at']
         indexes = [
-            models.Index(fields=['receiver_id', 'seen', 'created_at']),
+            models.Index(fields=['receiver', 'seen', 'created_at']),
         ]
     
     def __str__(self):
         status = "Read" if self.seen else "Unread"
-        return f"Notification for {self.receiver_id.username} - {status}"
+        return f"Notification for {self.receiver.username} - {status}"
     
     def mark_as_read(self):
         """Mark notification as read"""
@@ -341,7 +341,7 @@ class Help(models.Model):
         ('resolved', 'Resolved'),
     ]
     
-    user_id = models.ForeignKey(
+    user = models.ForeignKey(
         'User',
         on_delete=models.CASCADE,
         related_name='help_tickets'
@@ -357,11 +357,11 @@ class Help(models.Model):
         ordering = ['-created_at']
         indexes = [
             models.Index(fields=['status', 'created_at']),
-            models.Index(fields=['user_id', 'created_at']),
+            models.Index(fields=['user', 'created_at']),
         ]
     
     def __str__(self):
-        return f"Help #{self.id} - {self.user_id.username} ({self.status})"
+        return f"Help #{self.id} - {self.user.username} ({self.status})"
     
     def resolve(self):
         """Mark ticket as resolved"""
@@ -382,7 +382,7 @@ class JobInternshipOffer(models.Model):
         ('internship', 'Internship'),
     ]
     
-    company_id = models.ForeignKey(
+    company = models.ForeignKey(
         'Company',
         on_delete=models.CASCADE,
         related_name='job_offers'
@@ -400,12 +400,12 @@ class JobInternshipOffer(models.Model):
         db_table = 'job_internship_offers'
         ordering = ['-created_at']
         indexes = [
-            models.Index(fields=['company_id', 'type', 'created_at']),
+            models.Index(fields=['company', 'type', 'created_at']),
             models.Index(fields=['type', 'created_at']),
         ]
     
     def __str__(self):
-        return f"{self.title} ({self.type}) - {self.company_id.user.username}"
+        return f"{self.title} ({self.type}) - {self.company.user.username}"
 
 
 # Request Model --------------------------------------------
@@ -420,7 +420,7 @@ class Request(models.Model):
         ('rejected', 'Rejected'),
     ]
     
-    client_id = models.ForeignKey(
+    client = models.ForeignKey(
         'Client',
         on_delete=models.CASCADE,
         related_name='requests'
@@ -458,13 +458,13 @@ class Request(models.Model):
         db_table = 'requests'
         ordering = ['-created_at']
         indexes = [
-            models.Index(fields=['client_id', 'status', 'created_at']),
+            models.Index(fields=['client', 'status', 'created_at']),
             models.Index(fields=['status', 'created_at']),
             models.Index(fields=['category', 'created_at']),
         ]
     
     def __str__(self):
-        return f"Request #{self.id} by {self.client_id.user.username} - {self.status}"
+        return f"Request #{self.id} by {self.client.user.username} - {self.status}"
 
 
 # Negotiation Model --------------------------------------------
@@ -489,7 +489,7 @@ class Negotiation(models.Model):
         choices=ORIGIN_TYPE_CHOICES,
         help_text="How the negotiation was initiated"
     )
-    request_id = models.ForeignKey(
+    request = models.ForeignKey(
         'Request',
         on_delete=models.CASCADE,
         related_name='negotiations',
@@ -497,12 +497,12 @@ class Negotiation(models.Model):
         null=True,
         help_text="Related request if origin_type is 'request'"
     )
-    client_id = models.ForeignKey(
+    client = models.ForeignKey(
         'Client',
         on_delete=models.CASCADE,
         related_name='negotiations_as_client'
     )
-    freelancer_id = models.ForeignKey(
+    freelancer = models.ForeignKey(
         'Freelancer',
         on_delete=models.CASCADE,
         related_name='negotiations_as_freelancer'
@@ -528,14 +528,14 @@ class Negotiation(models.Model):
         db_table = 'negotiations'
         ordering = ['-created_at']
         indexes = [
-            models.Index(fields=['client_id', 'status', 'created_at']),
-            models.Index(fields=['freelancer_id', 'status', 'created_at']),
+            models.Index(fields=['client', 'status', 'created_at']),
+            models.Index(fields=['freelancer', 'status', 'created_at']),
             models.Index(fields=['status', 'created_at']),
             models.Index(fields=['origin_type', 'created_at']),
         ]
     
     def __str__(self):
-        return f"Negotiation #{self.id}: {self.client_id.user.username} ↔ {self.freelancer_id.user.username} ({self.status})"
+        return f"Negotiation #{self.id}: {self.client.user.username} ↔ {self.freelancer.user.username} ({self.status})"
     
     def is_agreed(self):
         """Check if both parties agreed"""
@@ -554,7 +554,7 @@ class NegotiationPhase(models.Model):
         ('revision_required', 'Revision Required'),
     ]
     
-    negotiation_id = models.ForeignKey(
+    negotiation = models.ForeignKey(
         'Negotiation',
         on_delete=models.CASCADE,
         related_name='phases'
@@ -575,14 +575,14 @@ class NegotiationPhase(models.Model):
     
     class Meta:
         db_table = 'negotiation_phases'
-        ordering = ['negotiation_id', 'created_at']
+        ordering = ['negotiation', 'created_at']
         indexes = [
-            models.Index(fields=['negotiation_id', 'status']),
+            models.Index(fields=['negotiation', 'status']),
             models.Index(fields=['deadline']),
         ]
     
     def __str__(self):
-        return f"Phase: {self.title} (Negotiation #{self.negotiation_id.id}) - {self.status}"
+        return f"Phase: {self.title} (Negotiation #{self.negotiation.id}) - {self.status}"
 
 
 # Negotiation Floating Comments Model --------------------------------------------
@@ -593,18 +593,18 @@ class NegotiationFloatingComment(models.Model):
         ('resolved', 'Resolved')
     ]
     
-    negotiation_id = models.ForeignKey(
+    negotiation = models.ForeignKey(
         'Negotiation',
         on_delete=models.CASCADE,
         related_name='floating_comments'
     )
-    user_id = models.ForeignKey(
+    user = models.ForeignKey(
         'User',
         on_delete=models.CASCADE,
         related_name='negotiation_comments'
     )
     comment = models.TextField(max_length=65535)
-    parent_id = models.ForeignKey(
+    parent = models.ForeignKey(
         'self',
         on_delete=models.CASCADE,
         blank=True,
@@ -630,13 +630,13 @@ class NegotiationFloatingComment(models.Model):
         db_table = 'negotiation_floating_comments'
         ordering = ['negotiation_id', 'created_at']
         indexes = [
-            models.Index(fields=['negotiation_id', 'created_at']),
-            models.Index(fields=['user_id', 'created_at']),
-            models.Index(fields=['parent_id']),
+            models.Index(fields=['negotiation', 'created_at']),
+            models.Index(fields=['user', 'created_at']),
+            models.Index(fields=['parent']),
         ]
     
     def __str__(self):
-        return f"Comment by {self.user_id.username} on Negotiation #{self.negotiation_id.id}"
+        return f"Comment by {self.user.username} on Negotiation #{self.negotiation.id}"
 
 
 # Project Model -------------------------------------------
@@ -648,7 +648,7 @@ class Project(models.Model):
         ('done', 'Done'),
     ]
     
-    negotiation_id = models.OneToOneField(
+    negotiation = models.OneToOneField(
         'Negotiation',
         on_delete=models.CASCADE,
         related_name='project',
@@ -663,22 +663,22 @@ class Project(models.Model):
         db_table = 'projects'
         ordering = ['-created_at']
         indexes = [
-            models.Index(fields=['negotiation_id']),
+            models.Index(fields=['negotiation']),
             models.Index(fields=['start_date', 'end_date']),
         ]
     
     def __str__(self):
-        return f"Project: {self.title} (Negotiation #{self.negotiation_id.id})"
+        return f"Project: {self.title} (Negotiation #{self.negotiation.id})"
     
     @property
     def client(self):
         """Get client from negotiation"""
-        return self.negotiation_id.client
+        return self.negotiation.client
     
     @property
     def freelancer(self):
         """Get freelancer from negotiation"""
-        return self.negotiation_id.freelancer
+        return self.negotiationfreelancer
 
 
 
@@ -692,7 +692,7 @@ class ProjectPhase(models.Model):
         ('done', 'Done'),
     ]
     
-    project_id = models.ForeignKey(
+    project = models.ForeignKey(
         'Project',
         on_delete=models.CASCADE,
         related_name='phases'
@@ -717,26 +717,25 @@ class ProjectPhase(models.Model):
     
     class Meta:
         db_table = 'project_phases'
-        ordering = ['project_id', 'created_at']
+        ordering = ['project', 'created_at']
         indexes = [
-            models.Index(fields=['project_id', 'status']),
+            models.Index(fields=['project', 'status']),
             models.Index(fields=['status', 'created_at']),
         ]
     
     def __str__(self):
-        return f"Phase: {self.title} (Project: {self.project_id.title}) - {self.status}"
+        return f"Phase: {self.title} (Project: {self.project.title}) - {self.status}"
 
 
 # Project Deliverables Model ----------------------------------------
 class Deliverable(models.Model):
     """Deliverables for project phases"""
     
-    phase_id = models.ForeignKey(
+    phase= models.ForeignKey(
         'ProjectPhase',
         on_delete=models.CASCADE,
         related_name='deliverable_items'
     )
-    link = models.CharField(max_length=255)
     attachment = models.CharField(max_length=255, blank=True, null=True)
     textcontent = models.TextField(max_length=65535, blank=True, null=True)
     submitted_at = models.DateTimeField(blank=True, null=True)
@@ -744,10 +743,10 @@ class Deliverable(models.Model):
     
     class Meta:
         db_table = 'deliverables'
-        ordering = ['phase_id', 'submitted_at']
+        ordering = ['phase', 'submitted_at']
         indexes = [
-            models.Index(fields=['phase_id', 'submitted_at']),
+            models.Index(fields=['phase', 'submitted_at']),
         ]
     
     def __str__(self):
-        return f"Deliverable: {self.link} (Phase: {self.phase_id.title}) - {self.status}"
+        return f"Deliverable: (Phase: {self.phase.title}) - {self.status}"

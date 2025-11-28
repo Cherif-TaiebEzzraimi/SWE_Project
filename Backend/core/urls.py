@@ -14,30 +14,17 @@ Including another URLconf
     1. Import the include() function: from django.urls import include, path
     2. Add a URL to urlpatterns:  path('blog/', include('blog.urls'))
 """
-
 from django.contrib import admin
-from django.http import JsonResponse
-from django.urls import include, path
+from django.urls import path , include
+from django.conf.urls.static  import static
+from django.conf import settings
 
-
-def api_root(request):
-    """
-    Friendly landing page for http://127.0.0.1:8000/ so developers
-    see a useful response instead of the default 404.
-    """
-    return JsonResponse(
-        {
-            "service": "Freelance Platform API",
-            "status": "ok",
-            "endpoints": {
-                "health": "/api/health/",
-                "admin": "/admin/",
-            },
-        }
-    )
 
 urlpatterns = [
-    path("", api_root, name="api-root"),
+
     path("admin/", admin.site.urls),
-    path("api/", include("platform_api.urls")),
+    path("", include("platform_api.urls")),
+
+
+
 ]
