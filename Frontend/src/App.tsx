@@ -1,16 +1,13 @@
-import { BrowserRouter as Router, Routes } from 'react-router-dom'
-import './styles/App.css'
+
+
+import ProjectProgressPage from './pages/project_progress/phases-section/PhasesPage';
 
 function App() {
   return (
-    <Router>
-      <div className="app">
-        <Routes>
-          {/* Routes will be added here */}
-        </Routes>
-      </div>
-    </Router>
-  )
+    <div className="app">
+      <ProjectProgressPage />
+    </div>
+  );
 }
 
-export default App
+export default App;
