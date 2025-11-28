@@ -50,6 +50,7 @@ INSTALLED_APPS = [
     "rest_framework",
     "platform_api",
 ]
+AUTH_USER_MODEL = 'platform_api.User'
 
 MIDDLEWARE = [
     "django.middleware.security.SecurityMiddleware",
@@ -60,6 +61,7 @@ MIDDLEWARE = [
     "django.contrib.auth.middleware.AuthenticationMiddleware",
     "django.contrib.messages.middleware.MessageMiddleware",
     "django.middleware.clickjacking.XFrameOptionsMiddleware",
+    
 ]
 
 ROOT_URLCONF = "core.urls"
@@ -141,6 +143,8 @@ USE_TZ = True
 
 STATIC_URL = "static/"
 STATIC_ROOT = BASE_DIR / "staticfiles"
+MEDIA_ROOT = os.path.join(BASE_DIR, 'media')
+MEDIA_URL = '/media/'
 
 CORS_ALLOW_CREDENTIALS = True
 default_origin = os.environ.get("FRONTEND_URL", "http://localhost:5173")
