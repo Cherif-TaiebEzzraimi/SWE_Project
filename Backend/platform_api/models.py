@@ -612,16 +612,7 @@ class NegotiationFloatingComment(models.Model):
         related_name='replies',
         help_text="For threaded/nested comments"
     )
-    x_position = models.FloatField(
-        blank=True,
-        null=True,
-        help_text="X coordinate for floating comment"
-    )
-    y_position = models.FloatField(
-        blank=True,
-        null=True,
-        help_text="Y coordinate for floating comment"
-    )
+  
     status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='active')
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)

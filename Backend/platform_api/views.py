@@ -488,8 +488,7 @@ def negotiation_comments(request, id):
     # POST - create
     text = request.data.get('comment')
     parent_id = request.data.get('parent')
-    x = request.data.get('x_position')
-    y = request.data.get('y_position')
+
     if not text:
         return Response({'detail': 'comment text required'}, status=status.HTTP_400_BAD_REQUEST)
     parent = None
@@ -502,8 +501,7 @@ def negotiation_comments(request, id):
         user=request.user,
         comment=text,
         parent=parent,
-        x_position=x,
-        y_position=y,
+
     )
     return Response(NegotiationFloatingCommentSerializer(comment).data, status=status.HTTP_201_CREATED)
 
