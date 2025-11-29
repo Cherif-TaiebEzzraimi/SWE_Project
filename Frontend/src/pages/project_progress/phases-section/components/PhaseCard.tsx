@@ -98,35 +98,7 @@ const PhaseCard: FC<PhaseCardProps> = ({ phase, onClick, isSelected = false }) =
           </span>
         </div>
 
-        {/* Tasks Progress */}
-        <div className="phase-detail-item flex-col items-start gap-1">
-          <div className="flex items-center gap-2 w-full">
-            <span className="phase-detail-label">Tasks:</span>
-            <span className="phase-detail-value">
-              {phase.tasks.completed}/{phase.tasks.total}
-            </span>
-            <span className="text-xs text-slate-500 dark:text-slate-400 ml-auto">
-              {getCompletionPercentage()}%
-            </span>
-          </div>
-          {/* Progress Bar */}
-          <div className="w-full bg-slate-200 dark:bg-slate-700 rounded-full h-1.5 overflow-hidden">
-            <div 
-              className={`h-full rounded-full transition-all duration-300 ${
-                phase.status === 'Completed' 
-                  ? 'bg-green-500' 
-                  : phase.status === 'In Progress'
-                  ? 'bg-brand-blue'
-                  : 'bg-slate-400'
-              }`}
-              style={{ width: `${getCompletionPercentage()}%` }}
-              role="progressbar"
-              aria-valuenow={getCompletionPercentage()}
-              aria-valuemin={0}
-              aria-valuemax={100}
-            />
-          </div>
-        </div>
+        
 
         {/* Deliverable Link */}
         {phase.deliverable && (
@@ -153,7 +125,7 @@ const PhaseCard: FC<PhaseCardProps> = ({ phase, onClick, isSelected = false }) =
         {/* Budget/Price indicator */}
         {phase.price && (
           <div className="phase-detail-item mt-2 pt-2 border-t border-slate-200 dark:border-slate-600">
-            <span className="phase-detail-label">Budget:</span>
+            <span className="phase-detail-label">Price:</span>
             <span className="phase-detail-value font-bold text-brand-navy-dark dark:text-white">
               {phase.price}
             </span>

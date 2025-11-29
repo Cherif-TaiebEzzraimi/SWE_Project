@@ -1,6 +1,6 @@
 
 
-import ProjectProgressPage from './pages/project_progress/phases-section/PhasesPage';
+import ProjectProgressPage from './pages/project_progress/ProjectProgressPage';
 
 function App() {
   return (

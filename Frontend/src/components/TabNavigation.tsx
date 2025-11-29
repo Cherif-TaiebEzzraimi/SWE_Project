@@ -23,6 +23,7 @@ interface TabNavigationProps {
 }
 
 const TabNavigation: FC<TabNavigationProps> = ({ 
+  
   activeTab, 
   onTabChange,
   tabs,

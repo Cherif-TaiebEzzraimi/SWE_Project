@@ -21,6 +21,7 @@ interface HeaderProps {
 }
 
 const Header: React.FC<HeaderProps> = ({ 
+  
   title = "Project Progress Hub",
   onNavigate,
   user,
