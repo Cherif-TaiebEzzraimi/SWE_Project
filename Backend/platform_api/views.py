@@ -17,7 +17,101 @@ from django.core.files.base import ContentFile
 import os
 from django.db.models import Count, Q
 
+
+@api_view(['GET'])
+def getRoutes(request):
+    routes = [
+        {'method': 'GET', 'path': '/auth/login/', 'description': 'Login'},
+        {'method': 'POST', 'path': '/auth/logout/', 'description': 'Logout'},
+        {'method': 'POST', 'path': '/auth/register/freelancer/', 'description': 'Register freelancer'},
+        {'method': 'POST', 'path': '/auth/register/client/', 'description': 'Register client'},
+        {'method': 'POST', 'path': '/auth/register/company/', 'description': 'Register company'},
+        {'method': 'GET', 'path': '/auth/verify-email/<token>/', 'description': 'Verify email token'},
+        {'method': 'POST', 'path': '/auth/forgot-password/', 'description': 'Forgot password'},
+        {'method': 'POST', 'path': '/auth/reset-password/', 'description': 'Reset password'},
+
+        {'method': 'GET', 'path': '/freelancers/<id>/', 'description': 'Get freelancer profile'},
+        {'method': 'PUT', 'path': '/freelancers/<id>/update/', 'description': 'Update freelancer profile'},
+        {'method': 'PUT', 'path': '/freelancers/<id>/password/', 'description': 'Update freelancer password'},
+
+        {'method': 'GET', 'path': '/clients/<id>/', 'description': 'Get client profile'},
+        {'method': 'PUT', 'path': '/clients/<id>/update/', 'description': 'Update client profile'},
+        {'method': 'PUT', 'path': '/clients/<id>/password/', 'description': 'Update client password'},
+
+        {'method': 'GET', 'path': '/companies/<id>/', 'description': 'Get company profile'},
+        {'method': 'PUT', 'path': '/companies/<id>/update/', 'description': 'Update company profile'},
+        {'method': 'PUT', 'path': '/companies/<id>/password/', 'description': 'Update company password'},
+
+        {'method': 'DELETE', 'path': '/users/<id>/', 'description': 'Soft-disable user (deactivate)'},
+
+        {'method': 'GET,POST', 'path': '/requests/', 'description': 'List or create requests'},
+        {'method': 'GET', 'path': '/requests/client/<client_id>/', 'description': 'List requests for a client'},
+        {'method': 'GET,PUT,DELETE', 'path': '/requests/<id>/', 'description': 'Get/update/soft-delete a request'},
+
+        {'method': 'POST', 'path': '/negotiations/directhire/<freelancer_id>/', 'description': 'Create direct-hire negotiation'},
+        {'method': 'POST', 'path': '/negotiations/<request_id>/create/', 'description': 'Create negotiation from request'},
+        {'method': 'GET,DELETE', 'path': '/negotiations/<id>/', 'description': 'Get or soft-delete negotiation'},
+        {'method': 'POST', 'path': '/negotiations/<id>/phases/', 'description': 'Add negotiation phase'},
+        {'method': 'PUT,DELETE', 'path': '/negotiations/phases/<phase_id>/', 'description': 'Update or delete negotiation phase'},
+        {'method': 'POST', 'path': '/negotiations/<id>/agree/', 'description': 'Agree to negotiation'},
+        {'method': 'POST', 'path': '/negotiations/<id>/decline/', 'description': 'Decline negotiation'},
+
+        {'method': 'GET', 'path': '/projects/user/<user_id>/', 'description': 'List projects for a user'},
+        {'method': 'GET,POST', 'path': '/projects/<id>/phases/', 'description': 'List or add project phases'},
+        {'method': 'PUT,DELETE', 'path': '/projects/<id>/phases/<phase_id>/', 'description': 'Update or soft-delete project phase'},
+        {'method': 'POST', 'path': '/projects/phases/<phase_id>/start/', 'description': 'Start phase (freelancer)'},
+        {'method': 'POST', 'path': '/projects/phases/<phase_id>/submit/', 'description': 'Submit phase deliverable'},
+        {'method': 'POST', 'path': '/projects/phases/<phase_id>/approve/', 'description': 'Approve phase (client)'},
+        {'method': 'POST', 'path': '/projects/phases/<phase_id>/next/', 'description': 'Move to next phase'},
+        {'method': 'POST', 'path': '/projects/phases/<phase_id>/reject/', 'description': 'Reject phase (client) - set back to in_progress'},
+        {'method': 'GET', 'path': '/projects/<id>/', 'description': 'Get project details'},
+
+        {'method': 'GET,POST', 'path': '/negotiations/<id>/comments/', 'description': 'List or add negotiation floating comments'},
+        {'method': 'PUT,DELETE', 'path': '/comments/<id>/', 'description': 'Update or soft-delete a comment'},
+        {'method': 'POST', 'path': '/comments/<id>/resolve/', 'description': 'Resolve a comment'},
+        {'method': 'POST', 'path': '/comments/<id>/reply/', 'description': 'Reply to a comment'},
+
+        {'method': 'POST', 'path': '/media/upload/', 'description': 'Upload media/file'},
+        {'method': 'GET', 'path': '/media/<entity_type>/<entity_id>/', 'description': 'List media for an entity'},
+        {'method': 'DELETE', 'path': '/media/<id>/', 'description': 'Soft-delete media'},
+
+        {'method': 'GET', 'path': '/faq/', 'description': 'List FAQs (public)'},
+        {'method': 'POST', 'path': '/admin/faq/', 'description': 'Create FAQ (admin)'},
+        {'method': 'PUT,DELETE', 'path': '/admin/faq/<id>/', 'description': 'Update or delete FAQ (admin)'},
+
+        {'method': 'POST', 'path': '/reviews/', 'description': 'Create review (client → freelancer)'},
+        {'method': 'GET', 'path': '/reviews/freelancer/<freelancer_id>/', 'description': 'List reviews for freelancer'},
+        {'method': 'PUT,DELETE', 'path': '/reviews/<id>/', 'description': 'Update or soft-delete review'},
+
+        {'method': 'POST', 'path': '/help/', 'description': 'Submit help ticket'},
+        {'method': 'GET', 'path': '/help/my/', 'description': 'List my help tickets'},
+        {'method': 'PUT', 'path': '/help/<id>/resolve/', 'description': 'Resolve help ticket (admin)'},
+
+        {'method': 'GET', 'path': '/admin/stats/users/', 'description': 'Admin: count freelancers/clients/companies'},
+        {'method': 'GET', 'path': '/admin/stats/posts/', 'description': 'Admin: count posted jobs'},
+        {'method': 'GET', 'path': '/admin/stats/requests/', 'description': 'Admin: count active requests'},
+        {'method': 'GET', 'path': '/admin/stats/negotiations/', 'description': 'Admin: active & declined negotiations'},
+        {'method': 'GET', 'path': '/admin/stats/projects/', 'description': 'Admin: active & declined projects'},
+
+        {'method': 'POST', 'path': '/admin/skills/', 'description': 'Admin: add skill'},
+        {'method': 'POST', 'path': '/admin/categories/', 'description': 'Admin: add category'},
+        {'method': 'GET', 'path': '/skills/', 'description': 'List skills'},
+        {'method': 'GET', 'path': '/categories/', 'description': 'List categories'},
+
+        {'method': 'GET', 'path': '/admin/reports/', 'description': 'Admin: list reports'},
+        {'method': 'POST', 'path': '/admin/reports/<id>/resolve/', 'description': 'Admin: resolve report'},
+    ]
+    return Response(routes)
+
 # User views ----------------------------------
+@api_view(['GET'])
+def soft_get_user(request):
+    data = Client.objects.all()
+    serializer = ClientSerializer(data , many = True)
+    return Response(serializer.data)
+
+
+
 @api_view(['POST'])
 def register_freelancer(request):
     data = request.data.copy()
@@ -35,7 +129,7 @@ def register_freelancer(request):
             user.save()
         # create freelancer profile
         freelancer_data = data.get('freelancer', {})
-        Freelancer.objects.create(user_id=user, **freelancer_data)
+        Freelancer.objects.create(user_id=user.id, **freelancer_data)
         return Response({'user': UserSerializer(user).data}, status=status.HTTP_201_CREATED)
     return Response(user_serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
@@ -54,7 +148,7 @@ def register_client(request):
         user = user_serializer.save()
         user.set_password(password)
         user.save()
-        Client.objects.create(user_id=user)
+        Client.objects.create(user_id=user.id)
         return Response({'user': UserSerializer(user).data}, status=status.HTTP_201_CREATED)
     return Response(user_serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
@@ -67,15 +161,15 @@ def register_company(request):
     if not email or not password:
         return Response({'detail': 'email and password are required'}, status=status.HTTP_400_BAD_REQUEST)
 
-    data['role'] = 'client'
     # companies are represented as client-role users with a Company profile
+    data['role'] = 'company'
     user_serializer = UserSerializer(data=data)
     if user_serializer.is_valid():
         user = user_serializer.save()
         user.set_password(password)
         user.save()
         company_data = data.get('company', {})
-        Company.objects.create(user_id=user, **company_data)
+        Company.objects.create(user_id=user.id, **company_data)
         return Response({'user': UserSerializer(user).data}, status=status.HTTP_201_CREATED)
     return Response(user_serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
@@ -101,7 +195,6 @@ def logout_view(request):
 
 @api_view(['GET'])
 def verify_email(request, token):
-    # Placeholder: implement token lookup + verification flow
     return Response({'detail': 'Email verification endpoint (token received)', 'token': token}, status=status.HTTP_200_OK)
 
 
@@ -127,26 +220,36 @@ def reset_password(request):
 
 # ---------- Profile endpoints (freelancer/client/company) ----------
 @api_view(['GET'])
-def _is_owner_or_staff(user, profile_obj):
-    try:
-        return user.is_staff or (hasattr(profile_obj, 'user_id') and profile_obj.user_id.id == user.id)
-    except Exception:
-        return False
-
+def _is_owner_or_staff(request, freelancer):
+    return request.user.is_staff or freelancer.user == request.user
 
 
 @api_view(['GET'])
 def get_freelancer(request, id):
-    freelancer = Freelancer.objects.get(id=id)
+    freelancer = Freelancer.objects.get(user=id)
     return Response(FreelancerSerializer(freelancer).data)
-
 
 @api_view(['PUT'])
 def update_freelancer(request, id):
-    freelancer = Freelancer.objects.get(id=id)
-    if not _is_owner_or_staff(request.user, freelancer):
+    try:
+        freelancer = Freelancer.objects.get(user=id)
+    except Freelancer.DoesNotExist:
+        return Response({'detail': 'Freelancer not found'}, status=status.HTTP_404_NOT_FOUND)
+    
+    if not _is_owner_or_staff(request._request, freelancer):
         return Response({'detail': 'Forbidden'}, status=status.HTTP_403_FORBIDDEN)
-    serializer = FreelancerSerializer(freelancer, data=request.data, partial=True)
+    
+    user_fields = ['first_name', 'last_name']
+    user_data = {field: request.data[field] for field in user_fields if field in request.data}
+    
+    if user_data:
+        user = freelancer.user
+        for field, value in user_data.items():
+            setattr(user, field, value)
+        user.save()
+    
+        freelancer_data = {k: v for k, v in request.data.items() if k not in user_fields}
+    serializer = FreelancerSerializer(freelancer, data=freelancer_data, partial=True)
     if serializer.is_valid():
         serializer.save()
         return Response(serializer.data)
@@ -154,10 +257,10 @@ def update_freelancer(request, id):
 
 @api_view(['PUT'])
 def update_freelancer_password(request, id):
-    freelancer = Freelancer.objects.get(id=id)
-    if not _is_owner_or_staff(request.user, freelancer):
-        return Response({'detail': 'Forbidden'}, status=status.HTTP_403_FORBIDDEN)
-    user = freelancer.user_id
+    freelancer = Freelancer.objects.get(user=id)
+    if not _is_owner_or_staff(request._request, freelancer):
+            return Response({'detail': 'Forbidden'}, status=status.HTTP_403_FORBIDDEN)
+    user = freelancer.user
     old = request.data.get('old_password')
     new = request.data.get('new_password')
     if not old or not new:
@@ -170,16 +273,32 @@ def update_freelancer_password(request, id):
 
 @api_view(['GET'])
 def get_client(request, id):
-    client = Client.objects.get(id=id)
+    client = Client.objects.get(user=id)
     return Response(ClientSerializer(client).data)
 
 
 @api_view(['PUT'])
 def update_client(request, id):
-    client = Client.objects.get(id=id)
-    if not _is_owner_or_staff(request.user, client):
+    try:
+        client = Client.objects.get(user=id)
+    except Client.DoesNotExist:
+        return Response({'detail': 'Client not found'}, status=status.HTTP_404_NOT_FOUND)
+    
+    if not _is_owner_or_staff(request._request, client):
         return Response({'detail': 'Forbidden'}, status=status.HTTP_403_FORBIDDEN)
-    serializer = ClientSerializer(client, data=request.data, partial=True)
+    
+
+    user_fields = ['first_name', 'last_name']
+    user_data = {field: request.data[field] for field in user_fields if field in request.data}
+    
+    if user_data:
+        user = client.user
+        for field, value in user_data.items():
+            setattr(user, field, value)
+        user.save()
+    
+    client_data = {k: v for k, v in request.data.items() if k not in user_fields}
+    serializer = ClientSerializer(client, data=client_data, partial=True)
     if serializer.is_valid():
         serializer.save()
         return Response(serializer.data)
@@ -188,10 +307,10 @@ def update_client(request, id):
 
 @api_view(['PUT'])
 def update_client_password(request, id):
-    client = Client.objects.get(id=id)
-    if not _is_owner_or_staff(request.user, client):
-        return Response({'detail': 'Forbidden'}, status=status.HTTP_403_FORBIDDEN)
-    user = client.user_id
+    client = Client.objects.get(user=id)
+    if not _is_owner_or_staff(request._request, client):
+            return Response({'detail': 'Forbidden'}, status=status.HTTP_403_FORBIDDEN)
+    user = client.user
     old = request.data.get('old_password')
     new = request.data.get('new_password')
     if not old or not new:
@@ -259,40 +378,43 @@ def requests_list_create(request):
         if request.user.is_staff:
             qs = Request.objects.all()
         else:
-            client = Client.objects.filter(user_id=request.user).first()
-            if not client:
+            try:
+                client = Client.objects.get(user=request.user)
+            except Client.DoesNotExist:
                 return Response({'detail': 'No client profile for user'}, status=status.HTTP_404_NOT_FOUND)
-            qs = Request.objects.filter(client_id=client)
+            qs = Request.objects.filter(client=client)
         serializer = RequestSerializer(qs, many=True)
         return Response(serializer.data)
 
-    # POST
-    # assume authenticated user is client
-    client = Client.objects.filter(user_id=request.user).first()
-    if not client:
+    # POST request - create new request
+    try:
+         client = Client.objects.get(user=request.user)
+    except Client.DoesNotExist:
         return Response({'detail': 'Only clients can create requests'}, status=status.HTTP_403_FORBIDDEN)
+    
     data = request.data.copy()
-    data['client_id'] = client.id
+    # Don't include client in data, pass it to save() instead
     serializer = RequestSerializer(data=data)
     if serializer.is_valid():
-        serializer.save()
+        serializer.save(client=client)  # Pass the client object directly
         return Response(serializer.data, status=status.HTTP_201_CREATED)
     return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
 
 @api_view(['GET'])
-@permission_classes([IsAuthenticated])
 def list_client_requests(request, client_id):
-    client = Client.objects.filter(id=client_id).first()
-    if not client:
+    try:
+        # Use pk or user_id since user is the primary key
+        client = Client.objects.get(pk=client_id)
+    except Client.DoesNotExist:
         return Response({'detail': 'Client not found'}, status=status.HTTP_404_NOT_FOUND)
-    qs = Request.objects.filter(client_id=client)
+    
+    qs = Request.objects.filter(client=client)
     serializer = RequestSerializer(qs, many=True)
     return Response(serializer.data)
 
 
 @api_view(['GET', 'PUT', 'DELETE'])
-@permission_classes([IsAuthenticated])
 def request_detail(request, id):
     req = Request.objects.filter(id=id).first()
     if not req:
@@ -819,14 +941,14 @@ def admin_manage_faq(request, id):
 
 # ---------- Help endpoints ----------
 @api_view(['POST'])
-@permission_classes([IsAuthenticated])
 def create_help(request):
     """POST /help - submit a help request (authenticated users)"""
     data = request.data.copy()
     problem = data.get('problem')
     if not problem:
         return Response({'detail': 'problem field is required'}, status=status.HTTP_400_BAD_REQUEST)
-    data['user'] = request.user.id
+    
+    data['user_id'] = request.user.id
     serializer = HelpSerializer(data=data)
     if serializer.is_valid():
         serializer.save()
@@ -835,7 +957,6 @@ def create_help(request):
 
 
 @api_view(['GET'])
-@permission_classes([IsAuthenticated])
 def my_help_requests(request):
     """GET /help/my - list help requests submitted by authenticated user"""
     qs = Help.objects.filter(user=request.user)
@@ -844,7 +965,6 @@ def my_help_requests(request):
 
 
 @api_view(['PUT'])
-@permission_classes([IsAuthenticated])
 def resolve_help_request(request, id):
     """PUT /help/:id/resolve - admin marks a help request as resolved"""
     if not request.user.is_staff:

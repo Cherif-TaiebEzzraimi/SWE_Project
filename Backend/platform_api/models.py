@@ -31,12 +31,13 @@ class User(AbstractBaseUser, PermissionsMixin):
         ('admin', 'Admin'),
         ('client', 'Client'),
         ('freelancer', 'Freelancer'),
+        ('company' , 'Company'),
     ]
     
     id = models.AutoField(primary_key=True)
     first_name = models.CharField(max_length=20)
     last_name = models.CharField(max_length=20)
-    email = models.CharField(max_length=20, unique=True)
+    email = models.CharField(max_length=30, unique=True)
     password = models.CharField(max_length=255)
     role = models.CharField(max_length=20, choices=ROLE_CHOICES)
     created_at = models.DateTimeField(auto_now_add=True)
@@ -347,7 +348,7 @@ class Help(models.Model):
         related_name='help_tickets'
     )
     problem = models.TextField(max_length=65535, help_text="Description of the problem")
-    status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='open')
+    status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='pending')
     created_at = models.DateTimeField(auto_now_add=True)
     
     class Meta:
@@ -361,7 +362,7 @@ class Help(models.Model):
         ]
     
     def __str__(self):
-        return f"Help #{self.id} - {self.user.username} ({self.status})"
+        return f"Help #{self.id} - {self.user.first_name} ({self.status})"
     
     def resolve(self):
         """Mark ticket as resolved"""
@@ -464,7 +465,7 @@ class Request(models.Model):
         ]
     
     def __str__(self):
-        return f"Request #{self.id} by {self.client.user.username} - {self.status}"
+        return f"Request #{self.id} by {self.client.user} - {self.status}"
 
 
 # Negotiation Model --------------------------------------------

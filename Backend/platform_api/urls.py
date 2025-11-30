@@ -9,7 +9,9 @@ router = DefaultRouter()
 
 
 urlpatterns = [
-    path('', include(router.urls)),
+    path('users/', views.soft_get_user, name='soft_delete_user'),
+    path('', views.getRoutes),
+
     path("admin/", admin.site.urls),
 
     path('auth/register/freelancer/', views.register_freelancer, name='register_freelancer'),

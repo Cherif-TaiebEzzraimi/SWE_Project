@@ -28,10 +28,11 @@ class CompanySerializer(serializers.ModelSerializer):
 
 
 class ClientSerializer(serializers.ModelSerializer):
+    user = UserSerializer(read_only=True)
+
     class Meta:
         model = Client
         fields = '__all__'
-
 
 class FreelancerSerializer(serializers.ModelSerializer):
     class Meta:
@@ -87,11 +88,12 @@ class NotificationSerializer(serializers.ModelSerializer):
 
 
 class HelpSerializer(serializers.ModelSerializer):
-    user_id = UserSerializer(read_only =True)
-
+    user = UserSerializer(read_only=True)
+    user_id = serializers.IntegerField(write_only=True)
+    
     class Meta:
         model = Help
-        fields = '__all__'
+        fields = ['id', 'user', 'user_id', 'problem', 'created_at']
 
 
 class JobInternshipOfferSerializer(serializers.ModelSerializer):
@@ -103,7 +105,7 @@ class JobInternshipOfferSerializer(serializers.ModelSerializer):
 
 
 class RequestSerializer(serializers.ModelSerializer):
-    client_id = ClientSerializer(read_only =True)
+    client = ClientSerializer(read_only=True)
 
     class Meta:
         model = Request

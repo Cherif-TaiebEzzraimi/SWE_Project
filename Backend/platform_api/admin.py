@@ -3,12 +3,13 @@ from django.contrib import admin
 from .models import (
     User, Admin, Client, Freelancer, 
     Skill, Category, Review, FAQ ,MediaFile , Report ,Notification , Help , JobInternshipOffer , Request
-    , Negotiation , NegotiationFloatingComment , NegotiationPhase  , Project  , ProjectPhase , Deliverable  )
+    , Negotiation , NegotiationFloatingComment , NegotiationPhase  , Project  , ProjectPhase , Deliverable  , Company )
 
 admin.site.register(User)
 admin.site .register(Admin)
 admin.site.register(Client)
 admin.site.register(Freelancer)
+admin.site.register(Company)
 admin.site.register(Skill)
 admin.site.register(Category)
 admin.site.register(Review)
