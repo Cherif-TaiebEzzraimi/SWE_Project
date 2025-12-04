@@ -6,9 +6,12 @@ interface PhaseCardProps {
   phase: Phase;
   onClick: () => void;
   isSelected?: boolean;
+  canEdit?: boolean;
+  onEdit?: () => void;
+  onDelete?: () => void;
 }
 
-const PhaseCard: FC<PhaseCardProps> = ({ phase, onClick, isSelected = false }) => {
+const PhaseCard: FC<PhaseCardProps> = ({ phase, onClick, isSelected = false, canEdit = false, onEdit, onDelete }) => {
   /**
    * Returns the appropriate color class based on phase status
    */
@@ -33,14 +36,6 @@ const PhaseCard: FC<PhaseCardProps> = ({ phase, onClick, isSelected = false }) =
       return 'text-brand-red-dark dark:text-red-400';
     }
     return 'text-slate-500 dark:text-slate-400';
-  };
-
-  /**
-   * Calculates completion percentage
-   */
-  const getCompletionPercentage = (): number => {
-    if (phase.tasks.total === 0) return 0;
-    return Math.round((phase.tasks.completed / phase.tasks.total) * 100);
   };
 
   /**
@@ -137,6 +132,40 @@ const PhaseCard: FC<PhaseCardProps> = ({ phase, onClick, isSelected = false }) =
       {isSelected && (
         <div className="absolute top-2 right-2">
           <div className="w-2 h-2 bg-brand-blue rounded-full animate-pulse" />
+        </div>
+      )}
+
+      {/* Edit/Delete Action Buttons - Only show if canEdit is true */}
+      {canEdit && (
+        <div className="absolute top-4 right-12 flex gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
+          {onEdit && (
+            <button
+              onClick={(e) => {
+                e.stopPropagation();
+                onEdit();
+              }}
+              className="p-2 bg-brand-blue text-white rounded-lg hover:bg-blue-600 transition-colors"
+              aria-label="Edit phase"
+              title="Edit phase"
+            >
+              <span className="material-symbols-outlined text-lg">edit</span>
+            </button>
+          )}
+          {onDelete && (
+            <button
+              onClick={(e) => {
+                e.stopPropagation();
+                if (confirm(`Are you sure you want to delete the "${phase.name}" phase?`)) {
+                  onDelete();
+                }
+              }}
+              className="p-2 bg-red-500 text-white rounded-lg hover:bg-red-600 transition-colors"
+              aria-label="Delete phase"
+              title="Delete phase"
+            >
+              <span className="material-symbols-outlined text-lg">delete</span>
+            </button>
+          )}
         </div>
       )}
     </div>

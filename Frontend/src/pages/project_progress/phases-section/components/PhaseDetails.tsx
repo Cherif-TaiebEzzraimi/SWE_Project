@@ -1,18 +1,17 @@
 // src/pages/project_progress/components/PhaseDetails.tsx
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import type { Phase, Todo } from '../types/project';
-import type { FC, FormEvent } from 'react';
+import type { FC } from 'react';
 import TodoItem from './TodoItem';
 
 interface PhaseDetailsProps {
   phase: Phase;
   onClose?: () => void;
+  onEdit?: () => void;
+  canEdit?: boolean;
 }
-const PhaseDetails: FC<PhaseDetailsProps> = ({ phase, onClose }) => {
+const PhaseDetails: FC<PhaseDetailsProps> = ({ phase, onClose, onEdit, canEdit = false }) => {
   const [todos, setTodos] = useState<Todo[]>(phase.todos);
-  const [showAddTodo, setShowAddTodo] = useState(false);
-  const [newTodoTitle, setNewTodoTitle] = useState('');
-  const [newTodoDate, setNewTodoDate] = useState('');
 
   /**
    * Calculates the number of completed todos
@@ -38,37 +37,6 @@ const PhaseDetails: FC<PhaseDetailsProps> = ({ phase, onClose }) => {
   const handleDeleteTodo = (todoId: string) => {
     setTodos(prevTodos => prevTodos.filter(todo => todo.id !== todoId));
   };
-
-  /**
-   * Adds a new todo item
-   */
-  const handleAddTodo = (e: FormEvent) => {
-    e.preventDefault();
-    if (newTodoTitle.trim() === '') return;
-
-    const newTodo: Todo = {
-      id: Date.now().toString(),
-      title: newTodoTitle,
-      completed: false,
-      date: newTodoDate || new Date().toLocaleDateString('en-US', { month: 'short', day: 'numeric' })
-    };
-
-    // Debug log to trace add action
-    // (will also log updated todos via useEffect below)
-    // eslint-disable-next-line no-console
-    console.log('PhaseDetails: adding todo', newTodo);
-
-    setTodos(prevTodos => [...prevTodos, newTodo]);
-    setNewTodoTitle('');
-    setNewTodoDate('');
-    setShowAddTodo(false);
-  };
-
-  // Debug: log todos when they change to confirm add/delete/toggle are working
-  useEffect(() => {
-    // eslint-disable-next-line no-console
-    console.log(`PhaseDetails: todos updated (phase ${phase.id})`, todos);
-  }, [todos, phase.id]);
 
   /**
    * Returns appropriate status badge styling
@@ -140,15 +108,28 @@ const PhaseDetails: FC<PhaseDetailsProps> = ({ phase, onClose }) => {
               <p className="phase-details-description">{phase.description}</p>
             </div>
             
-            {onClose && (
-              <button
-                onClick={onClose}
-                className="text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 transition-colors p-1"
-                aria-label="Close phase details"
-              >
-                <span className="material-symbols-outlined">close</span>
-              </button>
-            )}
+            <div className="flex items-center gap-2">
+              {canEdit && onEdit && (
+                <button
+                  onClick={onEdit}
+                  className="flex items-center gap-2 px-4 py-2 bg-brand-blue text-white rounded-lg hover:bg-blue-600 transition-colors"
+                  aria-label="Edit phase"
+                  title="Edit phase details"
+                >
+                  <span className="material-symbols-outlined text-sm">edit</span>
+                  <span className="text-sm font-medium">Edit Phase</span>
+                </button>
+              )}
+              {onClose && (
+                <button
+                  onClick={onClose}
+                  className="text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 transition-colors p-1"
+                  aria-label="Close phase details"
+                >
+                  <span className="material-symbols-outlined">close</span>
+                </button>
+              )}
+            </div>
           </div>
         </div>
 
@@ -272,84 +253,25 @@ const PhaseDetails: FC<PhaseDetailsProps> = ({ phase, onClose }) => {
         )}
 
         {/* Todo List Section */}
-        {todos.length > 0 || showAddTodo ? (
+        {todos.length > 0 && (
           <div className="todos-section">
             <div className="flex items-center justify-between mb-4">
               <h4 className="todos-title">To-do list</h4>
-              <button
-                onClick={() => setShowAddTodo(!showAddTodo)}
-                className="flex items-center gap-1 px-3 py-1.5 text-sm font-medium text-brand-blue hover:bg-blue-50 dark:hover:bg-blue-900/20 rounded-lg transition-colors"
-              >
-                <span className="material-symbols-outlined text-base">
-                  {showAddTodo ? 'close' : 'add'}
-                </span>
-                {showAddTodo ? 'Cancel' : 'Add Task'}
-              </button>
             </div>
 
-            {/* Add Todo Form */}
-            {showAddTodo && (
-              <form onSubmit={handleAddTodo} className="mb-4 p-4 bg-white dark:bg-slate-800/50 rounded-lg border border-slate-200 dark:border-slate-600">
-                <div className="space-y-3">
-                  <div>
-                    <label htmlFor="todoTitle" className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">
-                      Task Title
-                    </label>
-                    <input
-                      id="todoTitle"
-                      type="text"
-                      value={newTodoTitle}
-                      onChange={(e) => setNewTodoTitle(e.target.value)}
-                      placeholder="Enter task title..."
-                      className="w-full px-3 py-2 border border-slate-300 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-800 text-slate-900 dark:text-white focus:ring-2 focus:ring-brand-blue focus:border-transparent outline-none"
-                      required
-                    />
-                  </div>
-                  <div>
-                    <label htmlFor="todoDate" className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">
-                      Due Date (Optional)
-                    </label>
-                    <input
-                      id="todoDate"
-                      type="text"
-                      value={newTodoDate}
-                      onChange={(e) => setNewTodoDate(e.target.value)}
-                      placeholder="e.g., Nov 15"
-                      className="w-full px-3 py-2 border border-slate-300 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-800 text-slate-900 dark:text-white focus:ring-2 focus:ring-brand-blue focus:border-transparent outline-none"
-                    />
-                  </div>
-                  <button
-                    type="submit"
-                    className="w-full px-4 py-2 bg-brand-blue text-white rounded-lg hover:bg-blue-600 transition-colors font-medium"
-                  >
-                    Add Task
-                  </button>
-                </div>
-              </form>
-            )}
-
             {/* Todo Items List */}
-            {todos.length > 0 ? (
-              <ul className="todos-list">
-                {todos.map((todo) => (
-                  <TodoItem
-                    key={todo.id}
-                    todo={todo}
-                    onToggle={handleToggleTodo}
-                    onDelete={handleDeleteTodo}
-                  />
-                ))}
-              </ul>
-            ) : (
-              <div className="text-center py-8 text-slate-500 dark:text-slate-400">
-                <span className="material-symbols-outlined text-4xl mb-2 opacity-50">
-                  task_alt
-                </span>
-                <p>No tasks yet. Click "Add Task" to create one.</p>
-              </div>
-            )}
+            <ul className="todos-list">
+              {todos.map((todo) => (
+                <TodoItem
+                  key={todo.id}
+                  todo={todo}
+                  onToggle={handleToggleTodo}
+                  onDelete={handleDeleteTodo}
+                />
+              ))}
+            </ul>
           </div>
-        ) : null}
+        )}
       </div>
     </div>
   );

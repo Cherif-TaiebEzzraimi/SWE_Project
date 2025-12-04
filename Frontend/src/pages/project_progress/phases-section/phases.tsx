@@ -1,11 +1,14 @@
 import PhaseCard from './components/PhaseCard';
 import PhaseDetails from './components/PhaseDetails';
+import AddPhaseModal from './components/AddPhaseModal';
+import EditPhaseModal from './components/EditPhaseModal';
 import type { Phase } from './types/project';
 import { useState } from 'react';
+import { usePhasesContext, PhasesProvider } from './hooks/PhasesContext';
 import './styles/phases_styles.css';
 
 
-const phases: Phase[] = [
+const initialPhases: Phase[] = [
   {
     id: '1',
     name: 'Discovery',
@@ -222,56 +225,132 @@ const phases: Phase[] = [
   }
 ];
 
+const PhasesPageContent = () => {
+  const { phases, canEditPhases, addPhase, updatePhase, deletePhase, toggleEditMode } = usePhasesContext();
+
+  const [selectedPhase, setSelectedPhase] = useState<Phase | null>(null);
+  const [isAddModalOpen, setIsAddModalOpen] = useState(false);
+  const [isEditModalOpen, setIsEditModalOpen] = useState(false);
+  const [phaseToEdit, setPhaseToEdit] = useState<Phase | null>(null);
+
+  const handlePhaseClick = (phase: Phase) => {
+    setSelectedPhase(phase);
+  };
+
+  const handleEditPhase = (phase: Phase) => {
+    setPhaseToEdit(phase);
+    setIsEditModalOpen(true);
+  };
+
+  const handleDeletePhase = (phaseId: string) => {
+    deletePhase(phaseId);
+    if (selectedPhase?.id === phaseId) {
+      setSelectedPhase(null);
+    }
+  };
+
+  const handleAddPhase = (newPhase: Phase) => {
+    addPhase(newPhase);
+  };
+
+  const handleSaveEditedPhase = (updatedPhase: Phase) => {
+    updatePhase(updatedPhase);
+    setSelectedPhase(updatedPhase);
+  };
+
+  return (
+    <>
+      {/* Horizontal scrollable phases list */}
+      <div className="phases-scroll-container">
+        <div className="phases-scroll-content">
+          {phases.map((phase) => (
+            <PhaseCard
+              key={phase.id}
+              phase={phase}
+              onClick={() => handlePhaseClick(phase)}
+              isSelected={selectedPhase?.id === phase.id}
+              canEdit={canEditPhases}
+              onEdit={() => handleEditPhase(phase)}
+              onDelete={() => handleDeletePhase(phase.id)}
+            />
+          ))}
+        </div>
+      </div>
+
+      {/* Phase details section */}
+      {selectedPhase && (
+        <PhaseDetails
+          phase={selectedPhase}
+          onClose={() => setSelectedPhase(null)}
+          onEdit={() => handleEditPhase(selectedPhase)}
+          canEdit={canEditPhases}
+        />
+      )}
+
+      <div className="h-6" />
+
+      {/* Action Buttons */}
+      <div className="flex justify-center gap-5 flex-wrap">
+        <button className="px-6 py-3 bg-transparent text-red-400 border border-red-400 rounded-lg 
+       hover:scale-105 hover:shadow-[0_0_10px_rgba(239,68,68,0.7)] 
+       transition-all duration-500">
+          <span className="material-symbols-outlined mr-2 font-bold text-lg">ADD</span>
+          Leave a note
+        </button>
+
+        {canEditPhases && (
+          <button
+            onClick={() => setIsAddModalOpen(true)}
+            className="px-6 py-3 bg-transparent text-blue-400 border border-blue-600 rounded-lg 
+           hover:scale-105 hover:shadow-[0_0_10px_rgba(59,130,246,0.7)] 
+           transition-all duration-300"
+          >
+            <span className="material-symbols-outlined mr-2 font-bold text-lg">ADD</span>
+            Add a Phase
+          </button>
+        )}
+
+        {/* Edit Mode Toggle Button */}
+        <button
+          onClick={toggleEditMode}
+          className={`px-6 py-3 rounded-lg border transition-all duration-300 ${
+            canEditPhases
+              ? 'bg-green-500/20 text-green-600 border-green-600 hover:shadow-[0_0_10px_rgba(34,197,94,0.7)]'
+              : 'bg-slate-200/20 text-slate-600 border-slate-600 hover:shadow-[0_0_10px_rgba(71,85,105,0.7)]'
+          } hover:scale-105`}
+          title={canEditPhases ? 'Lock editing - disables add/edit/delete' : 'Unlocked editing - enables add/edit/delete'}
+        >
+          <span className="material-symbols-outlined mr-2 font-bold text-lg">
+            {canEditPhases ? 'lock_open' : 'lock'}
+          </span>
+          {canEditPhases ? 'Unlocked Editing' : 'Locked Editing'}
+        </button>
+      </div>
+
+      <div className="h-10" />
+
+      {/* Modals */}
+      <AddPhaseModal
+        isOpen={isAddModalOpen}
+        onClose={() => setIsAddModalOpen(false)}
+        onAdd={handleAddPhase}
+      />
+
+      <EditPhaseModal
+        isOpen={isEditModalOpen}
+        phase={phaseToEdit}
+        onClose={() => setIsEditModalOpen(false)}
+        onSave={handleSaveEditedPhase}
+      />
+    </>
+  );
+};
 
 const PhasesPage = () => {
-
-    const [selectedPhase, setSelectedPhase] = useState<Phase | null>(null);
-    const handlePhaseClick = (phase: Phase) => {
-        setSelectedPhase(phase);
-    };
-
-    return(
-    <>
-        {/* Horizontal scrollable phases list */}
-        <div className="phases-scroll-container">
-          <div className="phases-scroll-content">
-            {phases.map((phase) => (
-              <PhaseCard
-                key={phase.id}
-                phase={phase}
-                onClick={() => handlePhaseClick(phase)}
-                isSelected={selectedPhase?.id === phase.id}
-              />
-            ))}
-          </div>
-        </div>
-        {/* Phase details section */}
-        {selectedPhase && (
-          <PhaseDetails 
-            phase={selectedPhase}
-            onClose={() => setSelectedPhase(null)}
-          />
-        )}
-        <div className="h-6" />
-        {
-          <div className="flex justify-center flex gap-5 ">
-            <button className="px-6 py-3 bg-transparent text-red-400 border border-red-400 rounded-lg 
-         hover:scale-105 hover:shadow-[0_0_10px_rgba(239,68,68,0.7)] 
-         transition-all duration-500">
-              <span className="material-symbols-outlined mr-2 font-bold text-lg">ADD</span>
-              Leave a note
-            </button>
-            <button className="px-6 py-3 bg-transparent text-blue-400 border border-blue-600 rounded-lg 
-         hover:scale-105 hover:shadow-[0_0_10px_rgba(59,130,246,0.7)] 
-         transition-all duration-300">
-              <span className="material-symbols-outlined mr-2 font-bold text-lg">ADD</span>
-                Add a Phase
-            </button>
-          </div>
-        }
-        <div className="h-10" />
-
-      </>
-  )
-  }
+  return (
+    <PhasesProvider initialPhases={initialPhases}>
+      <PhasesPageContent />
+    </PhasesProvider>
+  );
+};
 export default PhasesPage;

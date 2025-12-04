@@ -113,7 +113,8 @@ const TabNavigation: FC<TabNavigationProps> = ({
                 focus:outline-none focus:ring-2 focus:ring-brand-blue focus:ring-offset-2
               `}
               style={{
-                borderBottomColor: isActive ? 'var(--tab-bg, white)' : 'transparent'
+                borderBottomColor: isActive ? 'var(--tab-bg, white)' : 'transparent',
+                
               }}
             >
               {/* Icon */}
@@ -145,7 +146,7 @@ const TabNavigation: FC<TabNavigationProps> = ({
               {/* Active indicator line */}
               {isActive && (
                 <span 
-                  className="absolute bottom-0 left-0 right-0 h-0.5 bg-brand-blue"
+                  className="absolute bottom-0 left-0 right-0 h-0.5 bg-blue-500"
                   aria-hidden="true"
                 />
               )}

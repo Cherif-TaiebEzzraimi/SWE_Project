@@ -516,6 +516,245 @@
   }
 }
 
+/* ==================== Modal Styles ==================== */
+.modal-backdrop {
+  position: fixed;
+  inset: 0;
+  background-color: rgba(0, 0, 0, 0.5);
+  z-index: 40;
+  backdrop-filter: blur(4px);
+}
+
+.dark .modal-backdrop {
+  background-color: rgba(0, 0, 0, 0.7);
+}
+
+.modal-container {
+  position: fixed;
+  inset: 0;
+  z-index: 50;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 1rem;
+  overflow-y: auto;
+}
+
+.modal-content {
+  background-color: white;
+  border-radius: 0.5rem;
+  box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1);
+  width: 100%;
+  max-width: 42rem;
+  margin: 2rem 0;
+}
+
+.dark .modal-content {
+  background-color: #1e293b;
+}
+
+.modal-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 1.5rem;
+  border-bottom: 1px solid #e2e8f0;
+}
+
+.dark .modal-header {
+  border-bottom-color: #334155;
+}
+
+.modal-header h2 {
+  font-size: 1.5rem;
+  font-weight: bold;
+  color: #1e293b;
+  margin: 0;
+}
+
+.dark .modal-header h2 {
+  color: #f1f5f9;
+}
+
+.modal-body {
+  padding: 1.5rem;
+  max-height: calc(100vh - 200px);
+  overflow-y: auto;
+}
+
+.modal-footer {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 0.75rem;
+  padding: 1.5rem;
+  border-top: 1px solid #e2e8f0;
+  background-color: #f8fafc;
+}
+
+.dark .modal-footer {
+  border-top-color: #334155;
+  background-color: #334155;
+}
+
+/* Form Elements in Modal */
+.modal-content label {
+  display: block;
+  font-size: 0.875rem;
+  font-weight: 500;
+  color: #475569;
+  margin-bottom: 0.5rem;
+}
+
+.dark .modal-content label {
+  color: #cbd5e1;
+}
+
+.modal-content input,
+.modal-content textarea,
+.modal-content select {
+  width: 100%;
+  padding: 0.75rem 1rem;
+  border: 1px solid #cbd5e1;
+  border-radius: 0.5rem;
+  background-color: white;
+  color: #1e293b;
+  font-size: 0.875rem;
+  transition: all 0.2s ease;
+}
+
+.dark .modal-content input,
+.dark .modal-content textarea,
+.dark .modal-content select {
+  background-color: #0f172a;
+  border-color: #475569;
+  color: #f1f5f9;
+}
+
+.modal-content input:focus,
+.modal-content textarea:focus,
+.modal-content select:focus {
+  outline: none;
+  border-color: #3b82f6;
+  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+}
+
+.dark .modal-content input:focus,
+.dark .modal-content textarea:focus,
+.dark .modal-content select:focus {
+  border-color: #3b82f6;
+  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.2);
+}
+
+.modal-content textarea {
+  resize: none;
+}
+
+/* Task Item in Modal */
+.task-item {
+  display: flex;
+  gap: 0.75rem;
+  align-items: flex-start;
+  background-color: #f1f5f9;
+  padding: 1rem;
+  border-radius: 0.5rem;
+}
+
+.dark .task-item {
+  background-color: rgba(71, 85, 105, 0.5);
+}
+
+.task-item input {
+  font-size: 0.875rem;
+}
+
+.task-item button {
+  flex-shrink: 0;
+}
+
+/* Phase Card Edit/Delete Buttons */
+.phase-card {
+  position: relative;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.phase-card:hover {
+  position: relative;
+}
+
+.phase-card-actions {
+  position: absolute;
+  top: 1rem;
+  right: 3rem;
+  display: flex;
+  gap: 0.5rem;
+  opacity: 0;
+  transition: opacity 0.2s ease;
+}
+
+.phase-card:hover .phase-card-actions {
+  opacity: 1;
+}
+
+.phase-card-actions button {
+  padding: 0.5rem;
+  border-radius: 0.5rem;
+  color: white;
+  border: none;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.phase-card-actions button:hover {
+  transform: scale(1.1);
+}
+
+.phase-card-actions .edit-btn {
+  background-color: #3b82f6;
+}
+
+.phase-card-actions .edit-btn:hover {
+  background-color: #2563eb;
+}
+
+.phase-card-actions .delete-btn {
+  background-color: #ef4444;
+}
+
+.phase-card-actions .delete-btn:hover {
+  background-color: #dc2626;
+}
+
+/* Scrollbar Styling */
+.modal-body::-webkit-scrollbar,
+.task-item input::-webkit-scrollbar {
+  width: 6px;
+}
+
+.modal-body::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.modal-body::-webkit-scrollbar-thumb {
+  background: #cbd5e1;
+  border-radius: 3px;
+}
+
+.modal-body::-webkit-scrollbar-thumb:hover {
+  background: #94a3b8;
+}
+
+.dark .modal-body::-webkit-scrollbar-thumb {
+  background: #475569;
+}
+
+.dark .modal-body::-webkit-scrollbar-thumb:hover {
+  background: #64748b;
+}
+
 /* ==================== Animations ==================== */
 @keyframes fade-in {
   from {
@@ -527,3 +766,15 @@
     transform: translateY(0);
   }
 }
+
+@keyframes slide-up {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+

@@ -14,15 +14,20 @@ const ProjectProgressPage = () => {
           
             <Header />
             
-            <main className="mt-8 px-4 sm:px-8 md:px-12 lg:px-20 xl:px-40">
+            <main className="px-4 space-y-0 sm:px-8 md:px-12 lg:px-20 xl:px-40">
               <TabNavigation activeTab={activeTab} onTabChange={setActiveTab} />
               
               <div className="tab-content">
-                {activeTab === 'phases' && <PhasesPage />}
+                {activeTab === 'phases' && (
+                  <div className="border-2 border-blue-500 shadow-[0_0_7px_3px_rgba(30,70,206,0.1)] dark:bg-blue-900 p-6 rounded-lg">
+                    <PhasesPage />
+                  </div>
+                )}
+                
 
                 {activeTab === 'overview' && (
                   <div className="overview-content">
-                    <div className="p-6 md:p-8">
+                    <div className="border-2 border-blue-500 shadow-[0_0_7px_3px_rgba(30,70,206,0.1)] dark:bg-blue-900 p-6 rounded-lg">
                       <p className="text-slate-500 dark:text-slate-400">
                         Overview section - to be implemented
                       </p>
@@ -32,7 +37,7 @@ const ProjectProgressPage = () => {
 
                 {activeTab === 'notes' && (
                   <div className="notes-content">
-                    <div className="p-6 md:p-8">
+                    <div className="border-2 border-blue-500 shadow-[0_0_7px_3px_rgba(30,70,206,0.1)] dark:bg-blue-900 p-6 rounded-lg">
                       <p className="text-slate-500 dark:text-slate-400">
                         Notes section - to be implemented
                       </p>
