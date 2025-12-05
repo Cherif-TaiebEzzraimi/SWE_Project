@@ -36,18 +36,27 @@ const AddPhaseModal: FC<AddPhaseModalProps> = ({ isOpen, onClose, onAdd }) => {
   };
 
   const handleTodoChange = (index: number, field: 'title' | 'date', value: string) => {
-    const updatedTodos = [...todos];
-    updatedTodos[index] = { ...updatedTodos[index], [field]: value };
-    setTodos(updatedTodos);
+    setTodos(prevTodos => {
+      const updatedTodos = [...prevTodos];
+      updatedTodos[index] = { ...updatedTodos[index], [field]: value };
+      return updatedTodos;
+    });
   };
 
   const handleAddTodoField = () => {
-    setTodos([...todos, { title: '', date: '', completed: false }]);
+    setTodos(prevTodos => [
+      ...prevTodos,
+      { title: '', date: '', completed: false },
+    ]);
   };
 
   const handleRemoveTodoField = (index: number) => {
-    const updatedTodos = todos.filter((_, i) => i !== index);
-    setTodos(updatedTodos.length === 0 ? [{ title: '', date: '', completed: false }] : updatedTodos);
+    setTodos(prevTodos => {
+      const updatedTodos = prevTodos.filter((_, i) => i !== index);
+      return updatedTodos.length === 0
+        ? [{ title: '', date: '', completed: false }]
+        : updatedTodos;
+    });
   };
 
   const handleSubmit = (e: FormEvent) => {

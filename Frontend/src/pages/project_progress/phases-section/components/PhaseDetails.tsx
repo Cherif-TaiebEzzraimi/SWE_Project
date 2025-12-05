@@ -1,5 +1,5 @@
 // src/pages/project_progress/components/PhaseDetails.tsx
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import type { Phase, Todo } from '../types/project';
 import type { FC } from 'react';
 import TodoItem from './TodoItem';
@@ -12,6 +12,11 @@ interface PhaseDetailsProps {
 }
 const PhaseDetails: FC<PhaseDetailsProps> = ({ phase, onClose, onEdit, canEdit = false }) => {
   const [todos, setTodos] = useState<Todo[]>(phase.todos);
+
+  // Sync todos with phase when phase changes
+  useEffect(() => {
+    setTodos(phase.todos || []);
+  }, [phase.id, phase.todos]);
 
   /**
    * Calculates the number of completed todos

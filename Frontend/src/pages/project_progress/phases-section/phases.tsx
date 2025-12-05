@@ -289,15 +289,36 @@ const PhasesPageContent = () => {
 
       <div className="h-6" />
 
-      {/* Action Buttons */}
+
+      {/* Add Note */}
       <div className="flex justify-center gap-5 flex-wrap">
-        <button className="px-6 py-3 bg-transparent text-red-400 border border-red-400 rounded-lg 
+       {canEditPhases && (
+          <button
+            onClick={() => setIsAddModalOpen(true)}
+            className="px-6 py-3 bg-transparent text-red-400 border border-red-400 rounded-lg 
        hover:scale-105 hover:shadow-[0_0_10px_rgba(239,68,68,0.7)] 
        transition-all duration-500">
-          <span className="material-symbols-outlined mr-2 font-bold text-lg">ADD</span>
-          Leave a note
+            <span className="material-symbols-outlined mr-2 font-bold text-lg">NOTE</span>
+            Leave a Note
+          </button>
+        )}
+
+
+       {/* Edit Mode Toggle Button */}
+        <button
+          onClick={toggleEditMode}
+          className={`px-6 py-3 rounded-lg border transition-all duration-300 bg-slate-200/20 text-slate-600 border-slate-600 hover:shadow-[0_0_10px_rgba(71,85,105,0.7)]'
+                } hover:scale-105`}
+          title={canEditPhases ? 'Lock editing' : 'Unlocked'}
+          >
+          <span className="material-symbols-outlined mr-2 font-bold text-lg">
+            {canEditPhases ? 'lock_open' : 'lock'}
+          </span>
+          {canEditPhases ? 'Lock Editing' : 'Unlock Editing'}
         </button>
 
+
+        {/*add phase button */}
         {canEditPhases && (
           <button
             onClick={() => setIsAddModalOpen(true)}
@@ -310,23 +331,8 @@ const PhasesPageContent = () => {
           </button>
         )}
 
-        {/* Edit Mode Toggle Button */}
-        <button
-          onClick={toggleEditMode}
-          className={`px-6 py-3 rounded-lg border transition-all duration-300 ${
-            canEditPhases
-              ? 'bg-green-500/20 text-green-600 border-green-600 hover:shadow-[0_0_10px_rgba(34,197,94,0.7)]'
-              : 'bg-slate-200/20 text-slate-600 border-slate-600 hover:shadow-[0_0_10px_rgba(71,85,105,0.7)]'
-          } hover:scale-105`}
-          title={canEditPhases ? 'Lock editing - disables add/edit/delete' : 'Unlocked editing - enables add/edit/delete'}
-        >
-          <span className="material-symbols-outlined mr-2 font-bold text-lg">
-            {canEditPhases ? 'lock_open' : 'lock'}
-          </span>
-          {canEditPhases ? 'Unlocked Editing' : 'Locked Editing'}
-        </button>
+        
       </div>
-
       <div className="h-10" />
 
       {/* Modals */}

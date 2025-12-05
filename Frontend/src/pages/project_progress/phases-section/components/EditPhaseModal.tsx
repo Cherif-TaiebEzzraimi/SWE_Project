@@ -8,68 +8,86 @@ interface EditPhaseModalProps {
   onSave: (phase: Phase) => void;
 }
 
+import { useEffect } from 'react';
 const EditPhaseModal: FC<EditPhaseModalProps> = ({ isOpen, phase, onClose, onSave }) => {
   const [formData, setFormData] = useState({
-    name: phase?.name || '',
-    description: phase?.description || '',
-    deadline: phase?.deadline || '',
-    price: phase?.price || '',
-    deliverable: phase?.deliverable || '',
-    status: phase?.status || 'Not Started',
+    name: '',
+    description: '',
+    deadline: '',
+    price: '',
+    deliverable: '',
+    status: 'Not Started',
   });
+  const [todos, setTodos] = useState<Todo[]>([]);
 
-  const [todos, setTodos] = useState<Todo[]>(phase?.todos || []);
-
-  // Note: resetForm is kept as it may be used in future enhancements
+  // Sync modal state with selected phase when opened or phase changes
+  useEffect(() => {
+    if (isOpen && phase) {
+      setFormData({
+        name: phase.name || '',
+        description: phase.description || '',
+        deadline: phase.deadline || '',
+        price: phase.price || '',
+        deliverable: phase.deliverable || '',
+        status: phase.status || 'Not Started',
+      });
+      setTodos(phase.todos ? phase.todos.map(todo => ({ ...todo })) : []);
+    }
+  }, [isOpen, phase]);
 
   const handleInputChange = (field: string, value: string) => {
     setFormData(prev => ({ ...prev, [field]: value }));
   };
 
   const handleTodoChange = (index: number, field: 'title' | 'date', value: string) => {
-    const updatedTodos = [...todos];
-    updatedTodos[index] = { ...updatedTodos[index], [field]: value };
-    setTodos(updatedTodos);
+    setTodos(prevTodos => {
+      const updatedTodos = [...prevTodos];
+      updatedTodos[index] = { ...updatedTodos[index], [field]: value };
+      return updatedTodos;
+    });
   };
 
   const handleToggleTodo = (index: number) => {
-    const updatedTodos = [...todos];
-    updatedTodos[index].completed = !updatedTodos[index].completed;
-    setTodos(updatedTodos);
+    setTodos(prevTodos => {
+      const updatedTodos = [...prevTodos];
+      updatedTodos[index].completed = !updatedTodos[index].completed;
+      return updatedTodos;
+    });
   };
 
   const handleAddTodoField = () => {
-    const newTodo: Todo = {
-      id: Date.now().toString(),
-      title: '',
-      date: '',
-      completed: false,
-    };
-    setTodos([...todos, newTodo]);
+    setTodos(prevTodos => [
+      ...prevTodos,
+      {
+        id: Date.now().toString(),
+        title: '',
+        date: '',
+        completed: false,
+      },
+    ]);
   };
 
   const handleRemoveTodoField = (index: number) => {
-    const updatedTodos = todos.filter((_, i) => i !== index);
-    setTodos(updatedTodos.length === 0 ? [{ id: Date.now().toString(), title: '', date: '', completed: false }] : updatedTodos);
+    setTodos(prevTodos => {
+      const updatedTodos = prevTodos.filter((_, i) => i !== index);
+      return updatedTodos.length === 0
+        ? [{ id: Date.now().toString(), title: '', date: '', completed: false }]
+        : updatedTodos;
+    });
   };
 
   const handleSubmit = (e: FormEvent) => {
     e.preventDefault();
-
     if (!formData.name.trim()) {
       alert('Please enter a phase name');
       return;
     }
-
     const filledTodos = todos.filter(todo => todo.title.trim() !== '');
-
     if (filledTodos.length === 0) {
       alert('Please add at least one task');
       return;
     }
-
     if (!phase) return;
-
     const updatedPhase: Phase = {
       ...phase,
       name: formData.name,
@@ -84,7 +102,6 @@ const EditPhaseModal: FC<EditPhaseModalProps> = ({ isOpen, phase, onClose, onSav
       },
       todos: filledTodos,
     };
-
     onSave(updatedPhase);
     onClose();
   };
