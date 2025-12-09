@@ -213,7 +213,7 @@ class Review(models.Model):
         unique_together = ['client', 'freelancer']  
     
     def __str__(self):
-        return f"Review by {self.client.user.username} for {self.freelancer.user.username} - {self.rating}★"
+        return f"Review by {self.client.user.email} for {self.freelancer.user.email} - {self.rating}★"
     
     def save(self, *args, **kwargs):
         """Override save to update freelancer rating"""
@@ -299,7 +299,7 @@ class Report(models.Model):
         ]
     
     def __str__(self):
-        return f"Report by {self.reporter.username}: {self.type} (ID: {self.target_id})"
+        return f"Report by {self.reporter.email}: {self.type} (ID: {self.target_id})"
 
 
 # Notifications Model -----------------------------------------------
@@ -325,7 +325,7 @@ class Notification(models.Model):
     
     def __str__(self):
         status = "Read" if self.seen else "Unread"
-        return f"Notification for {self.receiver.username} - {status}"
+        return f"Notification for {self.receiver.email} - {status}"
     
     def mark_as_read(self):
         """Mark notification as read"""
@@ -406,7 +406,7 @@ class JobInternshipOffer(models.Model):
         ]
     
     def __str__(self):
-        return f"{self.title} ({self.type}) - {self.company.user.username}"
+        return f"{self.title} ({self.type}) - {self.company.user.email}"
 
 
 # Request Model --------------------------------------------
@@ -536,11 +536,25 @@ class Negotiation(models.Model):
         ]
     
     def __str__(self):
-        return f"Negotiation #{self.id}: {self.client.user.username} ↔ {self.freelancer.user.username} ({self.status})"
+        return f"Negotiation #{self.id}: {self.client.user.email} ↔ {self.freelancer.user.email} ({self.status})"
     
     def is_agreed(self):
         """Check if both parties agreed"""
         return self.client_agreed and self.freelancer_agreed
+    
+    def save(self, *args, **kwargs):
+        """Override save to auto-create first phase for new negotiations"""
+        is_new = self.pk is None
+        super().save(*args, **kwargs)
+        
+        # Auto-create first phase for new negotiations
+        if is_new:
+            NegotiationPhase.objects.create(
+                negotiation=self,
+                title='Initial Phase',
+                description='Initial negotiation phase',
+                status='pending'
+            )
 
 
 # Negotiation Phases Model --------------------------------------------
@@ -628,7 +642,7 @@ class NegotiationFloatingComment(models.Model):
         ]
     
     def __str__(self):
-        return f"Comment by {self.user.username} on Negotiation #{self.negotiation.id}"
+        return f"Comment by {self.user.email} on Negotiation #{self.negotiation.id}"
 
 
 # Project Model -------------------------------------------
@@ -728,6 +742,7 @@ class Deliverable(models.Model):
         on_delete=models.CASCADE,
         related_name='deliverable_items'
     )
+    title = models.CharField(max_length=255, default='Deliverable', blank=True)
     attachment = models.CharField(max_length=255, blank=True, null=True)
     textcontent = models.TextField(max_length=65535, blank=True, null=True)
     submitted_at = models.DateTimeField(blank=True, null=True)
@@ -741,7 +756,7 @@ class Deliverable(models.Model):
         ]
     
     def __str__(self):
-        return f"Deliverable: (Phase: {self.phase.title}) - {self.status}"
+        return f"Deliverable: {self.title} (Phase: {self.phase.title})"
 
 
 # Community System Models =========================================================

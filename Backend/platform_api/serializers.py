@@ -152,7 +152,7 @@ class NegotiationFloatingCommentSerializer(serializers.ModelSerializer):
 
 
 class ProjectSerializer(serializers.ModelSerializer):
-    negotiation_id = NegotiationSerializer(read_only =True)
+    negotiation = NegotiationSerializer(read_only=True)
 
     class Meta:
         model = Project
@@ -160,14 +160,14 @@ class ProjectSerializer(serializers.ModelSerializer):
 
 
 class ProjectPhaseSerializer(serializers.ModelSerializer):
-    project_id = ProjectSerializer(read_only = True)
+    project = ProjectSerializer(read_only=True)
     class Meta:
         model = ProjectPhase
         fields = '__all__'
 
 
 class DeliverableSerializer(serializers.ModelSerializer):
-    phase_id = ProjectPhaseSerializer(read_only = True)
+    phase_detail = ProjectPhaseSerializer(source='phase', read_only=True)
     class Meta:
         model = Deliverable
         fields = '__all__'

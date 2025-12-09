@@ -833,17 +833,17 @@ def submit_phase(request, phase_id):
     phase = ProjectPhase.objects.filter(id=phase_id).first()
     if not phase:
         return Response({'detail': 'Phase not found'}, status=status.HTTP_404_NOT_FOUND)
-    project = phase.project_id
-    negotiation = project.negotiation_id
-    freelancer_user_id = negotiation.freelancer_id.user_id.id if negotiation and negotiation.freelancer_id else None
+    project = phase.project
+    negotiation = project.negotiation
+    freelancer_user_id = negotiation.freelancer.user.id if negotiation and negotiation.freelancer else None
     if request.user.id != freelancer_user_id and not request.user.is_staff:
         return Response({'detail': 'Forbidden'}, status=status.HTTP_403_FORBIDDEN)
     phase.status = 'waiting_client_review'
     phase.save()
     # optionally create deliverable if provided
     data = request.data.copy()
-    if data.get('link') or data.get('attachment') or data.get('textcontent'):
-        data['phase_id'] = phase.id
+    if data.get('link') or data.get('attachment') or data.get('textcontent') or data.get('title'):
+        data['phase'] = phase.id
         dser = DeliverableSerializer(data=data)
         if dser.is_valid():
             dser.save()
@@ -855,9 +855,9 @@ def approve_phase(request, phase_id):
     phase = ProjectPhase.objects.filter(id=phase_id).first()
     if not phase:
         return Response({'detail': 'Phase not found'}, status=status.HTTP_404_NOT_FOUND)
-    project = phase.project_id
-    negotiation = project.negotiation_id
-    client_user_id = negotiation.client_id.user_id.id if negotiation and negotiation.client_id else None
+    project = phase.project
+    negotiation = project.negotiation
+    client_user_id = negotiation.client.user.id if negotiation and negotiation.client else None
     if request.user.id != client_user_id and not request.user.is_staff:
         return Response({'detail': 'Forbidden'}, status=status.HTTP_403_FORBIDDEN)
     phase.status = 'done'
@@ -870,8 +870,8 @@ def next_phase(request, phase_id):
     phase = ProjectPhase.objects.filter(id=phase_id).first()
     if not phase:
         return Response({'detail': 'Phase not found'}, status=status.HTTP_404_NOT_FOUND)
-    project = phase.project_id
-    negotiation = project.negotiation_id
+    project = phase.project
+    negotiation = project.negotiation
     # allow client or system (staff)
     client_user_id = negotiation.client_id.user_id.id if negotiation and negotiation.client_id else None
     if request.user.id != client_user_id and not request.user.is_staff:
