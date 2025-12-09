@@ -742,3 +742,119 @@ class Deliverable(models.Model):
     
     def __str__(self):
         return f"Deliverable: (Phase: {self.phase.title}) - {self.status}"
+
+
+# Community System Models =========================================================
+
+# Community Posts Model -------------------------------------------
+class CommunityPost(models.Model):
+    """Community forum posts"""
+    
+    id = models.AutoField(primary_key=True)
+    owner = models.ForeignKey(
+        User,
+        on_delete=models.CASCADE,
+        related_name='community_posts'
+    )
+    description = models.TextField(max_length=65535)
+    attachments = models.JSONField(default=list, blank=True, null=True)
+    updated_at = models.DateTimeField(auto_now=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+    
+    class Meta:
+        db_table = 'community_posts'
+        ordering = ['-created_at']
+        indexes = [
+            models.Index(fields=['owner', 'created_at']),
+            models.Index(fields=['-created_at']),
+        ]
+    
+    def __str__(self):
+        return f"Post by {self.owner.email}: {self.description[:50]}..."
+
+
+# Community Comments Model ----------------------------------------
+class CommunityComment(models.Model):
+    """Comments on community posts and replies"""
+    
+    id = models.AutoField(primary_key=True)
+    post = models.ForeignKey(
+        CommunityPost,
+        on_delete=models.CASCADE,
+        related_name='comments'
+    )
+    user = models.ForeignKey(
+        User,
+        on_delete=models.CASCADE,
+        related_name='community_comments'
+    )
+    parent = models.ForeignKey(
+        'self',
+        on_delete=models.CASCADE,
+        related_name='replies',
+        null=True,
+        blank=True,
+        help_text="For nested/threaded replies"
+    )
+    comment = models.TextField(max_length=65535)
+    updated_at = models.DateTimeField(auto_now=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+    
+    class Meta:
+        db_table = 'community_comments'
+        ordering = ['created_at']
+        indexes = [
+            models.Index(fields=['post', 'created_at']),
+            models.Index(fields=['user', 'created_at']),
+            models.Index(fields=['parent', 'created_at']),
+        ]
+    
+    def __str__(self):
+        return f"Comment by {self.user.email} on post {self.post.id}: {self.comment[:30]}..."
+    
+    def reply(self, user, comment_text):
+        """Create a reply to this comment
+        
+        Args:
+            user: User object creating the reply
+            comment_text: Text content of the reply
+            
+        Returns:
+            CommunityComment: The newly created reply comment
+        """
+        return CommunityComment.objects.create(
+            post=self.post,
+            user=user,
+            parent=self,
+            comment=comment_text
+        )
+
+
+# Community Likes Model -------------------------------------------
+class CommunityLike(models.Model):
+    """Likes on community posts"""
+    
+    id = models.AutoField(primary_key=True)
+    post = models.ForeignKey(
+        CommunityPost,
+        on_delete=models.CASCADE,
+        related_name='likes'
+    )
+    user = models.ForeignKey(
+        User,
+        on_delete=models.CASCADE,
+        related_name='community_likes'
+    )
+    created_at = models.DateTimeField(auto_now_add=True)
+    
+    class Meta:
+        db_table = 'community_likes'
+        ordering = ['-created_at']
+        unique_together = ('post', 'user')  # Each user can like a post only once
+        indexes = [
+            models.Index(fields=['post', 'created_at']),
+            models.Index(fields=['user', 'created_at']),
+        ]
+    
+    def __str__(self):
+        return f"{self.user.email} liked post {self.post.id}"
