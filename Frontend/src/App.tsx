@@ -2,16 +2,19 @@ import { BrowserRouter as Router, Routes, Route } from 'react-router-dom'
 import ProjectProgressClientOverview from './pages/project_progress/project_progress_overview/ProjectProgressClientOverview'
 import ProjectProgressFreelancerOverview from './pages/project_progress/project_progress_overview/ProjectProgressFreelancerOverview'
 import ProjectProgressPhasesAndTasks from './pages/project_progress/project_progress_overview/ProjectProgressPhasesAndTasks'
+import ProjectProgressPage from './pages/project_progress/ProjectProgressPage'
 import './styles/App.css'
-
 
 function App() {
   return (
     <Router>
       <div className="app">
         <Routes>
-          {/* Default Route */}
-          <Route path="/" element={<ProjectProgressClientOverview />} />
+          {/* Default Route - New Phases Tab System */}
+          <Route path="/" element={<ProjectProgressPage />} />
+          
+          {/* Phases Tab System Route */}
+          <Route path="/project/:projectId/progress" element={<ProjectProgressPage />} />
 
           {/* Client Routes  */}
           <Route path="/project/:projectId/client/overview/upload" element={<ProjectProgressClientOverview />} />
