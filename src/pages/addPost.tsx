@@ -1,24 +1,46 @@
-import React, { useRef, useState } from 'react';
+import React, { useRef, useState, useRef as useReactRef } from 'react';
+import { useNavigate } from 'react-router-dom';
+import { categoriesWithSkills } from '../components/categories';
+import { usePosts } from '../context/PostsContext';
 
 const MAX_FILES = 5;
 const MAX_FILE_SIZE_MB = 25;
 
-const categoriesWithSkills = [
-  { category: 'Development & IT' },
-  { category: 'Design & Creative' },
-  { category: 'AI Services' },
-  { category: 'Writing & Translation' },
-  { category: 'Sales & Marketing' },
-];
 
-const AddPostPage: React.FC<{ onClose?: () => void }> = ({ onClose }) => {
-  const [title, setTitle] = useState('');
-  const [category, setCategory] = useState('');
-  const [budgetMin, setBudgetMin] = useState('');
-  const [budgetMax, setBudgetMax] = useState('');
-  const [description, setDescription] = useState('');
-  const [files, setFiles] = useState<File[]>([]);
+
+  const AddPostPage: React.FC<{ onClose?: () => void }> = ({ onClose }) => {
+  const navigate = useNavigate();
+  const USER_ID = 1; // Simulate logged-in user ID (should match dashboard)
+  const { addPost, updatePost, deletePost, editingPost, clearEdit } = usePosts();
+  const [errors, setErrors] = useState<{[key:string]: string}>({});
+  const formRef = useReactRef<HTMLFormElement>(null);
+  const [title, setTitle] = useState(editingPost ? editingPost.title : '');
+  const [category, setCategory] = useState(editingPost ? editingPost.category : '');
+  const [budgetMin, setBudgetMin] = useState(editingPost ? String(editingPost.minPrice) : '');
+  const [budgetMax, setBudgetMax] = useState(editingPost ? String(editingPost.maxPrice) : '');
+  const [description, setDescription] = useState(editingPost ? editingPost.description : '');
+  const [files, setFiles] = useState<File[]>([]); // File uploads not persisted for edit
+  const [neededSkills, setNeededSkills] = useState<string[]>(editingPost ? editingPost.requirements : []);
+
+  // Reset form fields to blank when editingPost becomes null (e.g., after Discard)
+  React.useEffect(() => {
+    if (!editingPost) {
+      setTitle('');
+      setCategory('');
+      setBudgetMin('');
+      setBudgetMax('');
+      setDescription('');
+      setFiles([]);
+      setNeededSkills([]);
+      setErrors({});
+    }
+  }, [editingPost]);
   const fileInputRef = useRef<HTMLInputElement>(null);
+
+  // Get skills for selected category
+  const availableSkills = category
+    ? (categoriesWithSkills.find(cat => cat.category === category)?.skills || [])
+    : [];
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (!e.target.files) return;
@@ -45,30 +67,99 @@ const AddPostPage: React.FC<{ onClose?: () => void }> = ({ onClose }) => {
     fileInputRef.current?.click();
   };
 
-  const handleDiscard = () => {
+  const handleDiscard = (e?: React.MouseEvent) => {
+    if (e) e.preventDefault();
+    if (editingPost) {
+      deletePost(editingPost.id);
+    } else {
+      clearEdit();
+      setTitle('');
+      setCategory('');
+      setBudgetMin('');
+      setBudgetMax('');
+      setDescription('');
+      setFiles([]);
+      setNeededSkills([]);
+      setErrors({});
+    }
+    if (onClose) onClose();
+    navigate('/client-dashboard');
+  };
+
+  const handleAddSkill = (skill: string) => {
+    if (!neededSkills.includes(skill)) {
+      setNeededSkills(prev => [...prev, skill]);
+    }
+  // removed setSkillInput
+  };
+
+  const handleRemoveSkill = (skill: string) => {
+    setNeededSkills(prev => prev.filter(s => s !== skill));
+  };
+
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    const newErrors: {[key:string]: string} = {};
+    if (!title.trim()) newErrors.title = 'Title is required.';
+    if (!category) newErrors.category = 'Category is required.';
+    if (!budgetMin || isNaN(Number(budgetMin)) || Number(budgetMin) < 100) newErrors.budgetMin = 'Minimum budget must be at least 100 DA.';
+    if (!budgetMax || isNaN(Number(budgetMax)) || Number(budgetMax) <= Number(budgetMin)) newErrors.budgetMax = 'Maximum budget must be greater than minimum budget.';
+    if (!description || description.trim().length < 30) newErrors.description = 'Description must be at least 30 characters.';
+    if (!neededSkills.length) newErrors.neededSkills = 'At least one needed skill is required.';
+    setErrors(newErrors);
+    if (Object.keys(newErrors).length > 0) {
+      setTimeout(() => {
+        const firstErrorField = document.querySelector('[data-error="true"]');
+        if (firstErrorField) firstErrorField.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      }, 100);
+      return;
+    }
+    if (editingPost) {
+      updatePost(editingPost.id, {
+        title,
+        category,
+        minPrice: Number(budgetMin),
+        maxPrice: Number(budgetMax),
+        description,
+        requirements: neededSkills,
+        attachments: editingPost.attachments || [],
+        applicants: editingPost.applicants || [],
+        userId: editingPost.userId,
+      });
+      clearEdit();
+    } else {
+      addPost({
+        title,
+        category,
+        minPrice: Number(budgetMin),
+        maxPrice: Number(budgetMax),
+        description,
+        requirements: neededSkills,
+        attachments: [],
+        applicants: [],
+        userId: USER_ID,
+      });
+    }
     setTitle('');
     setCategory('');
     setBudgetMin('');
     setBudgetMax('');
     setDescription('');
     setFiles([]);
-    if (onClose) onClose();
+    setNeededSkills([]);
+    setErrors({});
+    navigate('/client-dashboard');
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    // TODO: Implement submit logic
-    alert('Post published!');
-    handleDiscard();
-  };
+
 
   return (
-    <div className="min-h-screen w-full flex flex-col items-center justify-start bg-[#f5f7f8] dark:bg-[#101722] py-10 px-4 sm:px-8 md:px-20 xl:px-40 font-sans">
+  <div className="min-h-screen w-full flex flex-col items-center justify-start bg-[#f5f7f8] dark:bg-[#101722] py-10 px-4 sm:px-8 md:px-20 2xl:px-[20vw] font-sans">
       {/* Page Title */}
       <h1 className="text-4xl font-black text-center mb-8 text-[#0a66f0] dark:text-white drop-shadow-[0_0_12px_rgba(10,102,240,0.25)]">
-        Create a New Post
+        {editingPost ? 'Edit Post' : 'Create a New Post'}
       </h1>
-      <form onSubmit={handleSubmit} className="w-full max-w-2xl mx-auto bg-white dark:bg-[#1C2A3B] rounded-xl border border-[#0a66f0]/20 shadow-[0_0_30px_rgba(10,102,240,0.15)] p-4 sm:p-6 md:p-8 flex flex-col gap-8">
+      <form ref={formRef} onSubmit={handleSubmit} className="w-full max-w-4xl mx-auto bg-white dark:bg-[#1C2A3B] rounded-xl border border-[#0a66f0]/20 shadow-[0_0_30px_rgba(10,102,240,0.15)] p-4 sm:p-6 md:p-8 flex flex-col gap-8">
         {/* Title Field */}
         <div>
           <label className="block text-lg font-bold text-[#0a66f0] dark:text-white mb-2">
@@ -80,7 +171,9 @@ const AddPostPage: React.FC<{ onClose?: () => void }> = ({ onClose }) => {
             value={title}
             onChange={e => setTitle(e.target.value)}
             required
+            data-error={!!errors.title}
           />
+          {errors.title && <div className="text-red-600 text-sm mt-1">{errors.title}</div>}
         </div>
         {/* Category Field */}
         <div>
@@ -92,12 +185,47 @@ const AddPostPage: React.FC<{ onClose?: () => void }> = ({ onClose }) => {
             value={category}
             onChange={e => setCategory(e.target.value)}
             required
+            data-error={!!errors.category}
           >
             <option value="">Select category</option>
             {categoriesWithSkills.map(cat => (
               <option key={cat.category} value={cat.category}>{cat.category}</option>
             ))}
           </select>
+          {errors.category && <div className="text-red-600 text-sm mt-1">{errors.category}</div>}
+        </div>
+        {/* Needed Skills Field */}
+        <div>
+          <label className="block text-lg font-bold text-[#0a66f0] dark:text-white mb-2">
+            Needed Skills <span className="text-red-500">*</span>
+          </label>
+          <div className="flex flex-wrap gap-2 mb-2">
+            {neededSkills.map(skill => (
+              <span key={skill} className="inline-flex items-center bg-blue-100 text-blue-800 rounded-full px-3 py-1 text-sm font-medium">
+                {skill}
+                <button type="button" className="ml-2 text-blue-500 hover:text-red-500" onClick={() => handleRemoveSkill(skill)}>
+                  &times;
+                </button>
+              </span>
+            ))}
+          </div>
+          {/* Available skills as selectable tags */}
+          <div className="flex flex-wrap gap-2">
+            {availableSkills.filter(skill => !neededSkills.includes(skill)).map(skill => (
+              <button
+                type="button"
+                key={skill}
+                className="inline-flex items-center bg-gray-100 hover:bg-blue-200 text-blue-700 rounded-full px-3 py-1 text-sm font-medium border border-blue-200 transition-all"
+                onClick={() => handleAddSkill(skill)}
+              >
+                <span className="material-symbols-outlined text-base mr-1">add</span>
+                {skill}
+              </button>
+            ))}
+            {(!category || availableSkills.length === 0) && (
+              <span className="text-gray-400 text-sm">Select a category to choose skills</span>
+            )}
+          </div>
         </div>
         {/* Budget Fields */}
         <div className="flex gap-4">
@@ -112,7 +240,9 @@ const AddPostPage: React.FC<{ onClose?: () => void }> = ({ onClose }) => {
               value={budgetMin}
               onChange={e => setBudgetMin(e.target.value)}
               required
+              data-error={!!errors.budgetMin}
             />
+            {errors.budgetMin && <div className="text-red-600 text-sm mt-1">{errors.budgetMin}</div>}
           </div>
           <div className="flex-1">
             <label className="block text-lg font-bold text-[#0a66f0] dark:text-white mb-2">
@@ -125,7 +255,9 @@ const AddPostPage: React.FC<{ onClose?: () => void }> = ({ onClose }) => {
               value={budgetMax}
               onChange={e => setBudgetMax(e.target.value)}
               required
+              data-error={!!errors.budgetMax}
             />
+            {errors.budgetMax && <div className="text-red-600 text-sm mt-1">{errors.budgetMax}</div>}
           </div>
         </div>
         {/* Description Field */}
@@ -139,7 +271,9 @@ const AddPostPage: React.FC<{ onClose?: () => void }> = ({ onClose }) => {
             value={description}
             onChange={e => setDescription(e.target.value)}
             required
+            data-error={!!errors.description}
           />
+          {errors.description && <div className="text-red-600 text-sm mt-1">{errors.description}</div>}
         </div>
         {/* Attachments Section */}
         <div>
@@ -196,8 +330,7 @@ const AddPostPage: React.FC<{ onClose?: () => void }> = ({ onClose }) => {
           </button>
         </div>
       </form>
-    </div>
+  </div>
   );
-};
-
+} 
 export default AddPostPage;

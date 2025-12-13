@@ -58,6 +58,8 @@ export const categoriesWithSkills: CategoryWithSkills[] = [
 
   {
     category: "AI Services",
+
+
     skills: [
       "OpenAI Developers",
       "Artificial Intelligence Engineers",

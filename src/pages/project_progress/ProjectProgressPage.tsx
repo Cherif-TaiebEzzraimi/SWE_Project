@@ -1,6 +1,5 @@
 // src/pages/project_progress/ProjectProgressPage.tsx
 import { useState } from 'react';
-import Header from '../../components/Header';
 import TabNavigation from '../../components/TabNavigation';
 import  PhasesPage from './phases-section/phases'
 import '../../styles/index.css';

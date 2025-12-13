@@ -1,46 +1,47 @@
 
 
 
-import { BrowserRouter, Routes, Route, useLocation, useNavigate } from 'react-router-dom';
+import { BrowserRouter, Routes, Route, useNavigate } from 'react-router-dom';
 import ProjectProgressPage from './pages/project_progress/ProjectProgressPage';
 import ClientDashboard from './pages/ClientDashboard';
 import FreelancerDashboard from './pages/FreelancerDashboard';
 import AddPostPage from './pages/addPost.tsx';
 import Header from './components/Header';
-import { useState } from 'react';
+import { PostsProvider } from './context/PostsContext';
+
 
 function App() {
   // Single-page tab logic for main sections
   // Section state is now derived from the URL
 
   return (
-    <BrowserRouter>
-      <Routes>
-        <Route
-          path="/addPost"
-          element={
-            <div className="w-full flex justify-center">
-              <div className="w-full max-w-5xl">
-                <AddPostPage />
-              </div>
-            </div>
-          }
-        />
-        <Route path="/" element={<MainAppSections section="project-progress" />} />
-        <Route path="/client-dashboard" element={<MainAppSections section="client-dashboard" />} />
-        <Route path="/freelancer-dashboard" element={<MainAppSections section="freelancer-dashboard" />} />
-      </Routes>
-    </BrowserRouter>
+    <PostsProvider>
+      <BrowserRouter>
+        <Routes>
+          <Route path="/" element={<MainAppSections section="project-progress" />} />
+          <Route path="/client-dashboard/*" element={<MainAppSections section="client-dashboard" />} />
+          <Route path="/freelancer-dashboard" element={<MainAppSections section="freelancer-dashboard" />} />
+        </Routes>
+      </BrowserRouter>
+    </PostsProvider>
   );
 }
 
+import { Routes as NestedRoutes, Route as NestedRoute } from 'react-router-dom';
 function MainAppSections({ section }: { section: 'project-progress' | 'client-dashboard' | 'freelancer-dashboard' }) {
   const navigate = useNavigate();
+  // removed unused location
   let content = null;
   if (section === 'project-progress') {
     content = <ProjectProgressPage />;
   } else if (section === 'client-dashboard') {
-    content = <ClientDashboard />;
+    // Nested routing for addPost under client-dashboard
+    content = (
+      <NestedRoutes>
+        <NestedRoute path="/" element={<ClientDashboard />} />
+        <NestedRoute path="addPost" element={<AddPostPage />} />
+      </NestedRoutes>
+    );
   } else if (section === 'freelancer-dashboard') {
     content = <FreelancerDashboard />;
   }

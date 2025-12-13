@@ -1,8 +1,6 @@
 // src/components/Header.tsx
 import { useState, useRef, useEffect } from 'react';
 
-import { categoriesWithSkills } from './categories';
-
 interface User {
   name: string;
   role?: string;

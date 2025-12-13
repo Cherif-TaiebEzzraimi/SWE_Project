@@ -1,60 +1,25 @@
+
 import React, { useState } from 'react';
+import { categoriesWithSkills as allCategoriesWithSkills } from '../components/categories';
+import { useNavigate } from 'react-router-dom';
+import { usePosts } from '../context/PostsContext';
 
-// Mock categories data
-const categoriesWithSkills = [
-  { category: 'Development & IT' },
-  { category: 'Design & Creative' },
-  { category: 'AI Services' },
-  { category: 'Writing & Translation' },
-  { category: 'Sales & Marketing' },
-];
 
-// Dummy data for freelancers and posts
+// Dummy data for freelancers (keep local)
 const freelancers = [
   { id: 1, name: 'Amina Dev', category: 'Development & IT', skills: ['Web Developers', 'Java Engineer'], rating: 4.8, avatar: 'https://randomuser.me/api/portraits/women/44.jpg', bio: 'Experienced React and backend developer. Built 10+ scalable apps. Passionate about clean code, scalable systems, and mentoring junior devs.' },
   { id: 2, name: 'Yacine Design', category: 'Design & Creative', skills: ['Graphic Designers', 'Logo Designers'], rating: 4.6, avatar: 'https://randomuser.me/api/portraits/men/32.jpg', bio: 'Creative designer with a passion for branding and UI/UX. Has worked with 30+ startups and specializes in minimal, memorable design.' },
   { id: 3, name: 'Sara AI', category: 'AI Services', skills: ['Machine Learning Engineers', 'Data Scientists'], rating: 4.9, avatar: 'https://randomuser.me/api/portraits/women/65.jpg', bio: 'AI/ML expert, Kaggle Grandmaster, loves solving real-world problems. Built models for healthcare, finance, and e-commerce.' },
 ];
 
-const posts = [
-  {
-    id: 1,
-    title: 'Build a React App',
-    category: 'Development & IT',
-    description: 'We are looking for a skilled React developer to build a modern, scalable web application for our startup. The project involves API integration, authentication, and responsive design. Experience with TypeScript and TailwindCSS is a plus.',
-    minPrice: 100,
-    maxPrice: 500,
-    requirements: ['React', 'TypeScript', 'API Integration', 'TailwindCSS'],
-    attachments: ['specs.pdf'],
-    applicants: [freelancers[0], freelancers[2]]
-  },
-  {
-    id: 2,
-    title: 'Logo Design Needed',
-    category: 'Design & Creative',
-    description: 'Need a creative logo for a new eco-friendly brand. The logo should be minimal, memorable, and work well in both color and monochrome. Please share your portfolio.',
-    minPrice: 50,
-    maxPrice: 200,
-    requirements: ['Logo Design', 'Branding'],
-    attachments: [],
-    applicants: [freelancers[1]]
-  },
-  {
-    id: 3,
-    title: 'AI Model for Images',
-    category: 'AI Services',
-    description: 'Seeking an expert to build an image classification model for a medical dataset. Must have experience with deep learning, PyTorch, and data augmentation. Prior work in healthcare is a plus.',
-    minPrice: 300,
-    maxPrice: 1000,
-    requirements: ['PyTorch', 'Deep Learning', 'Data Augmentation'],
-    attachments: ['dataset.zip'],
-    applicants: [freelancers[2]]
-  },
-];
 
-const ClientDashboard: React.FC = () => {
+const Dashboard: React.FC = () => {
   const [selectedCategory, setSelectedCategory] = useState<string>('All');
-  const [view, setView] = useState<'freelancers' | 'posts'>();
+  const [view, setView] = useState<'freelancers' | 'posts'>('posts');
+  const [userType, setUserType] = useState<'client' | 'freelancer'>('client');
+  const [userId] = useState<number>(1); // Simulate logged-in user ID
+  const { posts, startEdit } = usePosts();
+  const navigate = useNavigate();
 
   const filteredFreelancers = selectedCategory === 'All'
     ? freelancers
@@ -63,20 +28,35 @@ const ClientDashboard: React.FC = () => {
     ? posts
     : posts.filter(p => p.category === selectedCategory);
 
-
-
   return (
     <div className="w-full px-4 sm:px-8 md:px-12 lg:px-20 xl:px-40 py-8">
-      {/* Add Post Button Top Right */}
+      {/* Toggle user type for testing */}
       <div className="flex justify-end mb-4">
         <button
-          className="px-6 py-3 bg-transparent text-blue-400 border border-blue-600 rounded-lg hover:scale-105 hover:shadow-[0_0_10px_rgba(59,130,246,0.7)] transition-all duration-300 flex items-center gap-2 font-bold text-base"
-          onClick={() => window.location.href = '/addPost'}
+          className={`px-4 py-2 rounded-lg font-bold text-base border-2 mr-2 ${userType === 'client' ? 'bg-blue-700 text-white border-blue-700' : 'bg-white text-blue-700 border-blue-700'}`}
+          onClick={() => setUserType('client')}
         >
-          <span className="material-symbols-outlined mr-2 font-bold text-lg">add</span>
-          Add a Post
+          Client View
+        </button>
+        <button
+          className={`px-4 py-2 rounded-lg font-bold text-base border-2 ${userType === 'freelancer' ? 'bg-blue-700 text-white border-blue-700' : 'bg-white text-blue-700 border-blue-700'}`}
+          onClick={() => setUserType('freelancer')}
+        >
+          Freelancer View
         </button>
       </div>
+      {/* Add Post Button Top Right (client only) */}
+      {userType === 'client' && (
+        <div className="flex justify-end mb-4">
+          <button
+            className="px-6 py-3 bg-transparent text-blue-400 border border-blue-600 rounded-lg hover:scale-105 hover:shadow-[0_0_10px_rgba(59,130,246,0.7)] transition-all duration-300 flex items-center gap-2 font-bold text-base"
+            onClick={() => navigate('/client-dashboard/addPost')}
+          >
+            <span className="material-symbols-outlined mr-2 font-bold text-lg">add</span>
+            Add a Post
+          </button>
+        </div>
+      )}
       {/* Horizontal scrollable categories */}
       <div className="flex items-center gap-2 mb-6 overflow-x-auto scrollbar-thin scrollbar-thumb-blue-200 scrollbar-track-transparent pb-2">
         <span className="font-semibold text-slate-900 dark:text-white mr-2 flex-shrink-0">Filter by Category:</span>
@@ -86,7 +66,7 @@ const ClientDashboard: React.FC = () => {
         >
           All
         </span>
-        {categoriesWithSkills.map(cat => (
+        {allCategoriesWithSkills.map(cat => (
           <span
             key={cat.category}
             className={`px-3 py-1 rounded-full cursor-pointer text-xs font-medium min-w-[120px] text-center ${selectedCategory === cat.category ? 'bg-blue-700 text-white shadow-lg' : 'bg-blue-100 text-blue-800 hover:bg-blue-200'}`}
@@ -97,14 +77,16 @@ const ClientDashboard: React.FC = () => {
         ))}
       </div>
 
-      {/* Elegant tab buttons */}
+      {/* Elegant tab buttons (show freelancers tab only for client) */}
       <div className="flex flex-col sm:flex-row gap-4 mb-6 items-center justify-center">
-        <button
-          className={`px-3 py-1.5 rounded-md font-semibold text-xs shadow border-2 transition-all duration-200 ${view === 'freelancers' ? 'bg-blue-700 text-white border-blue-500 shadow-lg' : 'bg-white dark:bg-blue-900/60 text-blue-700 border-blue-200 dark:border-blue-700 hover:bg-blue-50'}`}
-          onClick={() => setView('freelancers')}
-        >
-          Freelancers
-        </button>
+        {userType === 'client' && (
+          <button
+            className={`px-3 py-1.5 rounded-md font-semibold text-xs shadow border-2 transition-all duration-200 ${view === 'freelancers' ? 'bg-blue-700 text-white border-blue-500 shadow-lg' : 'bg-white dark:bg-blue-900/60 text-blue-700 border-blue-200 dark:border-blue-700 hover:bg-blue-50'}`}
+            onClick={() => setView('freelancers')}
+          >
+            Freelancers
+          </button>
+        )}
         <button
           className={`px-3 py-1.5 rounded-md font-semibold text-xs shadow border-2 transition-all duration-200 ${view === 'posts' ? 'bg-blue-700 text-white border-blue-500 shadow-lg' : 'bg-white dark:bg-blue-900/60 text-blue-700 border-blue-200 dark:border-blue-700 hover:bg-blue-50'}`}
           onClick={() => setView('posts')}
@@ -139,7 +121,9 @@ const ClientDashboard: React.FC = () => {
                   </div>
                 </div>
                 <div className="flex gap-3 mt-4 justify-center">
-                  <button className="px-5 py-1.5 rounded-md bg-blue-700 text-white font-semibold text-xs shadow hover:bg-blue-900 transition-all duration-200">Hire Now</button>
+                  {userType === 'client' && (
+                    <button className="px-5 py-1.5 rounded-md bg-blue-700 text-white font-semibold text-xs shadow hover:bg-blue-900 transition-all duration-200">Hire Now</button>
+                  )}
                   <button className="px-5 py-1.5 rounded-md border border-blue-700 text-blue-700 font-semibold text-xs shadow hover:bg-blue-700 hover:text-white transition-all duration-200">View Profile</button>
                 </div>
               </div>
@@ -171,8 +155,23 @@ const ClientDashboard: React.FC = () => {
                       </div>
                     )}
                   </div>
-                  <div className="flex flex-col gap-2 min-w-[120px]">
-                    <button className="px-4 py-1 rounded-md bg-blue-700 text-white font-semibold text-xs shadow hover:bg-blue-900 transition-all duration-200">View Details</button>
+                  <div className="flex flex-col gap-2 min-w-[120px] h-full justify-end items-end">
+                    {/* Edit button only for post owner */}
+                    {userType === 'client' && userId === (p as any).userId && (
+                      <button
+                        className="px-4 py-1 rounded-md border border-blue-700 text-blue-700 font-semibold text-xs shadow hover:bg-blue-700 hover:text-white transition-all duration-200"
+                        onClick={() => {
+                          startEdit(p);
+                          navigate('/client-dashboard/addPost');
+                        }}
+                      >
+                        Edit
+                      </button>
+                    )}
+                    {/* Apply Now only for freelancers */}
+                    {userType === 'freelancer' && (
+                      <button className="px-4 py-1 rounded-md bg-blue-700 text-white font-semibold text-xs shadow hover:bg-blue-900 transition-all duration-200 mt-4">Apply Now</button>
+                    )}
                   </div>
                 </div>
                 {/* Applicants section */}
@@ -200,4 +199,4 @@ const ClientDashboard: React.FC = () => {
   );
 };
 
-export default ClientDashboard;
+export default Dashboard;
