@@ -1,0 +1,235 @@
+
+/* Copied from SignupFreelancer.module.css for consistent design */
+.container {
+	min-height: 100vh;
+	background-color: #f1f5f9;
+	display: flex;
+	flex-direction: column;
+}
+.header {
+	position: fixed;
+	top: 0;
+	left: 0;
+	right: 0;
+	background-color: #ffffff;
+	border-bottom: 1px solid #e5e7eb;
+	padding: 1rem 0;
+	z-index: 1000;
+}
+.headerContent {
+	max-width: 1200px;
+	margin: 0 auto;
+	padding: 0 2rem;
+	display: flex;
+	justify-content: space-between;
+	align-items: center;
+}
+.logo {
+	font-size: 1.5rem;
+	font-weight: 600;
+	color: #172554;
+}
+.headerLinks {
+	display: flex;
+	align-items: center;
+	gap: 1rem;
+}
+.headerText {
+	color: #172554;
+	font-size: 0.95rem;
+}
+.headerLink {
+	background: none;
+	border: none;
+	color: #1e3a8a;
+	font-size: 0.95rem;
+	font-weight: 500;
+	cursor: pointer;
+	text-decoration: none;
+	padding: 0;
+}
+.headerLink:hover {
+	text-decoration: underline;
+}
+.content {
+	flex: 1;
+	max-width: 720px;
+	margin: 0 auto;
+	padding: 3rem 2rem;
+	padding-top: calc(3rem + 60px);
+	width: 100%;
+}
+.title {
+	font-size: 2rem;
+	font-weight: 500;
+	color: #172554;
+	text-align: center;
+	margin-bottom: 2.5rem;
+}
+.form {
+	display: flex;
+	flex-direction: column;
+	gap: 0.75rem;
+	width: 100%;
+}
+.row {
+	display: grid;
+	grid-template-columns: 1fr 1fr;
+	gap: 0.75rem;
+	width: 100%;
+}
+.formGroup {
+	display: flex;
+	flex-direction: column;
+}
+.label {
+	font-size: 0.95rem;
+	font-weight: 500;
+	color: #172554;
+	margin-bottom: 0.5rem;
+}
+.select {
+	padding: 0.75rem;
+	border: 1px solid #dddddd;
+	border-radius: 8px;
+	font-size: 1rem;
+	color: #172554;
+	background-color: #ffffff;
+	transition: border-color 0.2s ease;
+}
+.select:focus {
+	outline: none;
+	border-color: #0a65f1;
+}
+.select.error {
+	border: 2px solid #dc2626;
+}
+.select:disabled {
+	background-color: #f3f4f6;
+	cursor: not-allowed;
+}
+.passwordField {
+	position: relative;
+}
+.togglePassword {
+	position: absolute;
+	right: 0.75rem;
+	top: 2.75rem;
+	background: none;
+	border: none;
+	cursor: pointer;
+	padding: 0.25rem;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	color: #6b7280;
+	transition: color 0.2s;
+}
+.togglePassword:hover {
+	color: #374151;
+}
+.checkboxGroup {
+	display: flex;
+	flex-direction: column;
+	gap: 0.25rem;
+}
+.checkboxLabel {
+	display: flex;
+	align-items: flex-start;
+	gap: 0.75rem;
+	font-size: 0.9rem;
+	color: #172554;
+	cursor: pointer;
+}
+.checkbox {
+	margin-top: 0.25rem;
+	width: 18px;
+	height: 18px;
+	cursor: pointer;
+	accent-color: #0a65f1;
+	flex-shrink: 0;
+}
+.link {
+	color: #1e3a8a;
+	text-decoration: none;
+	font-weight: 500;
+}
+.link:hover {
+	text-decoration: underline;
+}
+.error {
+	display: flex;
+	align-items: center;
+	gap: 0.375rem;
+	color: #dc2626;
+	font-size: 0.875rem;
+	margin-top: 0.5rem;
+}
+.errorAlert {
+	background-color: #fef2f2;
+	border: 1px solid #fecaca;
+	color: #dc2626;
+	padding: 0.875rem;
+	border-radius: 8px;
+	margin-bottom: 1.5rem;
+	font-size: 0.95rem;
+	display: flex;
+	align-items: flex-start;
+	gap: 0.5rem;
+}
+.submitButton {
+	width: auto;
+	min-width: 160px;
+	padding: 0.875rem 2.25rem;
+	margin-top: 1rem;
+	font-size: 1.05rem;
+	font-weight: 600;
+	color: #ffffff;
+	background-color: #172554;
+	border: none;
+	border-radius: 24px;
+	cursor: pointer;
+	transition: background-color 0.2s ease;
+	align-self: center;
+}
+.submitButton:hover:not(:disabled) {
+	background-color: #1e3a8a;
+}
+.submitButton:disabled {
+	background-color: #e4e5e7;
+	color: #a8aaaf;
+	cursor: not-allowed;
+}
+.loginLink {
+	text-align: center;
+	margin-top: 0;
+	font-size: 0.95rem;
+	color: #172554;
+}
+.linkButton {
+	background: none;
+	border: none;
+	color: #1e3a8a;
+	font-weight: 500;
+	cursor: pointer;
+	padding: 0;
+	text-decoration: none;
+}
+.linkButton:hover {
+	text-decoration: underline;
+}
+@media (max-width: 768px) {
+	.row {
+		grid-template-columns: 1fr;
+	}
+	.headerContent {
+		padding: 0 1rem;
+	}
+	.content {
+		padding: 2rem 1rem;
+	}
+	.title {
+		font-size: 1.5rem;
+	}
+}
+

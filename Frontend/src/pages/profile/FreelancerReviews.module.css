@@ -1,0 +1,151 @@
+.reviewsContainer {
+  padding: 0;
+  background-color: #f1f5f9;
+}
+
+.loading {
+  text-align: center;
+  padding: 40px;
+  color: #172554;
+}
+
+.ratingsSummary {
+  background: transparent;
+  border: none;
+  border-radius: 0;
+  padding: 0;
+  margin-bottom: 16px;
+  color: #172554;
+  text-align: center;
+}
+
+.overallRating {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 10px;
+}
+
+.ratingNumber {
+  font-size: 36px;
+  font-weight: 700;
+  color: #172554;
+}
+
+.ratingStars {
+  font-size: 18px;
+  color: #0a65f1;
+}
+
+.reviewCount {
+  font-size: 13px;
+  opacity: 0.9;
+  color: #1e3a8a;
+}
+
+.stars {
+  display: flex;
+  gap: 4px;
+}
+
+.starFilled {
+  color: #ffc107;
+}
+
+.starEmpty {
+  color: rgba(10, 101, 241, 0.3);
+}
+
+.noReviews {
+  text-align: center;
+  padding: 60px 20px;
+  background-color: #e0f8fb;
+  border-radius: 8px;
+}
+
+.noReviews p {
+  margin: 10px 0;
+  color: #172554;
+  font-size: 16px;
+}
+
+.noReviewsSubtext {
+  font-size: 14px !important;
+  color: #999 !important;
+}
+
+.reviewsList {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.reviewCard {
+  background-color: #ffffff;
+  border: 1px solid #e0e0e0;
+  border-radius: 8px;
+  padding: 20px;
+  transition: box-shadow 0.2s, transform 0.1s;
+}
+
+.reviewCard:hover {
+  box-shadow: 0 2px 8px rgba(10, 101, 241, 0.2);
+  transform: translateY(-2px);
+}
+
+.reviewHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  margin-bottom: 15px;
+}
+
+.reviewClient {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.clientAvatar {
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  background: #e7b5b5;
+  border: 2px solid #b91c1c;
+  color: #172554;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 600;
+  font-size: 14px;
+}
+
+.clientName {
+  font-weight: 600;
+  color: #172554;
+  font-size: 15px;
+}
+
+.reviewDate {
+  font-size: 13px;
+  color: #1e3a8a;
+  margin-top: 2px;
+}
+
+.reviewRating .stars {
+  font-size: 18px;
+}
+
+.reviewRating .starFilled {
+  color: #ffc107;
+}
+
+.reviewRating .starEmpty {
+  color: rgba(10, 101, 241, 0.3);
+}
+
+.reviewFeedback {
+  color: #172554;
+  line-height: 1.6;
+  font-size: 14px;
+}

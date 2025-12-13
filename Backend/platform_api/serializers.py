@@ -5,7 +5,7 @@ from .models import (
     Help, JobInternshipOffer, Request,
     Negotiation, NegotiationPhase, NegotiationFloatingComment,
     Project, ProjectPhase, Deliverable,
-    
+    CommunityPost, CommunityComment, CommunityLike,
 )
 
 
@@ -28,12 +28,15 @@ class CompanySerializer(serializers.ModelSerializer):
 
 
 class ClientSerializer(serializers.ModelSerializer):
+    user = UserSerializer(read_only=True)
+
     class Meta:
         model = Client
         fields = '__all__'
 
-
 class FreelancerSerializer(serializers.ModelSerializer):
+    user = UserSerializer(read_only=True)
+    
     class Meta:
         model = Freelancer
         fields = '__all__'
@@ -66,44 +69,52 @@ class ReviewSerializer(serializers.ModelSerializer):
 
 
 class MediaFileSerializer(serializers.ModelSerializer):
-    owner_id = UserSerializer(read_only = True)
+    owner = UserSerializer(read_only=True)
     class Meta:
         model = MediaFile
         fields = '__all__'
 
 
 class ReportSerializer(serializers.ModelSerializer):
-    reporter_id = UserSerializer(read_only =True)
+    reporter = UserSerializer(read_only=True)
     class Meta:
         model = Report
         fields = '__all__'
 
 
 class NotificationSerializer(serializers.ModelSerializer):
-    receiver_id = UserSerializer(read_only = True)
+    receiver = UserSerializer(read_only=True)
     class Meta:
         model = Notification
         fields = '__all__'
 
 
 class HelpSerializer(serializers.ModelSerializer):
-    user_id = UserSerializer(read_only =True)
-
+    user = UserSerializer(read_only=True)
+    user_id = serializers.IntegerField(write_only=True)
+    
     class Meta:
         model = Help
-        fields = '__all__'
+        fields = ['id', 'user', 'user_id', 'problem', 'created_at']
 
 
 class JobInternshipOfferSerializer(serializers.ModelSerializer):
-    company_id = CompanySerializer(read_only =True)
+    company = CompanySerializer(read_only=True)
+    company_id = serializers.IntegerField(write_only=True, required=False)
 
     class Meta:
         model = JobInternshipOffer
         fields = '__all__'
+    
+    def create(self, validated_data):
+        # Company is passed from views, not from request data
+        return super().create(validated_data)
+
+
 
 
 class RequestSerializer(serializers.ModelSerializer):
-    client_id = ClientSerializer(read_only =True)
+    client = ClientSerializer(read_only=True)
 
     class Meta:
         model = Request
@@ -141,7 +152,7 @@ class NegotiationFloatingCommentSerializer(serializers.ModelSerializer):
 
 
 class ProjectSerializer(serializers.ModelSerializer):
-    negotiation_id = NegotiationSerializer(read_only =True)
+    negotiation = NegotiationSerializer(read_only=True)
 
     class Meta:
         model = Project
@@ -149,15 +160,70 @@ class ProjectSerializer(serializers.ModelSerializer):
 
 
 class ProjectPhaseSerializer(serializers.ModelSerializer):
-    project_id = ProjectSerializer(read_only = True)
+    project = ProjectSerializer(read_only=True)
     class Meta:
         model = ProjectPhase
         fields = '__all__'
 
 
 class DeliverableSerializer(serializers.ModelSerializer):
-    phase_id = ProjectPhaseSerializer(read_only = True)
+    phase_detail = ProjectPhaseSerializer(source='phase', read_only=True)
     class Meta:
         model = Deliverable
         fields = '__all__'
 
+
+# Community System Serializers =====================================================
+
+class CommunityPostSerializer(serializers.ModelSerializer):
+    owner = UserSerializer(read_only=True)
+    comments_count = serializers.SerializerMethodField()
+    likes_count = serializers.SerializerMethodField()
+    
+    class Meta:
+        model = CommunityPost
+        fields = ['id', 'owner', 'description', 'attachments', 'comments_count', 'likes_count', 'updated_at', 'created_at']
+    
+    def get_comments_count(self, obj):
+        return obj.comments.count()
+    
+    def get_likes_count(self, obj):
+        return obj.likes.count()
+
+
+class CommunityCommentSerializer(serializers.ModelSerializer):
+    user = UserSerializer(read_only=True)
+    replies_count = serializers.SerializerMethodField()
+    
+    class Meta:
+        model = CommunityComment
+        fields = ['id', 'post', 'user', 'parent', 'comment', 'replies_count', 'updated_at', 'created_at']
+    
+    def get_replies_count(self, obj):
+        return obj.replies.count()
+
+
+class CommunityCommentDetailSerializer(serializers.ModelSerializer):
+    user = UserSerializer(read_only=True)
+    replies = serializers.SerializerMethodField()
+    replies_count = serializers.SerializerMethodField()
+    
+    class Meta:
+        model = CommunityComment
+        fields = ['id', 'post', 'user', 'parent', 'comment', 'replies', 'replies_count', 'updated_at', 'created_at']
+    
+    def get_replies(self, obj):
+        # Get child comments (replies) for this comment
+        child_comments = obj.replies.all()
+        return CommunityCommentSerializer(child_comments, many=True).data
+    
+    def get_replies_count(self, obj):
+        return obj.replies.count()
+
+
+class CommunityLikeSerializer(serializers.ModelSerializer):
+    user = UserSerializer(read_only=True)
+    
+    class Meta:
+        model = CommunityLike
+        fields = ['id', 'post', 'user', 'created_at']

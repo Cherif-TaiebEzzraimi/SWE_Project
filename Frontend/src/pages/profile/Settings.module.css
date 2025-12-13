@@ -1,0 +1,404 @@
+.settingsContainer {
+  display: flex;
+  gap: 30px;
+  background-color: #f1f5f9;
+}
+
+.settingsNav {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+  min-width: 220px;
+}
+
+.settingsNav button {
+  padding: 12px 16px;
+  border: 1px solid #49cfe0;
+  background: #ffffff;
+  text-align: left;
+  cursor: pointer;
+  font-size: 14px;
+  color: #172554;
+  border-radius: 6px;
+  transition: all 0.2s;
+}
+
+.settingsNav button:hover {
+  background-color: #e0f8fb;
+  color: #1e3a8a;
+}
+
+.settingsNav button.active {
+  background-color: #0a65f1;
+  color: white;
+  border-color: #0a65f1;
+  font-weight: 600;
+}
+
+.settingsContent {
+  flex: 1;
+  background-color: #ffffff;
+  border-radius: 8px;
+  padding: 30px;
+  border: 1px solid #e0e0e0;
+}
+
+.section h2 {
+  font-size: 24px;
+  font-weight: 600;
+  color: #172554;
+  margin: 0 0 10px 0;
+}
+
+.sectionDescription {
+  color: #1e3a8a;
+  font-size: 14px;
+  margin-bottom: 30px;
+}
+
+.form {
+  max-width: 500px;
+}
+
+.formGroup {
+  margin-bottom: 20px;
+}
+
+.formGroup label {
+  display: block;
+  font-size: 14px;
+  font-weight: 500;
+  color: #333;
+  margin-bottom: 8px;
+}
+
+.formGroup input,
+.formGroup textarea {
+  width: 100%;
+  padding: 10px 12px;
+  border: 1px solid #e0e0e0;
+  border-radius: 6px;
+  font-size: 14px;
+  font-family: inherit;
+}
+
+.inputWrapper {
+  position: relative;
+}
+
+.passwordToggle {
+  position: absolute;
+  right: 10px;
+  top: 50%;
+  transform: translateY(-50%);
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  color: #1e3a8a;
+  padding: 4px;
+  border-radius: 4px;
+}
+
+.passwordToggle:hover {
+  background-color: #e0f8fb;
+}
+
+.validationMessage {
+  margin-top: 6px;
+  font-size: 12px;
+  color: #b91c1c;
+}
+
+.formGroup input:focus,
+.formGroup textarea:focus {
+  outline: none;
+  border-color: #0a65f1;
+  box-shadow: 0 0 0 3px rgba(73, 207, 224, 0.25);
+}
+
+.primaryButton {
+  padding: 12px 24px;
+  background-color: #0a65f1;
+  color: white;
+  border: none;
+  border-radius: 6px;
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: background-color 0.2s;
+}
+
+.primaryButton:hover {
+  background-color: #1e3a8a;
+}
+
+.secondaryButton {
+  padding: 12px 24px;
+  background-color: #e0f8fb;
+  color: #172554;
+  border: 1px solid #49cfe0;
+  border-radius: 6px;
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.secondaryButton:hover {
+  background-color: #49cfe0;
+  color: #ffffff;
+}
+
+.successMessage {
+  padding: 12px;
+  background-color: #e0f8fb;
+  color: #172554;
+  border-radius: 6px;
+  margin-bottom: 20px;
+  font-size: 14px;
+}
+
+.errorMessage {
+  padding: 12px;
+  background-color: #e7b5b5;
+  color: #b91c1c;
+  border-radius: 6px;
+  margin-bottom: 20px;
+  font-size: 14px;
+}
+
+/* Notifications */
+.notificationsList {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  max-height: 600px;
+  overflow-y: auto;
+}
+
+.notificationItem {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 16px 20px;
+  background-color: #ffffff;
+  border-radius: 12px;
+  border: 1px solid #e6eef5;
+  transition: box-shadow 0.2s, border-color 0.2s, background-color 0.2s;
+}
+
+.notificationItem:hover {
+  border-color: #c9d9ea;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.04);
+}
+
+.notificationItem.unread {
+  background-color: #f6fbff;
+  border-color: #bcd7ff;
+}
+
+.notificationContent {
+  flex: 1;
+  margin-right: 16px;
+}
+
+.notificationText {
+  margin: 0 0 6px 0;
+  font-size: 14px;
+  color: #172554;
+  line-height: 1.5;
+}
+
+.notificationDate {
+  font-size: 12px;
+  color: #6b7280;
+}
+
+.notificationActions {
+  display: flex;
+  gap: 8px;
+  flex-shrink: 0;
+}
+
+.markReadButton,
+.deleteButton {
+  padding: 8px 12px;
+  border: 1px solid #e6eef5;
+  background-color: #ffffff;
+  cursor: pointer;
+  font-size: 13px;
+  border-radius: 10px;
+  transition: background-color 0.2s, border-color 0.2s, box-shadow 0.2s;
+}
+
+.markReadButton:hover {
+  background-color: #f0f8ff;
+  border-color: #c9d9ea;
+}
+
+.deleteButton:hover {
+  background-color: #fff5f5;
+  border-color: #f0caca;
+}
+
+.emptyState {
+  text-align: center;
+  padding: 60px 20px;
+  color: #999;
+}
+
+.emptyState p:first-child {
+  font-size: 48px;
+  margin: 0 0 10px 0;
+}
+
+.emptyStateSubtext {
+  font-size: 14px;
+  color: #bbb;
+}
+
+/* Help Section */
+.helpResources {
+  margin-top: 40px;
+  padding-top: 30px;
+  border-top: 1px solid #e0e0e0;
+}
+
+.helpResources h3 {
+  font-size: 18px;
+  font-weight: 600;
+  margin-bottom: 15px;
+}
+
+.helpResources ul {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+
+.helpResources li {
+  margin-bottom: 10px;
+}
+
+.helpResources a {
+  color: #0a65f1;
+  text-decoration: none;
+  font-size: 14px;
+}
+
+.helpResources a:hover {
+  text-decoration: underline;
+  color: #1e3a8a;
+}
+
+/* Danger Zone */
+.dangerZone {
+  border: 2px solid #e7b5b5;
+  border-radius: 8px;
+  padding: 20px;
+  background-color: #ffffff;
+  margin-top: 24px;
+}
+
+.dangerZone h3 {
+  color: #b91c1c;
+  font-size: 18px;
+  margin: 0 0 20px 0;
+}
+
+.dangerItem {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 20px;
+}
+
+.dangerItem h4 {
+  font-size: 16px;
+  font-weight: 600;
+  margin: 0 0 8px 0;
+  color: #333;
+}
+
+.dangerItem p {
+  font-size: 14px;
+  color: #666;
+  margin: 0;
+  line-height: 1.5;
+}
+
+.dangerButton {
+  padding: 10px 20px;
+  background-color: #b91c1c;
+  color: white;
+  border: none;
+  border-radius: 6px;
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: background-color 0.2s;
+}
+
+.dangerButton:hover {
+  background-color: #8a1111;
+}
+
+/* Modal */
+.modal {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: rgba(0, 0, 0, 0.5);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+}
+
+.modalContent {
+  background-color: white;
+  border-radius: 8px;
+  padding: 30px;
+  max-width: 500px;
+  width: 90%;
+}
+
+.modalContent h3 {
+  font-size: 20px;
+  font-weight: 600;
+  margin: 0 0 15px 0;
+  color: #333;
+}
+
+.modalContent p {
+  color: #666;
+  font-size: 14px;
+  line-height: 1.6;
+  margin-bottom: 15px;
+}
+
+.modalContent ul {
+  margin: 15px 0;
+  padding-left: 20px;
+  color: #666;
+  font-size: 14px;
+}
+
+.modalContent li {
+  margin-bottom: 8px;
+}
+
+.warning {
+  color: #c62828 !important;
+  font-weight: 500;
+}
+
+.modalButtons {
+  display: flex;
+  gap: 10px;
+  justify-content: flex-end;
+  margin-top: 25px;
+}

@@ -1,0 +1,134 @@
+.container {
+  min-height: 100vh;
+  background-color: #f1f5f9;
+  display: flex;
+  flex-direction: column;
+}
+
+.loginBox {
+  background: #fff;
+  padding: 2.5rem 2rem;
+  border-radius: 16px;
+  box-shadow: 0 4px 24px rgba(0,0,0,0.10);
+  width: 100%;
+  max-width: 540px;
+  margin: 3rem auto 0 auto;
+}
+
+.title {
+  font-size: 2rem;
+  font-weight: 500;
+  color: #172554;
+  text-align: center;
+  margin-bottom: 2.5rem;
+}
+
+.subtitle {
+  margin: 0 0 2rem 0;
+  font-size: 1rem;
+  color: #7f8c8d;
+  text-align: center;
+}
+
+.errorAlert {
+  background-color: #fef2f2;
+  border: 1px solid #fecaca;
+  color: #dc2626;
+  padding: 0.875rem;
+  border-radius: 8px;
+  margin-bottom: 1.5rem;
+  font-size: 0.95rem;
+  display: flex;
+  align-items: flex-start;
+  gap: 0.5rem;
+}
+
+.form {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  width: 100%;
+}
+
+.submitButton {
+  width: auto;
+  min-width: 160px;
+  padding: 0.875rem 2.25rem;
+  margin-top: 1rem;
+  font-size: 1.05rem;
+  font-weight: 600;
+  color: #ffffff;
+  background-color: #172554;
+  border: none;
+  border-radius: 24px;
+  cursor: pointer;
+  transition: background-color 0.2s ease;
+  align-self: center;
+}
+
+.submitButton:hover:not(:disabled) {
+  background-color: #1e3a8a;
+}
+
+.submitButton:disabled {
+  background-color: #e4e5e7;
+  color: #a8aaaf;
+  cursor: not-allowed;
+}
+
+.forgotButton {
+  background: none;
+  border: none;
+  color: #1e3a8a;
+  font-weight: 500;
+  cursor: pointer;
+  padding: 0;
+  text-decoration: none;
+  font-size: 0.95rem;
+  margin-top: 0.5rem;
+  align-self: flex-end;
+}
+
+.forgotButton:hover:not(:disabled) {
+  text-decoration: underline;
+  color: #172554;
+}
+
+.forgotButton:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.signupLink {
+  text-align: center;
+  margin-top: 1.5rem;
+  font-size: 0.95rem;
+  color: #172554;
+}
+
+.linkButton {
+  background: none;
+  border: none;
+  color: #1e3a8a;
+  font-weight: 500;
+  cursor: pointer;
+  padding: 0;
+  text-decoration: none;
+}
+
+.linkButton:hover {
+  text-decoration: underline;
+}
+
+.linkButton:disabled {
+  cursor: not-allowed;
+  opacity: 0.6;
+}
+@media (max-width: 768px) {
+  .loginBox {
+    padding: 2rem 1rem;
+  }
+  .title {
+    font-size: 1.5rem;
+  }
+}

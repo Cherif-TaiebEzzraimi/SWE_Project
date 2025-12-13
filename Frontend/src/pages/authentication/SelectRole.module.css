@@ -1,0 +1,216 @@
+/* =============== HEADER =============== */
+.header {
+  width: 100%;
+  background: #fff;
+  border-bottom: 1px solid #e5e7eb;
+  padding: 1rem 0;
+  margin-bottom: 0;
+}
+
+.headerContent {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 0 2rem;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.logo {
+  font-size: 1.5rem;
+  font-weight: 600;
+  color: #172554;
+}
+
+.headerLinks {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.headerText {
+  color: #64748b;
+  font-size: 1rem;
+}
+
+.headerLink {
+  background: none;
+  border: none;
+  color: #1e3a8a;
+  font-size: 1rem;
+  font-weight: 500;
+  cursor: pointer;
+  padding: 0;
+  text-decoration: none;
+  transition: color 0.2s;
+}
+.headerLink:hover {
+  color: #0a65f1;
+  text-decoration: underline;
+}
+/* =============== CONTAINER =============== */
+.container {
+  display: flex;
+  justify-content: center;
+  align-items: flex-start;
+  min-height: 100vh;
+  background-color: #ffffff;
+  padding-top: 5rem;
+}
+
+/* =============== CONTENT WRAPPER =============== */
+.content {
+  width: 100%;
+  max-width: 750px;
+  text-align: center;
+}
+
+/* =============== PAGE TITLE =============== */
+.title {
+  font-size: 2.2rem;
+  font-weight: 500;
+  color: #1a1a1a;
+  margin-bottom: 3.5rem;
+}
+
+/* =============== CARDS GRID =============== */
+.cardsContainer {
+  display: flex;
+  justify-content: center;
+  gap: 2rem;
+}
+
+/* =============== CARD (DEFAULT STATE) =============== */
+.card {
+  position: relative;
+  width: 290px;
+  padding: 2rem 1.5rem;
+  background: #fff;
+  border: 1.5px solid #d3d7da;
+  border-radius: 12px;
+  cursor: pointer;
+  transition: all 0.25s ease;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  min-height: 150px;
+}
+
+/* Hover effect */
+.card:hover {
+  border-color: #0a65f1;
+  box-shadow: 0px 4px 12px rgba(10, 101, 241, 0.12);
+}
+
+/* =============== CARD SELECTED STATE =============== */
+.cardSelected {
+  border-color: #0a65f1;
+  background: #f1f5f9;
+  box-shadow: 0px 4px 12px rgba(10, 101, 241, 0.12);
+}
+
+/* =============== RADIO BUTTON =============== */
+.radioButton {
+  position: absolute;
+  top: 1rem;
+  right: 1rem;
+  width: 22px;
+  height: 22px;
+  border: 2px solid #b9bdbf;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.cardSelected .radioButton {
+  border-color: #0a65f1;
+}
+
+.radioButtonInner {
+  width: 12px;
+  height: 12px;
+  background-color: #0a65f1;
+  border-radius: 50%;
+}
+
+/* =============== ICON STYLING =============== */
+.icon {
+  color: #1a1a1a;
+  margin-bottom: 0.5rem;
+}
+
+/* =============== CARD TEXT =============== */
+.cardText {
+  margin-top: 0.8rem;
+  font-size: 1rem;
+  font-weight: 500;
+  color: #1a1a1a;
+  text-align: left;
+  line-height: 1.4;
+}
+
+/* =============== CONTINUE BUTTON =============== */
+.continueButton {
+  margin-top: 2rem;
+  padding: 0.75rem 2rem;
+  font-size: 1rem;
+  font-weight: 500;
+  border-radius: 20px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  border: 1px solid;
+}
+
+/* Button when enabled (role selected) */
+.continueButton:not(:disabled) {
+  color: #ffffff;
+  background-color: #172554;
+  border-color: #172554;
+}
+
+.continueButton:not(:disabled):hover {
+  background-color: #1e3a8a;
+  border-color: #1e3a8a;
+}
+
+/* Button when disabled (no role selected) */
+.continueButton:disabled {
+  background-color: #e4e5e7;
+  color: #a8aaaf;
+  border-color: #d5d7db;
+  cursor: not-allowed;
+}
+
+/* =============== LOGIN SECTION =============== */
+.loginLink {
+  margin-top: 2rem;
+  font-size: 1rem;
+  color: #5e6d55;
+}
+
+.linkButton {
+  background: none;
+  border: none;
+  color: #1e3a8a;
+  cursor: pointer;
+  padding: 0;
+  font-weight: 500;
+}
+
+.linkButton:hover {
+  text-decoration: underline;
+}
+
+/* =============== MOBILE RESPONSIVE =============== */
+@media (max-width: 768px) {
+  .cardsContainer {
+    flex-direction: column;
+    align-items: center;
+  }
+
+  .card {
+    width: 100%;
+    max-width: 350px;
+  }
+}

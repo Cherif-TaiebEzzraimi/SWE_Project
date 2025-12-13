@@ -3,13 +3,14 @@ from rest_framework.decorators import api_view, permission_classes
 from rest_framework.response import Response
 from rest_framework import status
 from rest_framework.permissions import IsAuthenticated, AllowAny
-from .serializers import UserSerializer , AdminSerializer , ClientSerializer , FreelancerSerializer , CompanySerializer , FAQSerializer , SkillSerializer , CategorySerializer , ReviewSerializer , ReportSerializer , MediaFileSerializer , NotificationSerializer , HelpSerializer , JobInternshipOfferSerializer , RequestSerializer , NegotiationSerializer , NegotiationFloatingCommentSerializer , NegotiationPhaseSerializer , ProjectSerializer , ProjectPhaseSerializer  , DeliverableSerializer
+from .serializers import UserSerializer , AdminSerializer , ClientSerializer , FreelancerSerializer , CompanySerializer , FAQSerializer , SkillSerializer , CategorySerializer , ReviewSerializer , ReportSerializer , MediaFileSerializer , NotificationSerializer , HelpSerializer , JobInternshipOfferSerializer , RequestSerializer , NegotiationSerializer , NegotiationFloatingCommentSerializer , NegotiationPhaseSerializer , ProjectSerializer , ProjectPhaseSerializer  , DeliverableSerializer , CommunityPostSerializer , CommunityCommentSerializer , CommunityCommentDetailSerializer , CommunityLikeSerializer
 from .models import (
     User, Admin, Company, Client, Freelancer,
     Skill, Category, Review, FAQ, MediaFile, Report, Notification,
     Help, JobInternshipOffer, Request,
     Negotiation, NegotiationPhase, NegotiationFloatingComment,
     Project, ProjectPhase, Deliverable,
+    CommunityPost, CommunityComment, CommunityLike,
 )
 from django.db import IntegrityError
 from django.core.files.storage import default_storage
@@ -17,7 +18,101 @@ from django.core.files.base import ContentFile
 import os
 from django.db.models import Count, Q
 
+
+@api_view(['GET'])
+def getRoutes(request):
+    routes = [
+        {'method': 'GET', 'path': '/auth/login/', 'description': 'Login'},
+        {'method': 'POST', 'path': '/auth/logout/', 'description': 'Logout'},
+        {'method': 'POST', 'path': '/auth/register/freelancer/', 'description': 'Register freelancer'},
+        {'method': 'POST', 'path': '/auth/register/client/', 'description': 'Register client'},
+        {'method': 'POST', 'path': '/auth/register/company/', 'description': 'Register company'},
+        {'method': 'GET', 'path': '/auth/verify-email/<token>/', 'description': 'Verify email token'},
+        {'method': 'POST', 'path': '/auth/forgot-password/', 'description': 'Forgot password'},
+        {'method': 'POST', 'path': '/auth/reset-password/', 'description': 'Reset password'},
+
+        {'method': 'GET', 'path': '/freelancers/<id>/', 'description': 'Get freelancer profile'},
+        {'method': 'PUT', 'path': '/freelancers/<id>/update/', 'description': 'Update freelancer profile'},
+        {'method': 'PUT', 'path': '/freelancers/<id>/password/', 'description': 'Update freelancer password'},
+
+        {'method': 'GET', 'path': '/clients/<id>/', 'description': 'Get client profile'},
+        {'method': 'PUT', 'path': '/clients/<id>/update/', 'description': 'Update client profile'},
+        {'method': 'PUT', 'path': '/clients/<id>/password/', 'description': 'Update client password'},
+
+        {'method': 'GET', 'path': '/companies/<id>/', 'description': 'Get company profile'},
+        {'method': 'PUT', 'path': '/companies/<id>/update/', 'description': 'Update company profile'},
+        {'method': 'PUT', 'path': '/companies/<id>/password/', 'description': 'Update company password'},
+
+        {'method': 'DELETE', 'path': '/users/<id>/', 'description': 'Soft-disable user (deactivate)'},
+
+        {'method': 'GET,POST', 'path': '/requests/', 'description': 'List or create requests'},
+        {'method': 'GET', 'path': '/requests/client/<client_id>/', 'description': 'List requests for a client'},
+        {'method': 'GET,PUT,DELETE', 'path': '/requests/<id>/', 'description': 'Get/update/soft-delete a request'},
+
+        {'method': 'POST', 'path': '/negotiations/directhire/<freelancer_id>/', 'description': 'Create direct-hire negotiation'},
+        {'method': 'POST', 'path': '/negotiations/<request_id>/create/', 'description': 'Create negotiation from request'},
+        {'method': 'GET,DELETE', 'path': '/negotiations/<id>/', 'description': 'Get or soft-delete negotiation'},
+        {'method': 'POST', 'path': '/negotiations/<id>/phases/', 'description': 'Add negotiation phase'},
+        {'method': 'PUT,DELETE', 'path': '/negotiations/phases/<phase_id>/', 'description': 'Update or delete negotiation phase'},
+        {'method': 'POST', 'path': '/negotiations/<id>/agree/', 'description': 'Agree to negotiation'},
+        {'method': 'POST', 'path': '/negotiations/<id>/decline/', 'description': 'Decline negotiation'},
+
+        {'method': 'GET', 'path': '/projects/user/<user_id>/', 'description': 'List projects for a user'},
+        {'method': 'GET,POST', 'path': '/projects/<id>/phases/', 'description': 'List or add project phases'},
+        {'method': 'PUT,DELETE', 'path': '/projects/<id>/phases/<phase_id>/', 'description': 'Update or soft-delete project phase'},
+        {'method': 'POST', 'path': '/projects/phases/<phase_id>/start/', 'description': 'Start phase (freelancer)'},
+        {'method': 'POST', 'path': '/projects/phases/<phase_id>/submit/', 'description': 'Submit phase deliverable'},
+        {'method': 'POST', 'path': '/projects/phases/<phase_id>/approve/', 'description': 'Approve phase (client)'},
+        {'method': 'POST', 'path': '/projects/phases/<phase_id>/next/', 'description': 'Move to next phase'},
+        {'method': 'POST', 'path': '/projects/phases/<phase_id>/reject/', 'description': 'Reject phase (client) - set back to in_progress'},
+        {'method': 'GET', 'path': '/projects/<id>/', 'description': 'Get project details'},
+
+        {'method': 'GET,POST', 'path': '/negotiations/<id>/comments/', 'description': 'List or add negotiation floating comments'},
+        {'method': 'PUT,DELETE', 'path': '/comments/<id>/', 'description': 'Update or soft-delete a comment'},
+        {'method': 'POST', 'path': '/comments/<id>/resolve/', 'description': 'Resolve a comment'},
+        {'method': 'POST', 'path': '/comments/<id>/reply/', 'description': 'Reply to a comment'},
+
+        {'method': 'POST', 'path': '/media/upload/', 'description': 'Upload media/file'},
+        {'method': 'GET', 'path': '/media/<entity_type>/<entity_id>/', 'description': 'List media for an entity'},
+        {'method': 'DELETE', 'path': '/media/<id>/', 'description': 'Soft-delete media'},
+
+        {'method': 'GET', 'path': '/faq/', 'description': 'List FAQs (public)'},
+        {'method': 'POST', 'path': '/admin/faq/', 'description': 'Create FAQ (admin)'},
+        {'method': 'PUT,DELETE', 'path': '/admin/faq/<id>/', 'description': 'Update or delete FAQ (admin)'},
+
+        {'method': 'POST', 'path': '/reviews/', 'description': 'Create review (client → freelancer)'},
+        {'method': 'GET', 'path': '/reviews/freelancer/<freelancer_id>/', 'description': 'List reviews for freelancer'},
+        {'method': 'PUT,DELETE', 'path': '/reviews/<id>/', 'description': 'Update or soft-delete review'},
+
+        {'method': 'POST', 'path': '/help/', 'description': 'Submit help ticket'},
+        {'method': 'GET', 'path': '/help/my/', 'description': 'List my help tickets'},
+        {'method': 'PUT', 'path': '/help/<id>/resolve/', 'description': 'Resolve help ticket (admin)'},
+
+        {'method': 'GET', 'path': '/admin/stats/users/', 'description': 'Admin: count freelancers/clients/companies'},
+        {'method': 'GET', 'path': '/admin/stats/posts/', 'description': 'Admin: count posted jobs'},
+        {'method': 'GET', 'path': '/admin/stats/requests/', 'description': 'Admin: count active requests'},
+        {'method': 'GET', 'path': '/admin/stats/negotiations/', 'description': 'Admin: active & declined negotiations'},
+        {'method': 'GET', 'path': '/admin/stats/projects/', 'description': 'Admin: active & declined projects'},
+
+        {'method': 'POST', 'path': '/admin/skills/', 'description': 'Admin: add skill'},
+        {'method': 'POST', 'path': '/admin/categories/', 'description': 'Admin: add category'},
+        {'method': 'GET', 'path': '/skills/', 'description': 'List skills'},
+        {'method': 'GET', 'path': '/categories/', 'description': 'List categories'},
+
+        {'method': 'GET', 'path': '/admin/reports/', 'description': 'Admin: list reports'},
+        {'method': 'POST', 'path': '/admin/reports/<id>/resolve/', 'description': 'Admin: resolve report'},
+    ]
+    return Response(routes)
+
 # User views ----------------------------------
+@api_view(['GET'])
+def soft_get_user(request):
+    data = Client.objects.all()
+    serializer = ClientSerializer(data , many = True)
+    return Response(serializer.data)
+
+
+
 @api_view(['POST'])
 def register_freelancer(request):
     data = request.data.copy()
@@ -35,7 +130,7 @@ def register_freelancer(request):
             user.save()
         # create freelancer profile
         freelancer_data = data.get('freelancer', {})
-        Freelancer.objects.create(user_id=user, **freelancer_data)
+        Freelancer.objects.create(user_id=user.id, **freelancer_data)
         return Response({'user': UserSerializer(user).data}, status=status.HTTP_201_CREATED)
     return Response(user_serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
@@ -54,7 +149,7 @@ def register_client(request):
         user = user_serializer.save()
         user.set_password(password)
         user.save()
-        Client.objects.create(user_id=user)
+        Client.objects.create(user_id=user.id)
         return Response({'user': UserSerializer(user).data}, status=status.HTTP_201_CREATED)
     return Response(user_serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
@@ -67,15 +162,33 @@ def register_company(request):
     if not email or not password:
         return Response({'detail': 'email and password are required'}, status=status.HTTP_400_BAD_REQUEST)
 
-    data['role'] = 'client'
+    registration_number = data.get('registration_number')
+    if not registration_number:
+        return Response({'detail': 'registration_number is required'}, status=status.HTTP_400_BAD_REQUEST)
+
     # companies are represented as client-role users with a Company profile
+    data['role'] = 'company'
+    # Set default names if not provided
+    if 'first_name' not in data:
+        data['first_name'] = data.get('company_name', 'Company')
+    if 'last_name' not in data:
+        data['last_name'] = 'Admin'
+    
     user_serializer = UserSerializer(data=data)
     if user_serializer.is_valid():
         user = user_serializer.save()
         user.set_password(password)
         user.save()
-        company_data = data.get('company', {})
-        Company.objects.create(user_id=user, **company_data)
+        # Create company profile with registration_number and other optional fields
+        company_data = {
+            'registration_number': registration_number,
+            'tax_id': data.get('tax_id', ''),
+            'representative': data.get('representative', ''),
+            'business_type': data.get('business_type', ''),
+            'description': data.get('description', ''),
+            'industry': data.get('industry', ''),
+        }
+        Company.objects.create(user_id=user.id, **company_data)
         return Response({'user': UserSerializer(user).data}, status=status.HTTP_201_CREATED)
     return Response(user_serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
@@ -101,7 +214,6 @@ def logout_view(request):
 
 @api_view(['GET'])
 def verify_email(request, token):
-    # Placeholder: implement token lookup + verification flow
     return Response({'detail': 'Email verification endpoint (token received)', 'token': token}, status=status.HTTP_200_OK)
 
 
@@ -127,26 +239,36 @@ def reset_password(request):
 
 # ---------- Profile endpoints (freelancer/client/company) ----------
 @api_view(['GET'])
-def _is_owner_or_staff(user, profile_obj):
-    try:
-        return user.is_staff or (hasattr(profile_obj, 'user_id') and profile_obj.user_id.id == user.id)
-    except Exception:
-        return False
-
+def _is_owner_or_staff(request, freelancer):
+    return request.user.is_staff or freelancer.user == request.user
 
 
 @api_view(['GET'])
 def get_freelancer(request, id):
-    freelancer = Freelancer.objects.get(id=id)
+    freelancer = Freelancer.objects.get(user=id)
     return Response(FreelancerSerializer(freelancer).data)
-
 
 @api_view(['PUT'])
 def update_freelancer(request, id):
-    freelancer = Freelancer.objects.get(id=id)
-    if not _is_owner_or_staff(request.user, freelancer):
+    try:
+        freelancer = Freelancer.objects.get(user=id)
+    except Freelancer.DoesNotExist:
+        return Response({'detail': 'Freelancer not found'}, status=status.HTTP_404_NOT_FOUND)
+    
+    if not _is_owner_or_staff(request._request, freelancer):
         return Response({'detail': 'Forbidden'}, status=status.HTTP_403_FORBIDDEN)
-    serializer = FreelancerSerializer(freelancer, data=request.data, partial=True)
+    
+    user_fields = ['first_name', 'last_name']
+    user_data = {field: request.data[field] for field in user_fields if field in request.data}
+    freelancer_data = {k: v for k, v in request.data.items() if k not in user_fields}
+    
+    if user_data:
+        user = freelancer.user
+        for field, value in user_data.items():
+            setattr(user, field, value)
+        user.save()
+    
+    serializer = FreelancerSerializer(freelancer, data=freelancer_data, partial=True)
     if serializer.is_valid():
         serializer.save()
         return Response(serializer.data)
@@ -154,10 +276,10 @@ def update_freelancer(request, id):
 
 @api_view(['PUT'])
 def update_freelancer_password(request, id):
-    freelancer = Freelancer.objects.get(id=id)
-    if not _is_owner_or_staff(request.user, freelancer):
-        return Response({'detail': 'Forbidden'}, status=status.HTTP_403_FORBIDDEN)
-    user = freelancer.user_id
+    freelancer = Freelancer.objects.get(user=id)
+    if not _is_owner_or_staff(request._request, freelancer):
+            return Response({'detail': 'Forbidden'}, status=status.HTTP_403_FORBIDDEN)
+    user = freelancer.user
     old = request.data.get('old_password')
     new = request.data.get('new_password')
     if not old or not new:
@@ -170,16 +292,32 @@ def update_freelancer_password(request, id):
 
 @api_view(['GET'])
 def get_client(request, id):
-    client = Client.objects.get(id=id)
+    client = Client.objects.get(user=id)
     return Response(ClientSerializer(client).data)
 
 
 @api_view(['PUT'])
 def update_client(request, id):
-    client = Client.objects.get(id=id)
-    if not _is_owner_or_staff(request.user, client):
+    try:
+        client = Client.objects.get(user=id)
+    except Client.DoesNotExist:
+        return Response({'detail': 'Client not found'}, status=status.HTTP_404_NOT_FOUND)
+    
+    if not _is_owner_or_staff(request._request, client):
         return Response({'detail': 'Forbidden'}, status=status.HTTP_403_FORBIDDEN)
-    serializer = ClientSerializer(client, data=request.data, partial=True)
+    
+
+    user_fields = ['first_name', 'last_name']
+    user_data = {field: request.data[field] for field in user_fields if field in request.data}
+    
+    if user_data:
+        user = client.user
+        for field, value in user_data.items():
+            setattr(user, field, value)
+        user.save()
+    
+    client_data = {k: v for k, v in request.data.items() if k not in user_fields}
+    serializer = ClientSerializer(client, data=client_data, partial=True)
     if serializer.is_valid():
         serializer.save()
         return Response(serializer.data)
@@ -188,10 +326,10 @@ def update_client(request, id):
 
 @api_view(['PUT'])
 def update_client_password(request, id):
-    client = Client.objects.get(id=id)
-    if not _is_owner_or_staff(request.user, client):
-        return Response({'detail': 'Forbidden'}, status=status.HTTP_403_FORBIDDEN)
-    user = client.user_id
+    client = Client.objects.get(user=id)
+    if not _is_owner_or_staff(request._request, client):
+            return Response({'detail': 'Forbidden'}, status=status.HTTP_403_FORBIDDEN)
+    user = client.user
     old = request.data.get('old_password')
     new = request.data.get('new_password')
     if not old or not new:
@@ -205,14 +343,20 @@ def update_client_password(request, id):
 
 @api_view(['GET'])
 def get_company(request, id):
-    company = Company.objects.get(id=id)
+    try:
+        company = Company.objects.get(user_id=id)
+    except Company.DoesNotExist:
+        return Response({'detail': 'Company not found'}, status=status.HTTP_404_NOT_FOUND)
     return Response(CompanySerializer(company).data)
 
 
 @api_view(['PUT'])
 def update_company(request, id):
-    company = Company.objects.get(id=id)
-    if not _is_owner_or_staff(request.user, company):
+    try:
+        company = Company.objects.get(user_id=id)
+    except Company.DoesNotExist:
+        return Response({'detail': 'Company not found'}, status=status.HTTP_404_NOT_FOUND)
+    if not _is_owner_or_staff(request, company):
         return Response({'detail': 'Forbidden'}, status=status.HTTP_403_FORBIDDEN)
     serializer = CompanySerializer(company, data=request.data, partial=True)
     if serializer.is_valid():
@@ -223,8 +367,11 @@ def update_company(request, id):
 
 @api_view(['PUT'])
 def update_company_password(request, id):
-    company = Company.objects.get(id=id)
-    if not _is_owner_or_staff(request.user, company):
+    try:
+        company = Company.objects.get(user_id=id)
+    except Company.DoesNotExist:
+        return Response({'detail': 'Company not found'}, status=status.HTTP_404_NOT_FOUND)
+    if not _is_owner_or_staff(request, company):
         return Response({'detail': 'Forbidden'}, status=status.HTTP_403_FORBIDDEN)
     user = company.user_id
     old = request.data.get('old_password')
@@ -259,40 +406,43 @@ def requests_list_create(request):
         if request.user.is_staff:
             qs = Request.objects.all()
         else:
-            client = Client.objects.filter(user_id=request.user).first()
-            if not client:
+            try:
+                client = Client.objects.get(user=request.user)
+            except Client.DoesNotExist:
                 return Response({'detail': 'No client profile for user'}, status=status.HTTP_404_NOT_FOUND)
-            qs = Request.objects.filter(client_id=client)
+            qs = Request.objects.filter(client=client)
         serializer = RequestSerializer(qs, many=True)
         return Response(serializer.data)
 
-    # POST
-    # assume authenticated user is client
-    client = Client.objects.filter(user_id=request.user).first()
-    if not client:
+    # POST request - create new request
+    try:
+         client = Client.objects.get(user=request.user)
+    except Client.DoesNotExist:
         return Response({'detail': 'Only clients can create requests'}, status=status.HTTP_403_FORBIDDEN)
+    
     data = request.data.copy()
-    data['client_id'] = client.id
+    # Don't include client in data, pass it to save() instead
     serializer = RequestSerializer(data=data)
     if serializer.is_valid():
-        serializer.save()
+        serializer.save(client=client)  # Pass the client object directly
         return Response(serializer.data, status=status.HTTP_201_CREATED)
     return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
 
 @api_view(['GET'])
-@permission_classes([IsAuthenticated])
 def list_client_requests(request, client_id):
-    client = Client.objects.filter(id=client_id).first()
-    if not client:
+    try:
+        # Use pk or user_id since user is the primary key
+        client = Client.objects.get(pk=client_id)
+    except Client.DoesNotExist:
         return Response({'detail': 'Client not found'}, status=status.HTTP_404_NOT_FOUND)
-    qs = Request.objects.filter(client_id=client)
+    
+    qs = Request.objects.filter(client=client)
     serializer = RequestSerializer(qs, many=True)
     return Response(serializer.data)
 
 
 @api_view(['GET', 'PUT', 'DELETE'])
-@permission_classes([IsAuthenticated])
 def request_detail(request, id):
     req = Request.objects.filter(id=id).first()
     if not req:
@@ -488,8 +638,7 @@ def negotiation_comments(request, id):
     # POST - create
     text = request.data.get('comment')
     parent_id = request.data.get('parent')
-    x = request.data.get('x_position')
-    y = request.data.get('y_position')
+
     if not text:
         return Response({'detail': 'comment text required'}, status=status.HTTP_400_BAD_REQUEST)
     parent = None
@@ -502,8 +651,7 @@ def negotiation_comments(request, id):
         user=request.user,
         comment=text,
         parent=parent,
-        x_position=x,
-        y_position=y,
+
     )
     return Response(NegotiationFloatingCommentSerializer(comment).data, status=status.HTTP_201_CREATED)
 
@@ -685,17 +833,17 @@ def submit_phase(request, phase_id):
     phase = ProjectPhase.objects.filter(id=phase_id).first()
     if not phase:
         return Response({'detail': 'Phase not found'}, status=status.HTTP_404_NOT_FOUND)
-    project = phase.project_id
-    negotiation = project.negotiation_id
-    freelancer_user_id = negotiation.freelancer_id.user_id.id if negotiation and negotiation.freelancer_id else None
+    project = phase.project
+    negotiation = project.negotiation
+    freelancer_user_id = negotiation.freelancer.user.id if negotiation and negotiation.freelancer else None
     if request.user.id != freelancer_user_id and not request.user.is_staff:
         return Response({'detail': 'Forbidden'}, status=status.HTTP_403_FORBIDDEN)
     phase.status = 'waiting_client_review'
     phase.save()
     # optionally create deliverable if provided
     data = request.data.copy()
-    if data.get('link') or data.get('attachment') or data.get('textcontent'):
-        data['phase_id'] = phase.id
+    if data.get('link') or data.get('attachment') or data.get('textcontent') or data.get('title'):
+        data['phase'] = phase.id
         dser = DeliverableSerializer(data=data)
         if dser.is_valid():
             dser.save()
@@ -707,9 +855,9 @@ def approve_phase(request, phase_id):
     phase = ProjectPhase.objects.filter(id=phase_id).first()
     if not phase:
         return Response({'detail': 'Phase not found'}, status=status.HTTP_404_NOT_FOUND)
-    project = phase.project_id
-    negotiation = project.negotiation_id
-    client_user_id = negotiation.client_id.user_id.id if negotiation and negotiation.client_id else None
+    project = phase.project
+    negotiation = project.negotiation
+    client_user_id = negotiation.client.user.id if negotiation and negotiation.client else None
     if request.user.id != client_user_id and not request.user.is_staff:
         return Response({'detail': 'Forbidden'}, status=status.HTTP_403_FORBIDDEN)
     phase.status = 'done'
@@ -722,8 +870,8 @@ def next_phase(request, phase_id):
     phase = ProjectPhase.objects.filter(id=phase_id).first()
     if not phase:
         return Response({'detail': 'Phase not found'}, status=status.HTTP_404_NOT_FOUND)
-    project = phase.project_id
-    negotiation = project.negotiation_id
+    project = phase.project
+    negotiation = project.negotiation
     # allow client or system (staff)
     client_user_id = negotiation.client_id.user_id.id if negotiation and negotiation.client_id else None
     if request.user.id != client_user_id and not request.user.is_staff:
@@ -821,14 +969,14 @@ def admin_manage_faq(request, id):
 
 # ---------- Help endpoints ----------
 @api_view(['POST'])
-@permission_classes([IsAuthenticated])
 def create_help(request):
     """POST /help - submit a help request (authenticated users)"""
     data = request.data.copy()
     problem = data.get('problem')
     if not problem:
         return Response({'detail': 'problem field is required'}, status=status.HTTP_400_BAD_REQUEST)
-    data['user'] = request.user.id
+    
+    data['user_id'] = request.user.id
     serializer = HelpSerializer(data=data)
     if serializer.is_valid():
         serializer.save()
@@ -837,7 +985,6 @@ def create_help(request):
 
 
 @api_view(['GET'])
-@permission_classes([IsAuthenticated])
 def my_help_requests(request):
     """GET /help/my - list help requests submitted by authenticated user"""
     qs = Help.objects.filter(user=request.user)
@@ -846,7 +993,6 @@ def my_help_requests(request):
 
 
 @api_view(['PUT'])
-@permission_classes([IsAuthenticated])
 def resolve_help_request(request, id):
     """PUT /help/:id/resolve - admin marks a help request as resolved"""
     if not request.user.is_staff:
@@ -1099,4 +1245,559 @@ def admin_resolve_report(request, id):
     rpt.status = 'resolved'
     rpt.save()
     return Response(ReportSerializer(rpt).data)
+
+
+# Community System APIs ============================================================
+
+# Community Posts ==========================================
+
+@api_view(['GET', 'POST'])
+@permission_classes([IsAuthenticated])
+def community_posts(request):
+    """GET /community/posts - List all community posts (paginated)
+    POST /community/posts - Create a new community post
+    """
+    if request.method == 'GET':
+        # Get all posts with likes and comments count
+        posts = CommunityPost.objects.all().order_by('-created_at')
+        # Optional: filter by owner
+        owner_id = request.query_params.get('owner_id')
+        if owner_id:
+            posts = posts.filter(owner_id=owner_id)
+        serializer = CommunityPostSerializer(posts, many=True)
+        return Response(serializer.data)
+    
+    elif request.method == 'POST':
+        # Create a new post
+        description = request.data.get('description')
+        attachments = request.data.get('attachments', [])
+        
+        if not description:
+            return Response({'detail': 'description is required'}, status=status.HTTP_400_BAD_REQUEST)
+        
+        post = CommunityPost.objects.create(
+            owner=request.user,
+            description=description,
+            attachments=attachments
+        )
+        return Response(CommunityPostSerializer(post).data, status=status.HTTP_201_CREATED)
+
+
+@api_view(['GET', 'PUT', 'DELETE'])
+@permission_classes([IsAuthenticated])
+def community_post_detail(request, post_id):
+    """GET /community/posts/<id> - Get post details with comments
+    PUT /community/posts/<id> - Update post (owner only)
+    DELETE /community/posts/<id> - Delete post (owner only)
+    """
+    post = CommunityPost.objects.filter(id=post_id).first()
+    if not post:
+        return Response({'detail': 'Post not found'}, status=status.HTTP_404_NOT_FOUND)
+    
+    if request.method == 'GET':
+        serializer = CommunityPostSerializer(post)
+        return Response(serializer.data)
+    
+    elif request.method == 'PUT':
+        if post.owner_id != request.user.id:
+            return Response({'detail': 'Forbidden'}, status=status.HTTP_403_FORBIDDEN)
+        
+        description = request.data.get('description', post.description)
+        attachments = request.data.get('attachments', post.attachments)
+        
+        post.description = description
+        post.attachments = attachments
+        post.save()
+        return Response(CommunityPostSerializer(post).data)
+    
+    elif request.method == 'DELETE':
+        if post.owner_id != request.user.id:
+            return Response({'detail': 'Forbidden'}, status=status.HTTP_403_FORBIDDEN)
+        post.delete()
+        return Response({'detail': 'Post deleted'}, status=status.HTTP_204_NO_CONTENT)
+
+
+# Community Comments =======================================
+
+@api_view(['GET', 'POST'])
+@permission_classes([IsAuthenticated])
+def community_comments(request, post_id):
+    """GET /community/posts/<post_id>/comments - Get all comments for a post
+    POST /community/posts/<post_id>/comments - Create a comment on a post
+    """
+    post = CommunityPost.objects.filter(id=post_id).first()
+    if not post:
+        return Response({'detail': 'Post not found'}, status=status.HTTP_404_NOT_FOUND)
+    
+    if request.method == 'GET':
+        comments = post.comments.filter(parent__isnull=True).order_by('created_at')
+        serializer = CommunityCommentDetailSerializer(comments, many=True)
+        return Response(serializer.data)
+    
+    elif request.method == 'POST':
+        comment_text = request.data.get('comment')
+        parent_id = request.data.get('parent_id')
+        
+        if not comment_text:
+            return Response({'detail': 'comment is required'}, status=status.HTTP_400_BAD_REQUEST)
+        
+        parent = None
+        if parent_id:
+            parent = CommunityComment.objects.filter(id=parent_id, post_id=post_id).first()
+            if not parent:
+                return Response({'detail': 'Parent comment not found'}, status=status.HTTP_404_NOT_FOUND)
+        
+        comment = CommunityComment.objects.create(
+            post=post,
+            user=request.user,
+            parent=parent,
+            comment=comment_text
+        )
+        return Response(CommunityCommentSerializer(comment).data, status=status.HTTP_201_CREATED)
+
+
+@api_view(['PUT', 'DELETE'])
+@permission_classes([IsAuthenticated])
+def community_comment_detail(request, post_id, comment_id):
+    """PUT /community/posts/<post_id>/comments/<comment_id> - Update comment (author only)
+    DELETE /community/posts/<post_id>/comments/<comment_id> - Delete comment (author only)
+    """
+    post = CommunityPost.objects.filter(id=post_id).first()
+    if not post:
+        return Response({'detail': 'Post not found'}, status=status.HTTP_404_NOT_FOUND)
+    
+    comment = CommunityComment.objects.filter(id=comment_id, post=post).first()
+    if not comment:
+        return Response({'detail': 'Comment not found'}, status=status.HTTP_404_NOT_FOUND)
+    
+    if request.method == 'PUT':
+        if comment.user_id != request.user.id:
+            return Response({'detail': 'Forbidden'}, status=status.HTTP_403_FORBIDDEN)
+        
+        comment_text = request.data.get('comment', comment.comment)
+        comment.comment = comment_text
+        comment.save()
+        return Response(CommunityCommentSerializer(comment).data)
+    
+    elif request.method == 'DELETE':
+        if comment.user_id != request.user.id:
+            return Response({'detail': 'Forbidden'}, status=status.HTTP_403_FORBIDDEN)
+        comment.delete()
+        return Response({'detail': 'Comment deleted'}, status=status.HTTP_204_NO_CONTENT)
+
+
+@api_view(['POST'])
+@permission_classes([IsAuthenticated])
+def community_comment_reply(request, comment_id):
+    """POST /community/comments/<comment_id>/reply - Reply to a specific comment"""
+    parent_comment = CommunityComment.objects.filter(id=comment_id).first()
+    if not parent_comment:
+        return Response(
+            {'detail': 'Parent comment not found'},
+            status=status.HTTP_404_NOT_FOUND
+        )
+    
+    reply_text = request.data.get('comment')
+    if not reply_text:
+        return Response(
+            {'detail': 'comment is required'},
+            status=status.HTTP_400_BAD_REQUEST
+        )
+    
+    # Use the model method to create reply
+    reply = parent_comment.reply(request.user, reply_text)
+    return Response(
+        CommunityCommentSerializer(reply).data,
+        status=status.HTTP_201_CREATED
+    )
+
+
+# Community Likes ==========================================
+
+@api_view(['POST', 'DELETE'])
+@permission_classes([IsAuthenticated])
+def community_like(request, post_id):
+    """POST /community/posts/<post_id>/like - Like a post
+    DELETE /community/posts/<post_id>/like - Unlike a post
+    """
+    post = CommunityPost.objects.filter(id=post_id).first()
+    if not post:
+        return Response({'detail': 'Post not found'}, status=status.HTTP_404_NOT_FOUND)
+    
+    if request.method == 'POST':
+        like, created = CommunityLike.objects.get_or_create(
+            post=post,
+            user=request.user
+        )
+        if not created:
+            return Response({'detail': 'Already liked'}, status=status.HTTP_400_BAD_REQUEST)
+        return Response(CommunityLikeSerializer(like).data, status=status.HTTP_201_CREATED)
+    
+    elif request.method == 'DELETE':
+        like = CommunityLike.objects.filter(post=post, user=request.user).first()
+        if not like:
+            return Response({'detail': 'Like not found'}, status=status.HTTP_404_NOT_FOUND)
+        like.delete()
+        return Response({'detail': 'Like removed'}, status=status.HTTP_204_NO_CONTENT)
+
+
+@api_view(['GET'])
+def community_post_likes(request, post_id):
+    """GET /community/posts/<post_id>/likes - Get all users who liked a post"""
+    post = CommunityPost.objects.filter(id=post_id).first()
+    if not post:
+        return Response({'detail': 'Post not found'}, status=status.HTTP_404_NOT_FOUND)
+    
+    likes = post.likes.all().order_by('-created_at')
+    serializer = CommunityLikeSerializer(likes, many=True)
+    return Response(serializer.data)
+
+
+# User Photo Upload APIs ====================================================
+
+@api_view(['POST'])
+@permission_classes([IsAuthenticated])
+def upload_profile_photo_freelancer(request, id):
+    """POST /freelancers/<id>/upload-photo/
+    Upload profile photo for freelancer.
+    Expects multipart form with 'photo' file.
+    """
+    try:
+        freelancer = Freelancer.objects.get(user=id)
+    except Freelancer.DoesNotExist:
+        return Response({'detail': 'Freelancer not found'}, status=status.HTTP_404_NOT_FOUND)
+    
+    if not _is_owner_or_staff(request._request, freelancer):
+        return Response({'detail': 'Forbidden'}, status=status.HTTP_403_FORBIDDEN)
+    
+    photo = request.FILES.get('photo')
+    if not photo:
+        return Response({'detail': 'photo file is required'}, status=status.HTTP_400_BAD_REQUEST)
+    
+    # Delete old photo if exists
+    if freelancer.profile_picture:
+        if default_storage.exists(freelancer.profile_picture.name):
+            default_storage.delete(freelancer.profile_picture.name)
+    
+    # Save new photo to user_photos/ directory
+    filename = f"freelancer_{id}_{photo.name}"
+    save_path = f"user_photos/{filename}"
+    saved_name = default_storage.save(save_path, ContentFile(photo.read()))
+    photo_url = default_storage.url(saved_name)
+    if not photo_url.startswith('http'):
+        photo_url = request.build_absolute_uri(photo_url)
+    
+    freelancer.profile_picture = saved_name
+    freelancer.save()
+    
+    return Response({
+        'detail': 'Photo uploaded successfully',
+        'photo_url': photo_url,
+        'freelancer': FreelancerSerializer(freelancer).data
+    }, status=status.HTTP_200_OK)
+
+
+@api_view(['POST'])
+@permission_classes([IsAuthenticated])
+def upload_profile_photo_client(request, id):
+    """POST /clients/<id>/upload-photo/
+    Upload profile photo for client.
+    Expects multipart form with 'photo' file.
+    """
+    try:
+        client = Client.objects.get(user=id)
+    except Client.DoesNotExist:
+        return Response({'detail': 'Client not found'}, status=status.HTTP_404_NOT_FOUND)
+    
+    if not _is_owner_or_staff(request._request, client):
+        return Response({'detail': 'Forbidden'}, status=status.HTTP_403_FORBIDDEN)
+    
+    photo = request.FILES.get('photo')
+    if not photo:
+        return Response({'detail': 'photo file is required'}, status=status.HTTP_400_BAD_REQUEST)
+    
+    # Delete old photo if exists
+    if client.profile_picture:
+        if default_storage.exists(client.profile_picture.name):
+            default_storage.delete(client.profile_picture.name)
+    
+    # Save new photo to user_photos/ directory
+    filename = f"client_{id}_{photo.name}"
+    save_path = f"user_photos/{filename}"
+    saved_name = default_storage.save(save_path, ContentFile(photo.read()))
+    photo_url = default_storage.url(saved_name)
+    if not photo_url.startswith('http'):
+        photo_url = request.build_absolute_uri(photo_url)
+    
+    client.profile_picture = saved_name
+    client.save()
+    
+    return Response({
+        'detail': 'Photo uploaded successfully',
+        'photo_url': photo_url,
+        'client': ClientSerializer(client).data
+    }, status=status.HTTP_200_OK)
+
+
+@api_view(['DELETE'])
+@permission_classes([IsAuthenticated])
+def delete_profile_photo_freelancer(request, id):
+    """DELETE /freelancers/<id>/photo/
+    Delete profile photo for freelancer.
+    """
+    try:
+        freelancer = Freelancer.objects.get(user=id)
+    except Freelancer.DoesNotExist:
+        return Response({'detail': 'Freelancer not found'}, status=status.HTTP_404_NOT_FOUND)
+    
+    if not _is_owner_or_staff(request._request, freelancer):
+        return Response({'detail': 'Forbidden'}, status=status.HTTP_403_FORBIDDEN)
+    
+    if freelancer.profile_picture:
+        if default_storage.exists(freelancer.profile_picture.name):
+            default_storage.delete(freelancer.profile_picture.name)
+        freelancer.profile_picture = None
+        freelancer.save()
+    
+    return Response({'detail': 'Photo deleted successfully'}, status=status.HTTP_204_NO_CONTENT)
+
+
+@api_view(['DELETE'])
+@permission_classes([IsAuthenticated])
+def delete_profile_photo_client(request, id):
+    """DELETE /clients/<id>/photo/
+    Delete profile photo for client.
+    """
+    try:
+        client = Client.objects.get(user=id)
+    except Client.DoesNotExist:
+        return Response({'detail': 'Client not found'}, status=status.HTTP_404_NOT_FOUND)
+    
+    if not _is_owner_or_staff(request._request, client):
+        return Response({'detail': 'Forbidden'}, status=status.HTTP_403_FORBIDDEN)
+    
+    if client.profile_picture:
+        if default_storage.exists(client.profile_picture.name):
+            default_storage.delete(client.profile_picture.name)
+        client.profile_picture = None
+        client.save()
+    
+    return Response({'detail': 'Photo deleted successfully'}, status=status.HTTP_204_NO_CONTENT)
+
+
+# ============================================================================
+# OFFER MANAGEMENT ENDPOINTS ================================================
+# ============================================================================
+
+@api_view(['POST', 'GET'])
+@permission_classes([IsAuthenticated])
+def offers_list_create(request):
+    """POST /offers - Create a new job or internship offer (company only)
+    GET /offers - Get all job and internship offers
+    """
+    if request.method == 'POST':
+        # Only companies can create offers
+        if request.user.role != 'company':
+            return Response(
+                {'detail': 'Only companies can create offers'},
+                status=status.HTTP_403_FORBIDDEN
+            )
+        
+        try:
+            company = Company.objects.get(user=request.user)
+        except Company.DoesNotExist:
+            return Response(
+                {'detail': 'Company profile not found'},
+                status=status.HTTP_404_NOT_FOUND
+            )
+        
+        serializer = JobInternshipOfferSerializer(data=request.data)
+        if serializer.is_valid():
+            serializer.save(company=company)
+            return Response(serializer.data, status=status.HTTP_201_CREATED)
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+    
+    elif request.method == 'GET':
+        offers = JobInternshipOffer.objects.all().order_by('-created_at')
+        serializer = JobInternshipOfferSerializer(offers, many=True)
+        return Response(serializer.data)
+
+
+@api_view(['PUT', 'DELETE', 'GET'])
+@permission_classes([IsAuthenticated])
+def offers_detail(request, offer_id):
+    """PUT /offers/<offer_id> - Update an offer (company only)
+    DELETE /offers/<offer_id> - Delete an offer (company only)
+    GET /offers/<offer_id> - Get offer details
+    """
+    try:
+        offer = JobInternshipOffer.objects.get(id=offer_id)
+    except JobInternshipOffer.DoesNotExist:
+        return Response(
+            {'detail': 'Offer not found'},
+            status=status.HTTP_404_NOT_FOUND
+        )
+    
+    if request.method == 'GET':
+        serializer = JobInternshipOfferSerializer(offer)
+        return Response(serializer.data)
+    
+    # For PUT and DELETE, only company owner can modify
+    if offer.company.user_id != request.user.id:
+        return Response(
+            {'detail': 'Forbidden'},
+            status=status.HTTP_403_FORBIDDEN
+        )
+    
+    if request.method == 'PUT':
+        serializer = JobInternshipOfferSerializer(offer, data=request.data, partial=True)
+        if serializer.is_valid():
+            serializer.save()
+            return Response(serializer.data)
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+    
+    elif request.method == 'DELETE':
+        offer.delete()
+        return Response(
+            {'detail': 'Offer deleted successfully'},
+            status=status.HTTP_204_NO_CONTENT
+        )
+
+
+@api_view(['GET'])
+@permission_classes([IsAuthenticated])
+def offers_by_company(request, company_id):
+    """GET /offers/company/<company_id> - Get all offers by a specific company"""
+    try:
+        company = Company.objects.get(id=company_id)
+    except Company.DoesNotExist:
+        return Response(
+            {'detail': 'Company not found'},
+            status=status.HTTP_404_NOT_FOUND
+        )
+    
+    offers = JobInternshipOffer.objects.filter(company=company).order_by('-created_at')
+    serializer = JobInternshipOfferSerializer(offers, many=True)
+    return Response(serializer.data)
+
+
+# ============================================================================
+# REPORTS MANAGEMENT ENDPOINTS ==============================================
+# ============================================================================
+
+@api_view(['POST', 'GET'])
+@permission_classes([IsAuthenticated])
+def reports_list_create(request):
+    """POST /reports - Create a new report
+    GET /reports/my - Get all reports submitted by authenticated user
+    """
+    if request.method == 'POST':
+        data = request.data.copy()
+        
+        serializer = ReportSerializer(data=data)
+        if serializer.is_valid():
+            serializer.save(reporter=request.user)
+            return Response(serializer.data, status=status.HTTP_201_CREATED)
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+    
+    elif request.method == 'GET':
+        # Get all reports by the authenticated user
+        reports = Report.objects.filter(reporter=request.user).order_by('-created_at')
+        serializer = ReportSerializer(reports, many=True)
+        return Response(serializer.data)
+
+
+@api_view(['DELETE'])
+@permission_classes([IsAuthenticated])
+def reports_detail(request, report_id):
+    """DELETE /reports/<report_id> - Delete a report (owner or admin only)"""
+    try:
+        report = Report.objects.get(id=report_id)
+    except Report.DoesNotExist:
+        return Response(
+            {'detail': 'Report not found'},
+            status=status.HTTP_404_NOT_FOUND
+        )
+    
+    # Only report creator or admin can delete
+    if report.reporter_id != request.user.id and request.user.role != 'admin':
+        return Response(
+            {'detail': 'Forbidden'},
+            status=status.HTTP_403_FORBIDDEN
+        )
+    
+    report.delete()
+    return Response(
+        {'detail': 'Report deleted successfully'},
+        status=status.HTTP_204_NO_CONTENT
+    )
+
+
+# ============================================================================
+# NOTIFICATIONS MANAGEMENT ENDPOINTS ========================================
+# ============================================================================
+
+@api_view(['POST'])
+@permission_classes([IsAuthenticated])
+def create_notification(request):
+    """POST /notifications - Create a notification
+    Admin only - can create notifications for users
+    """
+    if request.user.role != 'admin':
+        return Response(
+            {'detail': 'Only admins can create notifications'},
+            status=status.HTTP_403_FORBIDDEN
+        )
+    
+    data = request.data.copy()
+    serializer = NotificationSerializer(data=data)
+    if serializer.is_valid():
+        serializer.save()
+        return Response(serializer.data, status=status.HTTP_201_CREATED)
+    return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+
+@api_view(['GET'])
+@permission_classes([IsAuthenticated])
+def notifications_my(request):
+    """GET /notifications/my - Get all notifications for authenticated user"""
+    notifications = Notification.objects.filter(receiver=request.user).order_by('-created_at')
+    serializer = NotificationSerializer(notifications, many=True)
+    return Response(serializer.data)
+
+
+@api_view(['PUT', 'DELETE'])
+@permission_classes([IsAuthenticated])
+def notification_detail(request, notification_id):
+    """PUT /notifications/<notification_id> - Mark notification as read
+    DELETE /notifications/<notification_id> - Delete notification (owner or admin only)
+    """
+    try:
+        notification = Notification.objects.get(id=notification_id)
+    except Notification.DoesNotExist:
+        return Response(
+            {'detail': 'Notification not found'},
+            status=status.HTTP_404_NOT_FOUND
+        )
+    
+    # Only receiver or admin can access
+    if notification.receiver_id != request.user.id and request.user.role != 'admin':
+        return Response(
+            {'detail': 'Forbidden'},
+            status=status.HTTP_403_FORBIDDEN
+        )
+    
+    if request.method == 'PUT':
+        # Mark as read
+        notification.seen = True
+        notification.save()
+        return Response(NotificationSerializer(notification).data)
+    
+    elif request.method == 'DELETE':
+        notification.delete()
+        return Response(
+            {'detail': 'Notification deleted successfully'},
+            status=status.HTTP_204_NO_CONTENT
+        )
+
 
