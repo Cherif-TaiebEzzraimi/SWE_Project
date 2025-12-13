@@ -18,7 +18,7 @@ const PhaseCard: FC<PhaseCardProps> = ({ phase, onClick, isSelected = false, can
   const getStatusColor = (status: string): string => {
     switch (status) {
       case 'Completed':
-        return 'text-brand-navy-dark dark:text-green-400';
+        return 'text-brand-navy-dark dark:text-teal-400';
       case 'In Progress':
         return 'text-brand-blue dark:text-blue-400';
       case 'Not Started':
@@ -43,7 +43,7 @@ const PhaseCard: FC<PhaseCardProps> = ({ phase, onClick, isSelected = false, can
    */
   const getIconColorClass = (): string => {
     if (phase.status === 'Completed') {
-      return 'text-brand-navy-dark dark:text-green-400';
+      return 'text-brand-navy-dark dark:text-teal-400';
     } else if (phase.status === 'In Progress') {
       return 'text-brand-blue dark:text-blue-400';
     }

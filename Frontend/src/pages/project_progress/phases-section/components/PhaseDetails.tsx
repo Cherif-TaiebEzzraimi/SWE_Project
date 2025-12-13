@@ -49,7 +49,7 @@ const PhaseDetails: FC<PhaseDetailsProps> = ({ phase, onClose, onEdit, canEdit =
   const getStatusBadgeStyle = () => {
     switch (phase.status) {
       case 'Completed':
-        return 'bg-green-100 dark:bg-green-900/40 text-green-800 dark:text-green-300';
+        return 'bg-teal-100 dark:bg-teal-900/40 text-teal-800 dark:text-teal-300';
       case 'In Progress':
         return 'bg-blue-100 dark:bg-blue-900/40 text-brand-blue dark:text-blue-300';
       case 'Not Started':
@@ -99,7 +99,7 @@ const PhaseDetails: FC<PhaseDetailsProps> = ({ phase, onClose, onEdit, canEdit =
                 <span
                   className={`material-symbols-outlined text-4xl ${
                     phase.status === 'Completed' 
-                      ? 'text-green-600 dark:text-green-400' 
+                      ? 'text-teal-600 dark:text-teal-400' 
                       : phase.status === 'In Progress'
                       ? 'text-brand-blue'
                       : 'text-slate-400'

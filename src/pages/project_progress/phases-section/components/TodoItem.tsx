@@ -161,7 +161,7 @@ const TodoItem: FC<TodoItemProps> = ({ todo, onToggle, onDelete, onEdit }) => {
           <div className="flex items-center gap-1">
             <button
               onClick={handleSaveEdit}
-              className="p-1 hover:bg-green-100 dark:hover:bg-green-900/20 rounded text-green-600 dark:text-green-400 transition-colors"
+              className="p-1 hover:bg-teal-100 dark:hover:bg-teal-900/20 rounded text-teal-600 dark:text-teal-400 transition-colors"
               aria-label="Save changes"
             >
               <span className="material-symbols-outlined text-lg">check</span>

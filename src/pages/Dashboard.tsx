@@ -29,33 +29,33 @@ const Dashboard: React.FC = () => {
     : posts.filter(p => p.category === selectedCategory);
 
   return (
-    <div className="w-full px-4 sm:px-8 md:px-12 lg:px-20 xl:px-40 py-8">
-      {/* Toggle user type for testing */}
-      <div className="flex justify-end mb-4">
+    <div className="w-full px-4 sm:px-8 md:px-12 lg:px-20 xl:px-40 py-8 relative min-h-screen">
+      {/* Toggle user type for testing - move to left margin */}
+      <div className="fixed left-0 top-1/4 z-30 flex flex-col gap-2 pl-2">
         <button
-          className={`px-4 py-2 rounded-lg font-bold text-base border-2 mr-2 ${userType === 'client' ? 'bg-blue-700 text-white border-blue-700' : 'bg-white text-blue-700 border-blue-700'}`}
+          className={`w-8 h-8 flex items-center justify-center rounded-md border-2 mb-1 shadow text-xs font-bold transition-all duration-200 ${userType === 'client' ? 'bg-blue-700 text-white border-blue-700' : 'bg-white text-blue-700 border-blue-700 hover:bg-blue-50'}`}
           onClick={() => setUserType('client')}
+          aria-label="Client View"
         >
-          Client View
+          C
         </button>
         <button
-          className={`px-4 py-2 rounded-lg font-bold text-base border-2 ${userType === 'freelancer' ? 'bg-blue-700 text-white border-blue-700' : 'bg-white text-blue-700 border-blue-700'}`}
+          className={`w-8 h-8 flex items-center justify-center rounded-md border-2 shadow text-xs font-bold transition-all duration-200 ${userType === 'freelancer' ? 'bg-blue-700 text-white border-blue-700' : 'bg-white text-blue-700 border-blue-700 hover:bg-blue-50'}`}
           onClick={() => setUserType('freelancer')}
+          aria-label="Freelancer View"
         >
-          Freelancer View
+          F
         </button>
       </div>
-      {/* Add Post Button Top Right (client only) */}
+      {/* Floating Add Post Button (client only) */}
       {userType === 'client' && (
-        <div className="flex justify-end mb-4">
-          <button
-            className="px-6 py-3 bg-transparent text-blue-400 border border-blue-600 rounded-lg hover:scale-105 hover:shadow-[0_0_10px_rgba(59,130,246,0.7)] transition-all duration-300 flex items-center gap-2 font-bold text-base"
-            onClick={() => navigate('/client-dashboard/addPost')}
-          >
-            <span className="material-symbols-outlined mr-2 font-bold text-lg">add</span>
-            Add a Post
-          </button>
-        </div>
+        <button
+          className="fixed bottom-8 left-1/2 -translate-x-1/2 z-40 w-24 h-24 flex items-center justify-center rounded-xl bg-blue-600 text-white shadow-lg hover:bg-blue-700 transition-all duration-200 focus:outline-none focus:ring-4 focus:ring-blue-200"
+          onClick={() => navigate('/client-dashboard/addPost')}
+          aria-label="Offer a Job"
+        >
+          <span className="material-symbols-outlined text-6xl font-bold">add</span>
+        </button>
       )}
       {/* Horizontal scrollable categories */}
       <div className="flex items-center gap-2 mb-6 overflow-x-auto scrollbar-thin scrollbar-thumb-blue-200 scrollbar-track-transparent pb-2">
@@ -96,36 +96,57 @@ const Dashboard: React.FC = () => {
       </div>
 
       {/* Content area */}
-      <div className={view === 'freelancers' ? 'grid grid-cols-1 md:grid-cols-2 gap-8' : 'space-y-8'}>
+      <div className={view === 'freelancers' ? 'grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-10' : 'space-y-8'}>
         {view === 'freelancers' ? (
           filteredFreelancers.length === 0 ? (
             <div className="text-center text-gray-500 col-span-full">No freelancers found for this category.</div>
           ) : (
             filteredFreelancers.map(f => (
-              <div key={f.id} className="bg-white dark:bg-blue-900/60 border-2 border-blue-100 shadow-lg rounded-2xl p-10 flex flex-col gap-4">
-                <div className="flex items-center gap-8">
-                  <img src={f.avatar} alt={f.name} className="w-32 h-32 rounded-full object-cover border-4 border-blue-100 shadow-lg" />
-                  <div className="flex-1">
-                    <div className="font-bold text-blue-900 dark:text-white text-2xl mb-1">{f.name}</div>
-                    <div className="text-xs font-semibold mb-1 px-2 py-0.5 rounded-full bg-red-100 text-red-700 border border-red-100 inline-block w-fit">{f.category}</div>
-                    <div className="text-gray-600 dark:text-gray-300 text-sm mb-1 mt-2">{f.bio}</div>
-                    <div className="flex flex-wrap gap-2 mt-2">
-                      {f.skills.map(skill => (
-                        <span key={skill} className="px-2 py-0.5 rounded-full text-xs font-medium shadow-sm border border-blue-100 bg-blue-100 text-blue-700">{skill}</span>
-                      ))}
-                    </div>
-                  </div>
-                  <div className="ml-auto flex flex-col items-center">
-                    <span className="text-yellow-400 text-3xl">★</span>
-                    <span className="text-lg font-semibold text-blue-900 dark:text-white">{f.rating}</span>
-                  </div>
+              <div
+                key={f.id}
+                className="relative group bg-white dark:bg-blue-900/60 border-2 border-blue-100 shadow-xl rounded-3xl p-8 flex flex-col items-center transition-all duration-300 ease-in-out hover:scale-[1.025] hover:border-blue-600 hover:shadow-[0_0_32px_0_#60a5fa]"
+                style={{ minHeight: 420, background: 'white' }}
+              >
+                {/* Avatar with ring and lighter rating badge */}
+                <div className="relative mb-4 z-10">
+                  <img
+                    src={f.avatar}
+                    alt={f.name}
+                    className="w-44 h-44 rounded-full object-cover border-4 border-blue-300 shadow-xl bg-white transition-all duration-300 ease-in-out"
+                    style={{ background: '#fff' }}
+                  />
+                  <span className="absolute -bottom-2 left-1/2 -translate-x-1/2 bg-white/95 text-[var(--teal-main)] text-xs font-semibold px-3 py-1 rounded-full shadow border border-[var(--teal-main)] flex items-center gap-1 transition-all duration-300" style={{ minWidth: 48, justifyContent: 'center', letterSpacing: '0.01em' }}>
+                    <svg width="15" height="15" fill="none" viewBox="0 0 20 20" className="inline-block text-[var(--teal-main)]"><circle cx="10" cy="10" r="8.5" stroke="currentColor" strokeWidth="1.2" fill="none"/><polygon points="10,4.5 11.45,8.5 15.7,8.5 12.1,11.1 13.55,15.1 10,12.7 6.45,15.1 7.9,11.1 4.3,8.5 8.55,8.5" fill="currentColor" opacity="0.7"/></svg>
+                    {f.rating}
+                  </span>
                 </div>
-                <div className="flex gap-3 mt-4 justify-center">
+                {/* Name and category */}
+                <div className="text-center">
+                  <div className="font-extrabold text-blue-900 dark:text-white text-xl mb-1 tracking-tight">{f.name}</div>
+                  <div className="inline-block text-xs font-semibold mb-2 px-3 py-1 rounded-full bg-red-100 text-red-700 border border-red-200 shadow-sm">{f.category}</div>
+                </div>
+                {/* Bio */}
+                <div className="text-gray-700 dark:text-gray-200 text-sm mb-2 text-center min-h-[60px] mt-2">{f.bio}</div>
+                {/* Skills as pill badges with teal and blue, closer to description */}
+                <div className="flex flex-wrap gap-2 justify-center mb-2">
+                  {f.skills.map(skill => (
+                    <span
+                      key={skill}
+                      className="px-3 py-1 rounded-full text-xs font-semibold border border-[var(--teal-main)] bg-[var(--teal-bg)] text-[var(--teal-main)] shadow-sm"
+                    >
+                      {skill}
+                    </span>
+                  ))}
+                </div>
+                {/* Action buttons */}
+                <div className="flex gap-3 mt-10 justify-center w-full">
                   {userType === 'client' && (
-                    <button className="px-5 py-1.5 rounded-md bg-blue-700 text-white font-semibold text-xs shadow hover:bg-blue-900 transition-all duration-200">Hire Now</button>
+                    <button className="flex-1 px-5 py-2 rounded-lg border-2 border-blue-600 text-blue-700 font-bold text-sm shadow-sm bg-white transition-all duration-300 hover:bg-blue-50 hover:text-blue-800 hover:border-blue-700 hover:shadow-[0_0_0_3px_#e0e7ff] focus:outline-none focus:ring-2 focus:ring-blue-300">Hire Now</button>
                   )}
-                  <button className="px-5 py-1.5 rounded-md border border-blue-700 text-blue-700 font-semibold text-xs shadow hover:bg-blue-700 hover:text-white transition-all duration-200">View Profile</button>
+                  <button className="flex-1 px-5 py-2 rounded-lg text-blue-700 font-bold text-sm shadow-sm bg-white transition-all duration-300 hover:bg-blue-50 hover:text-blue-800 hover:shadow-[0_0_0_3px_#e0e7ff] focus:outline-none focus:ring-2 focus:ring-blue-300">View Profile</button>
                 </div>
+                {/* Only border and glow on hover, no color overlay */}
+                {/* Removed color overlay for a cleaner hover effect */}
               </div>
             ))
           )
@@ -134,45 +155,43 @@ const Dashboard: React.FC = () => {
             <div className="text-center text-gray-500">No posts found for this category.</div>
           ) : (
             filteredPosts.map(p => (
-              <div key={p.id} className="bg-white dark:bg-blue-900/60 border-2 border-blue-700 shadow-lg rounded-2xl p-8 flex flex-col gap-3">
-                <div className="flex flex-col md:flex-row md:items-center gap-3 mb-2">
-                  <div className="flex-1">
-                    <div className="font-bold text-blue-900 dark:text-white text-xl mb-1">{p.title}</div>
-                    <div className="flex flex-wrap gap-2 mb-2">
-                      <span className="px-2 py-0.5 rounded-full text-xs font-semibold border border-red-100 bg-red-100 text-red-700">{p.category}</span>
-                      {p.requirements && p.requirements.map((req: string) => (
-                        <span key={req} className="px-2 py-0.5 rounded-full text-xs font-medium border border-blue-100 bg-blue-100 text-blue-700">{req}</span>
+              <div key={p.id} className="bg-white dark:bg-blue-900/60 border-2 border-blue-600 shadow-lg rounded-2xl p-10 flex flex-col gap-6" style={{ boxShadow: '0 4px 32px 0 #e0f8fb22' }}>
+                <div className="flex flex-col gap-2 mb-2">
+                  <div className="font-extrabold text-blue-900 dark:text-white text-3xl mb-4 px-6 py-2 border-l-8 border-blue-600 bg-[var(--teal-bg)] shadow-sm tracking-tight w-full" style={{width: '100%'}}>{p.title}</div>
+                  <div className="flex flex-wrap gap-2 mb-3">
+                    <span className="px-2 py-0.5 rounded-full text-xs font-semibold border border-red-100 bg-red-100 text-red-700">{p.category}</span>
+                    {p.requirements && p.requirements.map((req: string) => (
+                      <span key={req} className="px-2 py-0.5 rounded-full text-xs font-medium border border-[var(--teal-main)] bg-[var(--teal-bg)] text-[var(--teal-main)]">{req}</span>
+                    ))}
+                  </div>
+                  <div className="text-gray-700 dark:text-gray-200 text-lg mb-4 leading-relaxed" style={{ minHeight: '3.5em' }}>{p.description}</div>
+                  <div className="text-xs text-gray-500 mb-4">Price Range: <span className="font-semibold">${p.minPrice} - ${p.maxPrice}</span></div>
+                  {p.attachments && p.attachments.length > 0 && (
+                    <div className="flex items-center gap-2 mt-1 mb-4">
+                      <span className="text-blue-700">📎</span>
+                      {p.attachments.map((file: string) => (
+                        <a key={file} href="#" className="text-xs text-blue-700 underline hover:text-blue-900 transition">{file}</a>
                       ))}
                     </div>
-                    <div className="text-gray-700 dark:text-gray-200 text-sm mb-2" style={{ minHeight: '3.5em' }}>{p.description}</div>
-                    <div className="text-xs text-gray-500 mb-2">Price Range: <span className="font-semibold">${p.minPrice} - ${p.maxPrice}</span></div>
-                    {p.attachments && p.attachments.length > 0 && (
-                      <div className="flex items-center gap-2 mt-1">
-                        <span className="text-blue-700">📎</span>
-                        {p.attachments.map((file: string) => (
-                          <a key={file} href="#" className="text-xs text-blue-700 underline hover:text-blue-900 transition">{file}</a>
-                        ))}
-                      </div>
-                    )}
-                  </div>
-                  <div className="flex flex-col gap-2 min-w-[120px] h-full justify-end items-end">
-                    {/* Edit button only for post owner */}
-                    {userType === 'client' && userId === (p as any).userId && (
-                      <button
-                        className="px-4 py-1 rounded-md border border-blue-700 text-blue-700 font-semibold text-xs shadow hover:bg-blue-700 hover:text-white transition-all duration-200"
-                        onClick={() => {
-                          startEdit(p);
-                          navigate('/client-dashboard/addPost');
-                        }}
-                      >
-                        Edit
-                      </button>
-                    )}
-                    {/* Apply Now only for freelancers */}
-                    {userType === 'freelancer' && (
-                      <button className="px-4 py-1 rounded-md bg-blue-700 text-white font-semibold text-xs shadow hover:bg-blue-900 transition-all duration-200 mt-4">Apply Now</button>
-                    )}
-                  </div>
+                  )}
+                </div>
+                <div className="flex gap-3 mt-2 justify-end w-full">
+                  {/* Edit button only for post owner */}
+                  {userType === 'client' && userId === (p as any).userId && (
+                    <button
+                      className="px-5 py-2 rounded-lg border-2 border-blue-600 text-blue-700 font-bold text-sm shadow-sm bg-white transition-all duration-300 hover:bg-blue-50 hover:text-blue-800 hover:border-blue-700 hover:shadow-[0_0_0_3px_#e0e7ff] focus:outline-none focus:ring-2 focus:ring-blue-300"
+                      onClick={() => {
+                        startEdit(p);
+                        navigate('/client-dashboard/addPost');
+                      }}
+                    >
+                      Edit
+                    </button>
+                  )}
+                  {/* Apply Now only for freelancers */}
+                  {userType === 'freelancer' && (
+                    <button className="px-5 py-2 rounded-lg border-2 border-blue-600 text-blue-700 font-bold text-sm shadow-sm bg-white transition-all duration-300 hover:bg-blue-50 hover:text-blue-800 hover:border-blue-700 hover:shadow-[0_0_0_3px_#e0e7ff] focus:outline-none focus:ring-2 focus:ring-blue-300">Apply Now</button>
+                  )}
                 </div>
                 {/* Applicants section */}
                 {p.applicants && p.applicants.length > 0 && (

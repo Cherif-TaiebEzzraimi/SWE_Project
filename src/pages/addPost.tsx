@@ -154,12 +154,21 @@ const MAX_FILE_SIZE_MB = 25;
 
 
   return (
-  <div className="min-h-screen w-full flex flex-col items-center justify-start bg-[#f5f7f8] dark:bg-[#101722] py-10 px-4 sm:px-8 md:px-20 2xl:px-[20vw] font-sans">
+    <div className="min-h-screen w-full flex flex-col items-center justify-start bg-[#f5f7f8] dark:bg-[#101722] py-10 px-4 sm:px-8 md:px-20 2xl:px-[20vw] font-sans">
       {/* Page Title */}
-      <h1 className="text-4xl font-black text-center mb-8 text-[#0a66f0] dark:text-white drop-shadow-[0_0_12px_rgba(10,102,240,0.25)]">
-        {editingPost ? 'Edit Post' : 'Create a New Post'}
-      </h1>
-      <form ref={formRef} onSubmit={handleSubmit} className="w-full max-w-4xl mx-auto bg-white dark:bg-[#1C2A3B] rounded-xl border border-[#0a66f0]/20 shadow-[0_0_30px_rgba(10,102,240,0.15)] p-4 sm:p-6 md:p-8 flex flex-col gap-8">
+      <form ref={formRef} onSubmit={handleSubmit} className="w-full max-w-4xl mx-auto bg-white dark:bg-[#1C2A3B] rounded-xl border border-[#0a66f0]/20 shadow-[0_0_30px_rgba(10,102,240,0.15)] p-4 sm:p-6 md:p-8 flex flex-col gap-8 relative">
+        {/* Go Back/Cross Button inside modal box */}
+        <button
+          type="button"
+          aria-label="Go back"
+          onClick={() => navigate(-1)}
+          className="absolute top-4 right-4 z-20 bg-white dark:bg-[#1C2A3B] border border-gray-200 dark:border-slate-700 rounded-full shadow-md p-2 hover:bg-gray-100 dark:hover:bg-slate-800 transition-colors"
+        >
+          <span className="material-symbols-outlined text-2xl text-gray-600 dark:text-slate-300">close</span>
+        </button>
+        <h1 className="text-4xl font-black text-center mb-8 text-[#0a66f0] dark:text-white drop-shadow-[0_0_12px_rgba(10,102,240,0.25)]">
+          {editingPost ? 'Edit Post' : 'Create a New Post'}
+        </h1>
         {/* Title Field */}
         <div>
           <label className="block text-lg font-bold text-[#0a66f0] dark:text-white mb-2">

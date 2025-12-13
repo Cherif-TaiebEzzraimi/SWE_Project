@@ -35,7 +35,18 @@ const initialPosts: Post[] = [
 		maxPrice: 500,
 		requirements: ['React', 'TypeScript', 'API Integration', 'TailwindCSS'],
 		attachments: ['specs.pdf'],
-		applicants: [],
+		applicants: [
+			{
+				id: 101,
+				name: 'Amina Dev',
+				avatar: 'https://randomuser.me/api/portraits/women/44.jpg',
+			},
+			{
+				id: 102,
+				name: 'Yacine Design',
+				avatar: 'https://randomuser.me/api/portraits/men/32.jpg',
+			},
+		],
 		userId: 1,
 	},
 	{
@@ -47,7 +58,13 @@ const initialPosts: Post[] = [
 		maxPrice: 200,
 		requirements: ['Logo Design', 'Branding'],
 		attachments: [],
-		applicants: [],
+		applicants: [
+			{
+				id: 103,
+				name: 'Sara AI',
+				avatar: 'https://randomuser.me/api/portraits/women/65.jpg',
+			}
+		],
 		userId: 2,
 	},
 	{
@@ -59,7 +76,13 @@ const initialPosts: Post[] = [
 		maxPrice: 1000,
 		requirements: ['PyTorch', 'Deep Learning', 'Data Augmentation'],
 		attachments: ['dataset.zip'],
-		applicants: [],
+		applicants: [
+			{
+				id: 104,
+				name: 'Amina Dev',
+				avatar: 'https://randomuser.me/api/portraits/women/44.jpg',
+			}
+		],
 		userId: 1,
 	},
 ];
