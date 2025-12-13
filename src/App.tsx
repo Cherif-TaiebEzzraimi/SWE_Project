@@ -3,7 +3,7 @@
 
 import { BrowserRouter, Routes, Route, useNavigate } from 'react-router-dom';
 import ProjectProgressPage from './pages/project_progress/ProjectProgressPage';
-import ClientDashboard from './pages/ClientDashboard';
+import Dashboard from './pages/Dashboard';
 import FreelancerDashboard from './pages/FreelancerDashboard';
 import AddPostPage from './pages/addPost.tsx';
 import Header from './components/Header';
@@ -38,7 +38,7 @@ function MainAppSections({ section }: { section: 'project-progress' | 'client-da
     // Nested routing for addPost under client-dashboard
     content = (
       <NestedRoutes>
-        <NestedRoute path="/" element={<ClientDashboard />} />
+  <NestedRoute path="/" element={<Dashboard />} />
         <NestedRoute path="addPost" element={<AddPostPage />} />
       </NestedRoutes>
     );

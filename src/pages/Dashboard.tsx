@@ -79,7 +79,7 @@ const Dashboard: React.FC = () => {
 
       {/* Elegant tab buttons (show freelancers tab only for client) */}
       <div className="flex flex-col sm:flex-row gap-4 mb-6 items-center justify-center">
-        {userType === 'client' && (
+        { (
           <button
             className={`px-3 py-1.5 rounded-md font-semibold text-xs shadow border-2 transition-all duration-200 ${view === 'freelancers' ? 'bg-blue-700 text-white border-blue-500 shadow-lg' : 'bg-white dark:bg-blue-900/60 text-blue-700 border-blue-200 dark:border-blue-700 hover:bg-blue-50'}`}
             onClick={() => setView('freelancers')}

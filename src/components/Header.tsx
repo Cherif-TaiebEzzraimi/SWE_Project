@@ -302,15 +302,9 @@ const Header = ({
           style={{ minWidth: 150 }}
           onClick={() => handleSectionClick('client-dashboard')}
         >
-          ClientDashboard
+          Dashboard
         </button>
-        <button
-          className={`px-4 py-2 rounded-lg font-semibold text-sm transition ${activeSection === 'freelancer-dashboard' ? 'bg-blue-600 text-white' : 'bg-slate-200 dark:bg-slate-700 text-slate-900 dark:text-white hover:bg-blue-600 hover:text-white'}`}
-          style={{ minWidth: 180 }}
-          onClick={() => handleSectionClick('freelancer-dashboard')}
-        >
-          Freelancer Dashboard
-        </button>
+        
       </div>
 
 
