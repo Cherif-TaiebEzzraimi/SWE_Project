@@ -5,8 +5,8 @@
 @tailwind utilities;
 
 :root {
-  --teal-bg: #e0f8fb;
-  --teal-main: #49cfe0;
+  --teal-bg: #e0f2fe;
+  --teal-main: #60a5fa;
 }
 
 * {
