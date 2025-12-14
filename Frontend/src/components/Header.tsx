@@ -1,38 +1,48 @@
 // src/components/Header.tsx
 import { useState, useRef, useEffect } from 'react';
+import { useNavigate, useLocation } from 'react-router-dom';
 
-interface HeaderProps {
-  /** Optional custom title for the header */
-  title?: string;
-  /** Optional callback when navigation items are clicked */
-  onNavigate?: (target: 'projects' | 'messages' | 'files') => void;
-  /** Optional user data */
-  user?: {
-    name: string;
-    avatar: string;
-    role?: string;
-  };
-  /** Optional flag to show/hide navigation links */
-  showNavigation?: boolean;
-  /** Optional callback for dark mode toggle */
-  onToggleDarkMode?: () => void;
-  /** Optional flag to show notification badge on messages */
-  hasNewMessages?: boolean;
+interface User {
+  name: string;
+  role?: string;
+  avatar?: string;
 }
 
-const Header: React.FC<HeaderProps> = ({ 
-  
-  title = "Project Progress Hub",
+interface HeaderProps {
+  title?: string;
+  onNavigate?: (target: 'projects' | 'messages' | 'files') => void;
+  user?: User;
+  showNavigation?: boolean;
+  hasNewMessages?: boolean;
+  onToggleDarkMode?: () => void;
+  view?: 'freelancers' | 'posts';
+  onViewChange?: (view: 'freelancers' | 'posts') => void;
+}
+
+const Header = ({
+  title = 'Platform', // unused
   onNavigate,
   user,
   showNavigation = true,
+  hasNewMessages = false,
   onToggleDarkMode,
-  hasNewMessages = true
-}) => {
+  view,
+  onViewChange
+}: HeaderProps) => {
   const [showUserMenu, setShowUserMenu] = useState(false);
+  const navigate = useNavigate();
+  const location = useLocation();
   const [showMobileMenu, setShowMobileMenu] = useState(false);
   const userMenuRef = useRef<HTMLDivElement>(null);
   const mobileMenuRef = useRef<HTMLDivElement>(null);
+  // For jobs/talent split
+  const [activeView, setActiveView] = useState<'freelancers' | 'posts'>(view || 'posts');
+
+  useEffect(() => {
+    if (view && view !== activeView) setActiveView(view);
+  }, [view, activeView]);
+
+  // handleViewClick is unused
 
   const defaultAvatar = "https://lh3.googleusercontent.com/aida-public/AB6AXuAqoJDUeuyHNzU9ui9ak-YnGF1h0CW1YoUT5NUt16D51-Q4jOO7prYZvCfBL7KL5PKLep4Z9nZ4nyClJ7UK_vhaorvBJ4WFOFdbID-8eHA18JQOKJRatVWyBuqIavMkoJuLj4vidTzLC_E1qAKiiQqZ_zhTs1iRrmu3AItEh7Jr5dLhq45fp1X5kAaDjZ1NZkExqokokXBfVt3zj5gmz6Wbhz0zp7G46mvk6ZmocNYNT6XoDHlkW2dAjXjtULAl4WaIT_11NLmoGX9V";
 
@@ -99,10 +109,11 @@ const Header: React.FC<HeaderProps> = ({
   };
 
   return (
-    <header className="flex items-center justify-between whitespace-nowrap border border-solid border-slate-200 dark:border-slate-700 px-4 md:px-10 py-3 bg-white dark:bg-slate-900/50 rounded-lg shadow-sm backdrop-blur-sm">
+
+    <header className="flex flex-row items-center justify-between border border-solid border-slate-200 dark:border-slate-700 px-4 md:px-10 py-3 bg-white dark:bg-slate-900/50 rounded-lg shadow-glow-blue backdrop-blur-sm">
       {/* Logo and Title Section */}
       <div className="flex items-center gap-4 text-slate-900 dark:text-slate-50">
-        <div className="w-6 h-6 text-brand-blue flex-shrink-0">
+        <div className="w-6 h-6 text-blue-600 flex-shrink-0">
           <svg fill="none" viewBox="0 0 48 48" xmlns="http://www.w3.org/2000/svg">
             <path
               clipRule="evenodd"
@@ -112,74 +123,55 @@ const Header: React.FC<HeaderProps> = ({
             />
           </svg>
         </div>
-        <h1 className="text-lg font-bold leading-tight tracking-[-0.015em] text-brand-navy-dark dark:text-slate-100">
-          {title}
+        <h1 className="text-lg font-bold leading-tight tracking-[-0.015em] text-slate-900 dark:text-slate-100">
+          FreelanceHub
         </h1>
       </div>
-      
-      {/* Navigation and User Section */}
-      <div className="flex flex-1 justify-end gap-4 md:gap-8 items-center">
-        {/* Desktop Navigation Links */}
-        {showNavigation && (
-          <nav className="hidden md:flex items-center gap-6" aria-label="Main navigation">
-            <a
-              href="#"
-              onClick={(e) => handleNavigationClick('projects', e)}
-              className="text-sm font-medium leading-normal text-brand-navy-dark dark:text-slate-300 hover:text-brand-blue dark:hover:text-brand-blue transition-colors duration-200 flex items-center gap-2"
-            >
-              <span className="material-symbols-outlined text-base">arrow_back</span>
-              Back to Projects
-            </a>
-            <a
-              href="#"
-              onClick={(e) => handleNavigationClick('messages', e)}
-              className="text-sm font-medium leading-normal text-brand-navy-dark dark:text-slate-300 hover:text-brand-blue dark:hover:text-brand-blue transition-colors duration-200 relative flex items-center gap-2"
-            >
-              <span className="material-symbols-outlined text-base">mail</span>
-              Messages
-              {/* Notification Badge */}
-              {hasNewMessages && (
-                <span 
-                  className="absolute -top-1 -right-2 w-2 h-2 bg-red-500 rounded-full animate-pulse" 
-                  aria-label="New messages"
-                />
-              )}
-            </a>
-            <a
-              href="#"
-              onClick={(e) => handleNavigationClick('files', e)}
-              className="text-sm font-medium leading-normal text-brand-navy-dark dark:text-slate-300 hover:text-brand-blue dark:hover:text-brand-blue transition-colors duration-200 flex items-center gap-2"
-            >
-              <span className="material-symbols-outlined text-base">folder</span>
-              Files
-            </a>
-          </nav>
-        )}
 
-        {/* User Avatar with Dropdown */}
+      {/* Main Navigation Tabs */}
+      <nav className="flex flex-wrap gap-2 md:gap-4 items-center bg-white/80 dark:bg-slate-900/60 rounded-xl px-2 py-1 shadow-glow-blue">
+        <button
+          className={`px-4 py-2 rounded-lg font-semibold text-sm transition-all duration-200 ${location.pathname.startsWith('/client-dashboard') ? 'text-blue-600 bg-blue-50 shadow-glow-blue' : 'text-black dark:text-blue hover:text-blue'}`}
+          onClick={() => navigate('/client-dashboard')}
+        >
+          Jobs
+        </button>
+        <button
+          className={`px-4 py-2 rounded-lg font-semibold text-sm transition-all duration-200 ${location.pathname.startsWith('/freelancers') ? 'text-blue-600 bg-blue-50 shadow-glow-blue' : 'text-black dark:text-blue hover:text-blue'}`}
+          onClick={() => navigate('/freelancers')}
+        >
+          Browse Skills
+        </button>
+        <button
+          className={`px-4 py-2 rounded-lg font-semibold text-sm transition-all duration-200 ${location.pathname === '/' ? 'text-blue-600 bg-blue-50 shadow-glow-blue' : 'text-black dark:text-blue hover:text-blue'}`}
+          onClick={() => navigate('/')}
+        >
+          Project Progress
+        </button>
+      </nav>
+
+      {/* User Avatar and Menu */}
+      <div className="flex items-center gap-4">
         <div className="relative" ref={userMenuRef}>
           <button
             onClick={() => setShowUserMenu(!showUserMenu)}
-            className="bg-center bg-no-repeat aspect-square bg-cover rounded-full w-10 h-10 hover:ring-2 hover:ring-brand-blue hover:ring-offset-2 transition-all focus:outline-none focus:ring-2 focus:ring-brand-blue focus:ring-offset-2 relative"
+            className="bg-center bg-no-repeat aspect-square bg-cover rounded-full w-10 h-10 hover:ring-2 hover:ring-blue-600 hover:ring-offset-2 transition-all focus:outline-none focus:ring-2 focus:ring-blue-600 focus:ring-offset-2 relative"
             style={{
-              backgroundImage: `url("${user?.avatar || defaultAvatar}")`
+              backgroundImage: `url(${user?.avatar || defaultAvatar})`
             }}
             aria-label="User menu"
             aria-expanded={showUserMenu}
             aria-haspopup="true"
           >
-            {/* Online status indicator */}
             <span className="absolute bottom-0 right-0 w-3 h-3 bg-green-500 border-2 border-white dark:border-slate-900 rounded-full" />
           </button>
 
-          {/* User Dropdown Menu */}
           {showUserMenu && (
             <div 
-              className="absolute right-0 top-14 z-50 bg-white dark:bg-slate-800 rounded-lg shadow-xl border border-slate-200 dark:border-slate-600 py-2 min-w-[220px] animate-in fade-in slide-in-from-top-2 duration-200"
+              className="absolute right-0 top-14 z-50 bg-white dark:bg-slate-800 rounded-lg shadow-xl border border-slate-200 dark:border-slate-600 py-2 min-w-[220px]"
               role="menu"
               aria-orientation="vertical"
             >
-              {/* User Info */}
               {user && (
                 <div className="px-4 py-3 border-b border-slate-200 dark:border-slate-600">
                   <p className="font-semibold text-slate-900 dark:text-white truncate">
@@ -193,51 +185,44 @@ const Header: React.FC<HeaderProps> = ({
                 </div>
               )}
 
-              {/* Menu Items */}
               <div className="py-1">
                 <button
                   onClick={() => handleMenuAction('profile')}
-                  className="w-full px-4 py-2.5 text-left text-sm hover:bg-slate-100 dark:hover:bg-slate-700 flex items-center gap-3 text-slate-700 dark:text-slate-300 transition-colors"
+                  className="w-full px-4 py-2.5 text-left text-sm hover:bg-slate-100 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 transition-colors"
                   role="menuitem"
                 >
-                  <span className="material-symbols-outlined text-lg">person</span>
-                  <span>View Profile</span>
+                  View Profile
                 </button>
                 <button
                   onClick={() => handleMenuAction('settings')}
-                  className="w-full px-4 py-2.5 text-left text-sm hover:bg-slate-100 dark:hover:bg-slate-700 flex items-center gap-3 text-slate-700 dark:text-slate-300 transition-colors"
+                  className="w-full px-4 py-2.5 text-left text-sm hover:bg-slate-100 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 transition-colors"
                   role="menuitem"
                 >
-                  <span className="material-symbols-outlined text-lg">settings</span>
-                  <span>Settings</span>
+                  Settings
                 </button>
                 <button
                   onClick={handleDarkModeToggle}
-                  className="w-full px-4 py-2.5 text-left text-sm hover:bg-slate-100 dark:hover:bg-slate-700 flex items-center gap-3 text-slate-700 dark:text-slate-300 transition-colors"
+                  className="w-full px-4 py-2.5 text-left text-sm hover:bg-slate-100 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 transition-colors"
                   role="menuitem"
                 >
-                  <span className="material-symbols-outlined text-lg">dark_mode</span>
-                  <span>Toggle Dark Mode</span>
+                  Toggle Dark Mode
                 </button>
                 <button
                   onClick={() => handleMenuAction('help')}
-                  className="w-full px-4 py-2.5 text-left text-sm hover:bg-slate-100 dark:hover:bg-slate-700 flex items-center gap-3 text-slate-700 dark:text-slate-300 transition-colors"
+                  className="w-full px-4 py-2.5 text-left text-sm hover:bg-slate-100 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 transition-colors"
                   role="menuitem"
                 >
-                  <span className="material-symbols-outlined text-lg">help</span>
-                  <span>Help & Support</span>
+                  Help & Support
                 </button>
               </div>
 
-              {/* Logout */}
               <div className="py-1 border-t border-slate-200 dark:border-slate-600">
                 <button
                   onClick={() => handleMenuAction('logout')}
-                  className="w-full px-4 py-2.5 text-left text-sm hover:bg-red-50 dark:hover:bg-red-900/20 flex items-center gap-3 text-red-600 dark:text-red-400 transition-colors"
+                  className="w-full px-4 py-2.5 text-left text-sm hover:bg-red-50 dark:hover:bg-red-900/20 text-red-600 dark:text-red-400 transition-colors"
                   role="menuitem"
                 >
-                  <span className="material-symbols-outlined text-lg">logout</span>
-                  <span>Logout</span>
+                  Logout
                 </button>
               </div>
             </div>
@@ -253,39 +238,35 @@ const Header: React.FC<HeaderProps> = ({
               aria-label="Toggle mobile menu"
               aria-expanded={showMobileMenu}
             >
-              <span className="material-symbols-outlined text-slate-700 dark:text-slate-300">
-                {showMobileMenu ? 'close' : 'menu'}
+              <span className="text-slate-700 dark:text-slate-300 text-2xl">
+                {showMobileMenu ? '✕' : '☰'}
               </span>
             </button>
 
-            {/* Mobile Menu Dropdown */}
             {showMobileMenu && (
-              <div className="absolute right-4 top-20 z-40 bg-white dark:bg-slate-800 rounded-lg shadow-xl border border-slate-200 dark:border-slate-600 py-2 min-w-[200px] animate-in fade-in slide-in-from-top-2 duration-200">
+              <div className="absolute right-4 top-20 z-40 bg-white dark:bg-slate-800 rounded-lg shadow-xl border border-slate-200 dark:border-slate-600 py-2 min-w-[200px]">
                 <a
                   href="#"
                   onClick={(e) => handleNavigationClick('projects', e)}
-                  className="w-full px-4 py-2.5 text-left text-sm hover:bg-slate-100 dark:hover:bg-slate-700 flex items-center gap-3 text-slate-700 dark:text-slate-300 transition-colors"
+                  className="block px-4 py-2.5 text-sm hover:bg-slate-100 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 transition-colors"
                 >
-                  <span className="material-symbols-outlined text-base">arrow_back</span>
                   Back to Projects
                 </a>
                 <a
                   href="#"
                   onClick={(e) => handleNavigationClick('messages', e)}
-                  className="w-full px-4 py-2.5 text-left text-sm hover:bg-slate-100 dark:hover:bg-slate-700 flex items-center gap-3 text-slate-700 dark:text-slate-300 transition-colors relative"
+                  className="block px-4 py-2.5 text-sm hover:bg-slate-100 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 transition-colors relative"
                 >
-                  <span className="material-symbols-outlined text-base">mail</span>
                   Messages
                   {hasNewMessages && (
-                    <span className="ml-auto w-2 h-2 bg-red-500 rounded-full animate-pulse" />
+                    <span className="ml-2 w-2 h-2 bg-red-500 rounded-full animate-pulse inline-block" />
                   )}
                 </a>
                 <a
                   href="#"
                   onClick={(e) => handleNavigationClick('files', e)}
-                  className="w-full px-4 py-2.5 text-left text-sm hover:bg-slate-100 dark:hover:bg-slate-700 flex items-center gap-3 text-slate-700 dark:text-slate-300 transition-colors"
+                  className="block px-4 py-2.5 text-sm hover:bg-slate-100 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 transition-colors"
                 >
-                  <span className="material-symbols-outlined text-base">folder</span>
                   Files
                 </a>
               </div>

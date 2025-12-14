@@ -8,10 +8,14 @@ interface PhaseDetailsProps {
   phase: Phase;
   onClose?: () => void;
   onEdit?: () => void;
+  onDelete?: () => void; 
   canEdit?: boolean;
 }
-const PhaseDetails: FC<PhaseDetailsProps> = ({ phase, onClose, onEdit, canEdit = false }) => {
+const PhaseDetails: FC<PhaseDetailsProps> = ({ phase, onClose, onEdit, onDelete, canEdit = false }) => {
   const [todos, setTodos] = useState<Todo[]>(phase.todos);
+  
+
+  
 
   // Sync todos with phase when phase changes
   useEffect(() => {
@@ -114,6 +118,17 @@ const PhaseDetails: FC<PhaseDetailsProps> = ({ phase, onClose, onEdit, canEdit =
             </div>
             
             <div className="flex items-center gap-2">
+              {canEdit && onEdit && (
+                  <button
+                    onClick={onDelete}
+                    className="flex items-center gap-2 px-4 py-2 bg-brand-blue text-white rounded-lg hover:bg-blue-600 transition-colors"
+                    aria-label="Delete phase"
+                    title="Delete phase details"
+                  >
+                    <span className="material-symbols-outlined text-sm">edit</span>
+                    <span className="text-sm font-medium">Delete phase</span>
+                  </button>
+              )}
               {canEdit && onEdit && (
                 <button
                   onClick={onEdit}

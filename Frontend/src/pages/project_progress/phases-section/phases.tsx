@@ -4,7 +4,7 @@ import AddPhaseModal from './components/AddPhaseModal';
 import EditPhaseModal from './components/EditPhaseModal';
 import type { Phase } from './types/project';
 import { useState } from 'react';
-import { usePhasesContext, PhasesProvider } from './hooks/PhasesContext';
+import { usePhasesContext, PhasesProvider } from './context/PhasesContext';
 import './styles/phases_styles.css';
 
 
@@ -283,6 +283,7 @@ const PhasesPageContent = () => {
           phase={selectedPhase}
           onClose={() => setSelectedPhase(null)}
           onEdit={() => handleEditPhase(selectedPhase)}
+          onDelete={() => handleDeletePhase(selectedPhase.id)}
           canEdit={canEditPhases}
         />
       )}
