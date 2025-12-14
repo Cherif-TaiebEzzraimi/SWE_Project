@@ -1,5 +1,5 @@
 import React, { useRef, useState, useRef as useReactRef } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
 import { categoriesWithSkills } from '../components/categories';
 import { usePosts } from '../context/PostsContext';
 
@@ -9,12 +9,15 @@ const MAX_FILE_SIZE_MB = 25;
 
 
   const AddPostPage: React.FC<{ onClose?: () => void }> = ({ onClose }) => {
+  const location = useLocation();
+  const directHire = location.state?.directHire;
+  const directFreelancer = location.state?.freelancer;
   const navigate = useNavigate();
   const USER_ID = 1; // Simulate logged-in user ID (should match dashboard)
   const { addPost, updatePost, deletePost, editingPost, clearEdit } = usePosts();
   const [errors, setErrors] = useState<{[key:string]: string}>({});
   const formRef = useReactRef<HTMLFormElement>(null);
-  const [title, setTitle] = useState(editingPost ? editingPost.title : '');
+  const [title, setTitle] = useState(editingPost ? editingPost.title : (directHire && directFreelancer ? `Direct Hire: ${directFreelancer.name}` : ''));
   const [category, setCategory] = useState(editingPost ? editingPost.category : '');
   const [budgetMin, setBudgetMin] = useState(editingPost ? String(editingPost.minPrice) : '');
   const [budgetMax, setBudgetMax] = useState(editingPost ? String(editingPost.maxPrice) : '');
@@ -25,7 +28,7 @@ const MAX_FILE_SIZE_MB = 25;
   // Reset form fields to blank when editingPost becomes null (e.g., after Discard)
   React.useEffect(() => {
     if (!editingPost) {
-      setTitle('');
+      setTitle(directHire && directFreelancer ? `Direct Hire: ${directFreelancer.name}` : '');
       setCategory('');
       setBudgetMin('');
       setBudgetMax('');
@@ -127,6 +130,15 @@ const MAX_FILE_SIZE_MB = 25;
         userId: editingPost.userId,
       });
       clearEdit();
+      setTitle('');
+      setCategory('');
+      setBudgetMin('');
+      setBudgetMax('');
+      setDescription('');
+      setFiles([]);
+      setNeededSkills([]);
+      setErrors({});
+      navigate('/client-dashboard');
     } else {
       addPost({
         title,
@@ -139,16 +151,20 @@ const MAX_FILE_SIZE_MB = 25;
         applicants: [],
         userId: USER_ID,
       });
+      setTitle('');
+      setCategory('');
+      setBudgetMin('');
+      setBudgetMax('');
+      setDescription('');
+      setFiles([]);
+      setNeededSkills([]);
+      setErrors({});
+      if (directHire && directFreelancer) {
+        navigate('/project-progress', { state: { directHire: true, freelancer: directFreelancer, post: { title, category, minPrice: Number(budgetMin), maxPrice: Number(budgetMax), description, requirements: neededSkills } } });
+      } else {
+        navigate('/client-dashboard');
+      }
     }
-    setTitle('');
-    setCategory('');
-    setBudgetMin('');
-    setBudgetMax('');
-    setDescription('');
-    setFiles([]);
-    setNeededSkills([]);
-    setErrors({});
-    navigate('/client-dashboard');
   };
 
 

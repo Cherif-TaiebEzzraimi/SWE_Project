@@ -1,5 +1,5 @@
-
 import React, { useState } from 'react';
+import ConfirmModal from '../components/ConfirmModal';
 import { categoriesWithSkills as allCategoriesWithSkills } from '../components/categories';
 import { useNavigate } from 'react-router-dom';
 import { usePosts } from '../context/PostsContext';
@@ -18,8 +18,10 @@ const Dashboard: React.FC = () => {
   const [view, setView] = useState<'freelancers' | 'posts'>('posts');
   const [userType, setUserType] = useState<'client' | 'freelancer'>('client');
   const [userId] = useState<number>(1); // Simulate logged-in user ID
-  const { posts, startEdit } = usePosts();
+  const { posts, startEdit, updatePost } = usePosts();
   const navigate = useNavigate();
+  // Modal state for confirmation dialogs
+  const [modal, setModal] = useState<{ open: boolean; action: null | 'refuse' | 'accept' | 'hire' | 'apply'; post?: any; applicant?: any; freelancer?: any }>({ open: false, action: null });
 
   const filteredFreelancers = selectedCategory === 'All'
     ? freelancers
@@ -47,8 +49,8 @@ const Dashboard: React.FC = () => {
           F
         </button>
       </div>
-      {/* Floating Add Post Button (client only) */}
-      {userType === 'client' && (
+      {/* Floating Add Post Button (client only, not visible in freelancers view) */}
+      {userType === 'client' && view !== 'freelancers' && (
         <button
           className="fixed bottom-8 left-1/2 -translate-x-1/2 z-40 w-24 h-24 flex items-center justify-center rounded-xl bg-blue-600 text-white shadow-lg hover:bg-blue-700 transition-all duration-200 focus:outline-none focus:ring-4 focus:ring-blue-200"
           onClick={() => navigate('/client-dashboard/addPost')}
@@ -79,14 +81,12 @@ const Dashboard: React.FC = () => {
 
       {/* Elegant tab buttons (show freelancers tab only for client) */}
       <div className="flex flex-col sm:flex-row gap-4 mb-6 items-center justify-center">
-        { (
-          <button
-            className={`px-3 py-1.5 rounded-md font-semibold text-xs shadow border-2 transition-all duration-200 ${view === 'freelancers' ? 'bg-blue-700 text-white border-blue-500 shadow-lg' : 'bg-white dark:bg-blue-900/60 text-blue-700 border-blue-200 dark:border-blue-700 hover:bg-blue-50'}`}
-            onClick={() => setView('freelancers')}
-          >
-            Freelancers
-          </button>
-        )}
+        <button
+          className={`px-3 py-1.5 rounded-md font-semibold text-xs shadow border-2 transition-all duration-200 ${view === 'freelancers' ? 'bg-blue-700 text-white border-blue-500 shadow-lg' : 'bg-white dark:bg-blue-900/60 text-blue-700 border-blue-200 dark:border-blue-700 hover:bg-blue-50'}`}
+          onClick={() => setView('freelancers')}
+        >
+          Freelancers
+        </button>
         <button
           className={`px-3 py-1.5 rounded-md font-semibold text-xs shadow border-2 transition-all duration-200 ${view === 'posts' ? 'bg-blue-700 text-white border-blue-500 shadow-lg' : 'bg-white dark:bg-blue-900/60 text-blue-700 border-blue-200 dark:border-blue-700 hover:bg-blue-50'}`}
           onClick={() => setView('posts')}
@@ -141,12 +141,15 @@ const Dashboard: React.FC = () => {
                 {/* Action buttons */}
                 <div className="flex gap-3 mt-10 justify-center w-full">
                   {userType === 'client' && (
-                    <button className="flex-1 px-5 py-2 rounded-lg border-2 border-blue-600 text-blue-700 font-bold text-sm shadow-sm bg-white transition-all duration-300 hover:bg-blue-50 hover:text-blue-800 hover:border-blue-700 hover:shadow-[0_0_0_3px_#e0e7ff] focus:outline-none focus:ring-2 focus:ring-blue-300">Hire Now</button>
+                    <button
+                      className="flex-1 px-5 py-2 rounded-lg border-2 border-blue-600 text-blue-700 font-bold text-sm shadow-sm bg-white transition-all duration-300 hover:bg-blue-50 hover:text-blue-800 hover:border-blue-700 hover:shadow-[0_0_0_3px_#e0e7ff] focus:outline-none focus:ring-2 focus:ring-blue-300"
+                      onClick={() => setModal({ open: true, action: 'hire', freelancer: f })}
+                    >
+                      Hire Now
+                    </button>
                   )}
                   <button className="flex-1 px-5 py-2 rounded-lg text-blue-700 font-bold text-sm shadow-sm bg-white transition-all duration-300 hover:bg-blue-50 hover:text-blue-800 hover:shadow-[0_0_0_3px_#e0e7ff] focus:outline-none focus:ring-2 focus:ring-blue-300">View Profile</button>
                 </div>
-                {/* Only border and glow on hover, no color overlay */}
-                {/* Removed color overlay for a cleaner hover effect */}
               </div>
             ))
           )
@@ -190,7 +193,31 @@ const Dashboard: React.FC = () => {
                   )}
                   {/* Apply Now only for freelancers */}
                   {userType === 'freelancer' && (
-                    <button className="px-5 py-2 rounded-lg border-2 border-blue-600 text-blue-700 font-bold text-sm shadow-sm bg-white transition-all duration-300 hover:bg-blue-50 hover:text-blue-800 hover:border-blue-700 hover:shadow-[0_0_0_3px_#e0e7ff] focus:outline-none focus:ring-2 focus:ring-blue-300">Apply Now</button>
+                    (() => {
+                      // Simulate logged-in freelancer
+                      const freelancer = { id: 999, name: 'Current Freelancer', avatar: 'https://randomuser.me/api/portraits/men/99.jpg' };
+                      const alreadyApplied = (p.applicants || []).some((a: any) => a.id === freelancer.id);
+                      if (alreadyApplied) {
+                        return (
+                          <button
+                            className="px-5 py-2 rounded-lg border-2 border-red-600 text-red-700 font-bold text-sm shadow-sm bg-white transition-all duration-300 hover:bg-red-50 hover:text-red-800 hover:border-red-700 hover:shadow-[0_0_0_3px_#fee2e2] focus:outline-none focus:ring-2 focus:ring-red-300"
+                            title="Cancel Application"
+                            onClick={() => setModal({ open: true, action: 'refuse', post: p, applicant: freelancer })}
+                          >
+                            × Cancel Application
+                          </button>
+                        );
+                      } else {
+                        return (
+                          <button
+                            className="px-5 py-2 rounded-lg border-2 border-blue-600 text-blue-700 font-bold text-sm shadow-sm bg-white transition-all duration-300 hover:bg-blue-50 hover:text-blue-800 hover:border-blue-700 hover:shadow-[0_0_0_3px_#e0e7ff] focus:outline-none focus:ring-2 focus:ring-blue-300"
+                            onClick={() => setModal({ open: true, action: 'apply', post: p, applicant: freelancer })}
+                          >
+                            Apply Now
+                          </button>
+                        );
+                      }
+                    })()
                   )}
                 </div>
                 {/* Applicants section */}
@@ -202,6 +229,24 @@ const Dashboard: React.FC = () => {
                         <div key={app.id} className="flex items-center gap-2 bg-blue-100 border border-blue-100 rounded-full px-3 py-1">
                           <img src={app.avatar} alt={app.name} className="w-8 h-8 rounded-full object-cover border-2 border-blue-100" />
                           <span className="text-xs font-semibold text-blue-900">{app.name}</span>
+                          {/* Accept button for post owner */}
+                          {userType === 'client' && userId === (p as any).userId && (
+                            <>
+                              <button
+                                className="ml-2 px-3 py-1 rounded bg-green-600 text-white text-xs font-semibold shadow hover:bg-green-700 transition"
+                                onClick={() => setModal({ open: true, action: 'accept', post: p, applicant: app })}
+                              >
+                                Accept
+                              </button>
+                              <button
+                                className="ml-2 px-2 py-1 rounded bg-red-500 text-white text-xs font-bold shadow hover:bg-red-700 transition"
+                                title="Refuse applicant"
+                                onClick={() => setModal({ open: true, action: 'refuse', post: p, applicant: app })}
+                              >
+                                ×
+                              </button>
+                            </>
+                          )}
                         </div>
                       ))}
                     </div>
@@ -213,7 +258,50 @@ const Dashboard: React.FC = () => {
         )}
       </div>
 
-      {/* Add Offer Modal removed: now handled as a full page */}
+      {/* Confirmation Modal */}
+      <ConfirmModal
+        open={modal.open}
+        title={
+          modal.action === 'refuse' ? 'Refuse Applicant'
+          : modal.action === 'accept' ? 'Accept Applicant'
+          : modal.action === 'hire' ? 'Hire Freelancer'
+          : modal.action === 'apply' ? 'Apply for Job'
+          : 'Confirmation'}
+        message={
+          modal.action === 'refuse' ? 'Are you sure you want to refuse this freelancer?'
+          : modal.action === 'accept' ? 'Are you sure you want to accept this applicant?'
+          : modal.action === 'hire' ? 'Are you sure you want to hire this freelancer?'
+          : modal.action === 'apply' ? 'Are you sure you want to apply for this job?'
+          : ''
+        }
+        confirmText={
+          modal.action === 'refuse' ? 'Refuse'
+          : modal.action === 'accept' ? 'Accept'
+          : modal.action === 'hire' ? 'Hire'
+          : modal.action === 'apply' ? 'Apply'
+          : 'Confirm'}
+        cancelText="Cancel"
+        onCancel={() => setModal({ open: false, action: null })}
+        onConfirm={() => {
+          if (modal.action === 'refuse' && modal.post && modal.applicant) {
+            const updatedApplicants = (modal.post.applicants || []).filter((a: any) => a.id !== modal.applicant.id);
+            updatePost(modal.post.id, { ...modal.post, applicants: updatedApplicants });
+          }
+          if (modal.action === 'accept' && modal.post && modal.applicant) {
+            navigate('/project-progress', { state: { projectId: modal.post.id, applicant: modal.applicant } });
+          }
+          if (modal.action === 'hire' && modal.freelancer) {
+            navigate('/client-dashboard/addPost', { state: { directHire: true, freelancer: modal.freelancer } });
+          }
+          if (modal.action === 'apply' && modal.post && modal.applicant) {
+            const applicants = modal.post.applicants || [];
+            if (!applicants.some((a: any) => a.id === modal.applicant.id)) {
+              updatePost(modal.post.id, { ...modal.post, applicants: [...applicants, modal.applicant] });
+            }
+          }
+          setModal({ open: false, action: null });
+        }}
+      />
     </div>
   );
 };

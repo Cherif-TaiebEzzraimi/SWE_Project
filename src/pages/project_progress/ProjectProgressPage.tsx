@@ -1,11 +1,14 @@
 // src/pages/project_progress/ProjectProgressPage.tsx
 import { useState } from 'react';
+import { useLocation } from 'react-router-dom';
 import TabNavigation from '../../components/TabNavigation';
 import  PhasesPage from './phases-section/phases'
 import '../../styles/index.css';
 
 const ProjectProgressPage = () => {
   const [activeTab, setActiveTab] = useState<'overview' | 'phases' | 'notes'>('phases');
+  const location = useLocation();
+  const projectState = location.state || {};
 
 
   return (
@@ -27,9 +30,21 @@ const ProjectProgressPage = () => {
                 {activeTab === 'overview' && (
                   <div className="overview-content">
                     <div className="border-2 border-blue-500 shadow-[0_0_7px_3px_rgba(30,70,206,0.1)] dark:bg-blue-900 p-6 rounded-lg">
-                      <p className="text-slate-500 dark:text-slate-400">
-                        Overview section - to be implemented
-                      </p>
+                      <h2 className="text-2xl font-bold mb-4 text-blue-700">Project Details</h2>
+                      {projectState.projectId && (
+                        <div className="mb-2 text-slate-700 dark:text-slate-200">
+                          <div><span className="font-semibold">Project ID:</span> {projectState.projectId}</div>
+                          {projectState.applicant && (
+                            <div className="mt-2">
+                              <span className="font-semibold">Chosen Applicant:</span> {projectState.applicant.name}
+                              <img src={projectState.applicant.avatar} alt={projectState.applicant.name} className="inline-block ml-2 w-8 h-8 rounded-full border" />
+                            </div>
+                          )}
+                        </div>
+                      )}
+                      {!projectState.projectId && (
+                        <p className="text-slate-500 dark:text-slate-400">No project details available.</p>
+                      )}
                     </div>
                   </div>
                 )}
