@@ -1,0 +1,81 @@
+/* Colors used */
+:root {
+  --off-white: #f1f5f9;
+  --white: #ffffff;
+  --dark-blue: #172554;
+  --real-blue: #1e3a8a;
+  --bright-blue: #0a65f1;
+  --light-teal: #e0f8fb;
+  --dark-teal: #49cfe0;
+  --dark-red: #b91c1c;
+  --light-red: #e7b5b5;
+}
+
+.navbar {
+  width: 100%;
+  padding: 1rem 2rem;
+  background-color: var(--off-white);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  border-bottom: 2px solid var(--light-teal);
+}
+
+.navbar-logo {
+  font-size: 1.5rem;
+  color: var(--dark-blue);
+}
+
+.navbar-links {
+  display: flex;
+  gap: 2rem;
+}
+
+.navbar-links a {
+  text-decoration: none;
+  color: var(--dark-blue);
+  font-weight: 500;
+  transition: 0.3s;
+}
+
+.navbar-links a:hover {
+  color: var(--dark-teal);
+  /* real-blue */
+}
+
+.navbar-actions {
+  display: flex;
+  gap: 1rem;
+}
+
+.login-btn {
+  padding: 0.5rem 1.1rem;
+  background-color: transparent;
+  color: var(--dark-blue);
+  border: 2px solid var(--dark-blue);
+  border-radius: 6px;
+  cursor: pointer;
+  font-weight: 600;
+  transition: 0.3s;
+}
+
+.login-btn:hover {
+  background-color: var(--light-teal);
+  border-color: var(--dark-teal);
+  color: var(--real-blue);
+}
+
+.signup-btn {
+  padding: 0.5rem 1.2rem;
+  background-color: var(--real-blue);
+  color: var(--white);
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+  font-weight: 600;
+  transition: 0.3s;
+}
+
+.signup-btn:hover {
+  background-color: var(--dark-teal);
+}
