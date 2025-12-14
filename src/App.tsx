@@ -52,12 +52,14 @@ function MainAppSections({ section }: { section: 'project-progress' | 'client-da
   return (
     <div className="app min-h-screen bg-background-light dark:bg-background-dark">
       <Header
-        section={section}
-        onSectionChange={(s: string) => {
-          if (s === 'project-progress') navigate('/');
-          else if (s === 'client-dashboard') navigate('/client-dashboard');
-          else if (s === 'freelancer-dashboard') navigate('/freelancer-dashboard');
-        }}
+        {...({
+          section,
+          onSectionChange: (s: string) => {
+            if (s === 'project-progress') navigate('/');
+            else if (s === 'client-dashboard') navigate('/client-dashboard');
+            else if (s === 'freelancer-dashboard') navigate('/freelancer-dashboard');
+          },
+        } as any)}
       />
       <main>
         {content}

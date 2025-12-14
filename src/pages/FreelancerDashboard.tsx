@@ -5,12 +5,14 @@ import { categoriesWithSkills } from '../components/categories';
 const jobOffers = [
   { id: 1, title: 'React App Needed', category: 'Development & IT', description: 'Build a modern React app for our startup.', price: 400, status: 'open' },
   { id: 2, title: 'Logo Design', category: 'Design & Creative', description: 'Design a logo for a new brand.', price: 120, status: 'open' },
+ 
 ];
 
 const works = [
   { id: 1, title: 'Landing Page', status: 'done', price: 200 },
   { id: 2, title: 'E-commerce App', status: 'in progress', price: 800 },
   { id: 3, title: 'Branding Project', status: 'in negotiation', price: 150 },
+  
 ];
 
 const statusColors = {

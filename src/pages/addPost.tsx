@@ -21,6 +21,13 @@ const MAX_FILE_SIZE_MB = 25;
   const [category, setCategory] = useState(
     editingPost ? editingPost.category : (directHire && directFreelancer ? directFreelancer.category : '')
   );
+
+  // Ensure category is set to freelancer's category on direct hire
+  React.useEffect(() => {
+    if (!editingPost && directHire && directFreelancer && directFreelancer.category && category !== directFreelancer.category) {
+      setCategory(directFreelancer.category);
+    }
+  }, [directHire, directFreelancer, editingPost]);
   const [budgetMin, setBudgetMin] = useState(editingPost ? String(editingPost.minPrice) : '');
   const [budgetMax, setBudgetMax] = useState(editingPost ? String(editingPost.maxPrice) : '');
   const [description, setDescription] = useState(editingPost ? editingPost.description : '');
@@ -31,7 +38,7 @@ const MAX_FILE_SIZE_MB = 25;
   React.useEffect(() => {
     if (!editingPost) {
       setTitle(directHire && directFreelancer ? `Direct Hire: ${directFreelancer.name}` : '');
-      setCategory('');
+      setCategory(directHire && directFreelancer ? directFreelancer.category : '');
       setBudgetMin('');
       setBudgetMax('');
       setDescription('');
@@ -39,7 +46,7 @@ const MAX_FILE_SIZE_MB = 25;
       setNeededSkills([]);
       setErrors({});
     }
-  }, [editingPost]);
+  }, [editingPost, directHire, directFreelancer]);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   // Get skills for selected category

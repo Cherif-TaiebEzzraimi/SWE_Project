@@ -221,14 +221,31 @@ const Dashboard: React.FC = () => {
                     {/* Applicants section */}
                     {p.applicants && p.applicants.length > 0 && (
                       <div className="mt-2 border-t border-blue-100 pt-2">
-                        <div className="flex -space-x-2 items-center">
-                          {p.applicants.slice(0, 4).map((app: any) => (
-                            <img key={app.id} src={app.avatar} alt={app.name} className="w-7 h-7 rounded-full border-2 border-white dark:border-slate-900 shadow -ml-2 first:ml-0" title={app.name} />
+                        <div className="flex flex-col gap-2">
+                          {p.applicants.map((app: any) => (
+                            <div key={app.id} className="flex items-center gap-2 group/applicant">
+                              <img src={app.avatar} alt={app.name} className="w-7 h-7 rounded-full border-2 border-white dark:border-slate-900 shadow" title={app.name} />
+                              <span className="text-xs text-slate-700 dark:text-slate-200 font-medium mr-2">{app.name}</span>
+                              {userType === 'client' && userId === (p as any).userId && (
+                                <>
+                                  <button
+                                    className="ml-1 w-6 h-6 flex items-center justify-center border border-blue-400 text-blue-500 rounded-full hover:bg-blue-50 transition-colors text-base focus:outline-none"
+                                    title="Accept"
+                                    onClick={() => setModal({ open: true, action: 'accept', post: p, applicant: app })}
+                                  >
+                                    <span className="material-symbols-outlined text-[18px]">check</span>
+                                  </button>
+                                  <button
+                                    className="ml-1 w-6 h-6 flex items-center justify-center border border-red-400 text-red-500 rounded-full hover:bg-red-50 transition-colors text-base focus:outline-none"
+                                    title="Refuse"
+                                    onClick={() => setModal({ open: true, action: 'refuse', post: p, applicant: app })}
+                                  >
+                                    <span className="material-symbols-outlined text-[18px]">close</span>
+                                  </button>
+                                </>
+                              )}
+                            </div>
                           ))}
-                          {p.applicants.length > 4 && (
-                            <span className="ml-2 text-xs text-slate-500">+{p.applicants.length - 4} more</span>
-                          )}
-                          {/* Minimal accept/refuse for owner: show only on hover or as icon buttons if needed */}
                         </div>
                       </div>
                     )}
