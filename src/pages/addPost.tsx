@@ -17,8 +17,10 @@ const MAX_FILE_SIZE_MB = 25;
   const { addPost, updatePost, deletePost, editingPost, clearEdit } = usePosts();
   const [errors, setErrors] = useState<{[key:string]: string}>({});
   const formRef = useReactRef<HTMLFormElement>(null);
-  const [title, setTitle] = useState(editingPost ? editingPost.title : (directHire && directFreelancer ? `Direct Hire: ${directFreelancer.name}` : ''));
-  const [category, setCategory] = useState(editingPost ? editingPost.category : '');
+  const [title, setTitle] = useState(editingPost ? editingPost.title : '');
+  const [category, setCategory] = useState(
+    editingPost ? editingPost.category : (directHire && directFreelancer ? directFreelancer.category : '')
+  );
   const [budgetMin, setBudgetMin] = useState(editingPost ? String(editingPost.minPrice) : '');
   const [budgetMax, setBudgetMax] = useState(editingPost ? String(editingPost.maxPrice) : '');
   const [description, setDescription] = useState(editingPost ? editingPost.description : '');
@@ -183,7 +185,11 @@ const MAX_FILE_SIZE_MB = 25;
           <span className="material-symbols-outlined text-2xl text-gray-600 dark:text-slate-300">close</span>
         </button>
         <h1 className="text-4xl font-black text-center mb-8 text-[#0a66f0] dark:text-white drop-shadow-[0_0_12px_rgba(10,102,240,0.25)]">
-          {editingPost ? 'Edit Post' : 'Create a New Post'}
+          {directHire && directFreelancer
+            ? `Direct Hire: ${directFreelancer.name}`
+            : editingPost
+            ? 'Edit Post'
+            : 'Create a New Post'}
         </h1>
         {/* Title Field */}
         <div>
@@ -205,18 +211,27 @@ const MAX_FILE_SIZE_MB = 25;
           <label className="block text-lg font-bold text-[#0a66f0] dark:text-white mb-2">
             Category <span className="text-red-500">*</span>
           </label>
-          <select
-            className="w-full rounded-lg border border-gray-200 dark:border-slate-600 bg-[#f5f7f8] dark:bg-[#101722] text-[#425466] dark:text-slate-400 focus:ring-2 focus:ring-blue-500/50 focus:outline-none p-4 text-base transition-all"
-            value={category}
-            onChange={e => setCategory(e.target.value)}
-            required
-            data-error={!!errors.category}
-          >
-            <option value="">Select category</option>
-            {categoriesWithSkills.map(cat => (
-              <option key={cat.category} value={cat.category}>{cat.category}</option>
-            ))}
-          </select>
+          {directHire && directFreelancer ? (
+            <input
+              className="w-full rounded-lg border border-gray-200 dark:border-slate-600 bg-[#f5f7f8] dark:bg-[#101722] text-[#425466] dark:text-slate-400 p-4 text-base transition-all"
+              value={category}
+              disabled
+              readOnly
+            />
+          ) : (
+            <select
+              className="w-full rounded-lg border border-gray-200 dark:border-slate-600 bg-[#f5f7f8] dark:bg-[#101722] text-[#425466] dark:text-slate-400 focus:ring-2 focus:ring-blue-500/50 focus:outline-none p-4 text-base transition-all"
+              value={category}
+              onChange={e => setCategory(e.target.value)}
+              required
+              data-error={!!errors.category}
+            >
+              <option value="">Select category</option>
+              {categoriesWithSkills.map(cat => (
+                <option key={cat.category} value={cat.category}>{cat.category}</option>
+              ))}
+            </select>
+          )}
           {errors.category && <div className="text-red-600 text-sm mt-1">{errors.category}</div>}
         </div>
         {/* Needed Skills Field */}
@@ -351,7 +366,7 @@ const MAX_FILE_SIZE_MB = 25;
             type="submit"
             className="px-8 py-2 rounded-lg font-bold text-base bg-[#0a65f1] text-white shadow-[0_0_15px_rgba(10,101,241,0.4)] border-2 border-blue-200 hover:bg-blue-800 transition-all duration-200"
           >
-            Publish Post
+            {directHire && directFreelancer ? 'Confirm' : 'Publish Post'}
           </button>
         </div>
       </form>

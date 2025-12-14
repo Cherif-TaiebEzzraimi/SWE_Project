@@ -226,9 +226,9 @@ const Dashboard: React.FC = () => {
                     <div className="font-semibold text-xs text-blue-700 mb-1">Applicants:</div>
                     <div className="flex flex-wrap gap-3">
                       {p.applicants.map((app: any) => (
-                        <div key={app.id} className="flex items-center gap-2 bg-blue-100 border border-blue-100 rounded-full px-3 py-1">
-                          <img src={app.avatar} alt={app.name} className="w-8 h-8 rounded-full object-cover border-2 border-blue-100" />
-                          <span className="text-xs font-semibold text-blue-900">{app.name}</span>
+                        <div key={app.id} className="flex items-center gap-2 bg-[#e0f8fb] border border-[#49cfe0] rounded-full px-3 py-1">
+                          <img src={app.avatar} alt={app.name} className="w-8 h-8 rounded-full object-cover border-2 border-[#b91c1c]" />
+                          <span className="text-xs font-semibold text-[#172554]">{app.name}</span>
                           {/* Accept button for post owner */}
                           {userType === 'client' && userId === (p as any).userId && (
                             <>
