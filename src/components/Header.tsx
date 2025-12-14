@@ -1,5 +1,6 @@
 // src/components/Header.tsx
 import { useState, useRef, useEffect } from 'react';
+import { useNavigate, useLocation } from 'react-router-dom';
 
 interface User {
   name: string;
@@ -8,40 +9,40 @@ interface User {
 }
 
 interface HeaderProps {
-  /** Optional custom title for the header */
   title?: string;
-  /** Optional callback when navigation items are clicked */
   onNavigate?: (target: 'projects' | 'messages' | 'files') => void;
-  /** Optional user data */
   user?: User;
-  /** Show navigation links */
   showNavigation?: boolean;
-  /** Indicates if there are new messages */
   hasNewMessages?: boolean;
-  /** Optional callback for dark mode toggle */
   onToggleDarkMode?: () => void;
+  view?: 'freelancers' | 'posts';
+  onViewChange?: (view: 'freelancers' | 'posts') => void;
 }
 
 const Header = ({
-  title = 'Platform',
+  title = 'Platform', // unused
   onNavigate,
   user,
   showNavigation = true,
   hasNewMessages = false,
   onToggleDarkMode,
-  section = 'project-progress',
-  onSectionChange
-}: HeaderProps & { section?: string, onSectionChange?: (section: string) => void }) => {
+  view,
+  onViewChange
+}: HeaderProps) => {
   const [showUserMenu, setShowUserMenu] = useState(false);
+  const navigate = useNavigate();
+  const location = useLocation();
   const [showMobileMenu, setShowMobileMenu] = useState(false);
   const userMenuRef = useRef<HTMLDivElement>(null);
   const mobileMenuRef = useRef<HTMLDivElement>(null);
-  const [activeSection, setActiveSection] = useState<string>(section || 'project-progress');
+  // For jobs/talent split
+  const [activeView, setActiveView] = useState<'freelancers' | 'posts'>(view || 'posts');
 
-  const handleSectionClick = (sec: string) => {
-    setActiveSection(sec);
-    if (onSectionChange) onSectionChange(sec);
-  };
+  useEffect(() => {
+    if (view && view !== activeView) setActiveView(view);
+  }, [view, activeView]);
+
+  // handleViewClick is unused
 
   const defaultAvatar = "https://lh3.googleusercontent.com/aida-public/AB6AXuAqoJDUeuyHNzU9ui9ak-YnGF1h0CW1YoUT5NUt16D51-Q4jOO7prYZvCfBL7KL5PKLep4Z9nZ4nyClJ7UK_vhaorvBJ4WFOFdbID-8eHA18JQOKJRatVWyBuqIavMkoJuLj4vidTzLC_E1qAKiiQqZ_zhTs1iRrmu3AItEh7Jr5dLhq45fp1X5kAaDjZ1NZkExqokokXBfVt3zj5gmz6Wbhz0zp7G46mvk6ZmocNYNT6XoDHlkW2dAjXjtULAl4WaIT_11NLmoGX9V";
 
@@ -108,7 +109,8 @@ const Header = ({
   };
 
   return (
-    <header className="flex flex-row items-center justify-between border border-solid border-slate-200 dark:border-slate-700 px-4 md:px-10 py-3 bg-white dark:bg-slate-900/50 rounded-lg shadow-sm backdrop-blur-sm">
+
+    <header className="flex flex-row items-center justify-between border border-solid border-slate-200 dark:border-slate-700 px-4 md:px-10 py-3 bg-white dark:bg-slate-900/50 rounded-lg shadow-glow-blue backdrop-blur-sm">
       {/* Logo and Title Section */}
       <div className="flex items-center gap-4 text-slate-900 dark:text-slate-50">
         <div className="w-6 h-6 text-blue-600 flex-shrink-0">
@@ -122,29 +124,34 @@ const Header = ({
           </svg>
         </div>
         <h1 className="text-lg font-bold leading-tight tracking-[-0.015em] text-slate-900 dark:text-slate-100">
-          {title}
+          FreelanceHub
         </h1>
       </div>
-      {/* User Avatar, Dashboard, and Project Progress links */}
-      <div className="flex items-center gap-6">
-        {/* Section Navigation Tabs */}
-      <div className="flex flex-wrap gap-2 md:gap-4 items-center">
+
+      {/* Main Navigation Tabs */}
+      <nav className="flex flex-wrap gap-2 md:gap-4 items-center bg-white/80 dark:bg-slate-900/60 rounded-xl px-2 py-1 shadow-glow-blue">
         <button
-          className={`px-4 py-2 rounded-lg font-semibold text-sm transition ${activeSection === 'project-progress' ? ' text-blue-600' : '  text-black dark:text-blue  hover:text-blue'}`}
-          style={{ minWidth: 150 }}
-          onClick={() => handleSectionClick('project-progress')}
+          className={`px-4 py-2 rounded-lg font-semibold text-sm transition-all duration-200 ${location.pathname.startsWith('/client-dashboard') ? 'text-blue-600 bg-blue-50 shadow-glow-blue' : 'text-black dark:text-blue hover:text-blue'}`}
+          onClick={() => navigate('/client-dashboard')}
+        >
+          Jobs
+        </button>
+        <button
+          className={`px-4 py-2 rounded-lg font-semibold text-sm transition-all duration-200 ${location.pathname.startsWith('/freelancers') ? 'text-blue-600 bg-blue-50 shadow-glow-blue' : 'text-black dark:text-blue hover:text-blue'}`}
+          onClick={() => navigate('/freelancers')}
+        >
+          Browse Skills
+        </button>
+        <button
+          className={`px-4 py-2 rounded-lg font-semibold text-sm transition-all duration-200 ${location.pathname === '/' ? 'text-blue-600 bg-blue-50 shadow-glow-blue' : 'text-black dark:text-blue hover:text-blue'}`}
+          onClick={() => navigate('/')}
         >
           Project Progress
         </button>
-        <button
-          className={`px-4 py-2 rounded-lg font-semibold text-sm transition ${activeSection === 'client-dashboard' ? ' text-blue-600' : '  text-black dark:text-blue  hover:text-blue'}`}
-          style={{ minWidth: 150 }}
-          onClick={() => handleSectionClick('client-dashboard')}
-        >
-          Dashboard
-        </button>
-        
-      </div>
+      </nav>
+
+      {/* User Avatar and Menu */}
+      <div className="flex items-center gap-4">
         <div className="relative" ref={userMenuRef}>
           <button
             onClick={() => setShowUserMenu(!showUserMenu)}
@@ -158,8 +165,7 @@ const Header = ({
           >
             <span className="absolute bottom-0 right-0 w-3 h-3 bg-green-500 border-2 border-white dark:border-slate-900 rounded-full" />
           </button>
-        </div>
-      </div>
+
           {showUserMenu && (
             <div 
               className="absolute right-0 top-14 z-50 bg-white dark:bg-slate-800 rounded-lg shadow-xl border border-slate-200 dark:border-slate-600 py-2 min-w-[220px]"
@@ -221,7 +227,7 @@ const Header = ({
               </div>
             </div>
           )}
-        
+        </div>
 
         {/* Mobile Menu Button */}
         {showNavigation && (
@@ -267,11 +273,7 @@ const Header = ({
             )}
           </div>
         )}
-      
-
-      
-
-
+      </div>
     </header>
   );
 };

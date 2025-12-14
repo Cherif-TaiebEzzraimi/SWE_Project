@@ -2,9 +2,11 @@
 
 
 import { BrowserRouter, Routes, Route, useNavigate } from 'react-router-dom';
+
 import ProjectProgressPage from './pages/project_progress/ProjectProgressPage';
 import Dashboard from './pages/Dashboard';
 import FreelancerDashboard from './pages/FreelancerDashboard';
+import FreelancersPage from './pages/FreelancersPage';
 import AddPostPage from './pages/addPost.tsx';
 import Header from './components/Header';
 import { PostsProvider } from './context/PostsContext';
@@ -21,6 +23,7 @@ function App() {
           <Route path="/" element={<MainAppSections section="project-progress" />} />
           <Route path="/client-dashboard/*" element={<MainAppSections section="client-dashboard" />} />
           <Route path="/freelancer-dashboard" element={<MainAppSections section="freelancer-dashboard" />} />
+          <Route path="/freelancers" element={<FreelancersPage />} />
         </Routes>
       </BrowserRouter>
     </PostsProvider>
