@@ -1,25 +1,24 @@
 import React, { useEffect, useState } from 'react';
 import styles from './FreelancerProfile.module.css';
-import WilayaDropdown from '../../components/WilayaDropdown';
 import Settings from './Settings';
+import { BUSINESS_TYPES } from '../../lib/businessTypes';
+import { updateUser } from '../../api/userApi';
 
 interface CompanyData {
   user: {
     id: number;
     email: string;
+    first_name: string;
+    last_name: string;
   };
-  company_name: string;
   registration_number: string;
-  logo_url: string | null;
-  phone_number: string;
+  logo: string | null;
   description: string;
-  city: string;
-  wilaya: string;
-  social_links: {
-    website?: string;
-    linkedin?: string;
-    [key: string]: string | undefined;
-  };
+  business_type?: string | null;
+  tax_id?: string | null;
+  representative?: string | null;
+  industry?: string | null;
+  is_verified: boolean;
 }
 
 const ClientCompanyProfile: React.FC = () => {
@@ -27,6 +26,11 @@ const ClientCompanyProfile: React.FC = () => {
   const [isEditing, setIsEditing] = useState(false);
   const [companyData, setCompanyData] = useState<CompanyData | null>(null);
   const [formData, setFormData] = useState<Partial<CompanyData>>({});
+  // Business type selection follows company signup: plain select with list
+  const [customBusinessType, setCustomBusinessType] = useState('');
+  const [saveLoading, setSaveLoading] = useState(false);
+  const [saveSuccess, setSaveSuccess] = useState('');
+  const [saveError, setSaveError] = useState('');
 
   useEffect(() => {
     fetchCompanyData();
@@ -34,19 +38,16 @@ const ClientCompanyProfile: React.FC = () => {
 
   const fetchCompanyData = async () => {
     const dummy: CompanyData = {
-      user: { id: 2, email: 'contact@acme.inc' },
-      company_name: 'ACME Innovations',
+      user: { id: 2, email: 'contact@acme.inc', first_name: 'Ahmed', last_name: 'Benali' },
       registration_number: 'RC-ALG-2020-000123',
-      logo_url: null,
-      phone_number: '021 123 456',
+      logo: null,
       description:
         'ACME Innovations is a technology company specializing in AI-driven business solutions and software engineering services.',
-      city: 'Algiers',
-      wilaya: 'Alger',
-      social_links: {
-        website: 'https://acme.example.com',
-        linkedin: 'https://linkedin.com/company/acme-innovations',
-      },
+      business_type: 'Software Company',
+      tax_id: null,
+      representative: null,
+      industry: null,
+      is_verified: false,
     };
     setCompanyData(dummy);
     setFormData(dummy);
@@ -56,37 +57,78 @@ const ClientCompanyProfile: React.FC = () => {
   const handleCancel = () => {
     setIsEditing(false);
     setFormData(companyData || {});
+    setSaveError('');
+    setSaveSuccess('');
   };
 
   const handleSave = async () => {
+    setSaveError('');
+    setSaveSuccess('');
+    setSaveLoading(true);
     // TODO: PUT /companies/<id>/update
+    const resolvedBusinessType = (formData.business_type === 'Other' ? (customBusinessType.trim() || formData.business_type) : formData.business_type) || companyData?.business_type || null;
+    // Update user fields if changed
+    if (companyData?.user.id) {
+      const userPayload: any = {};
+      const newFirst = formData.user?.first_name;
+      const newLast = formData.user?.last_name;
+      if (typeof newFirst === 'string' && newFirst !== companyData.user.first_name) userPayload.first_name = newFirst;
+      if (typeof newLast === 'string' && newLast !== companyData.user.last_name) userPayload.last_name = newLast;
+      if (Object.keys(userPayload).length > 0) {
+        try {
+          const updated = await updateUser(companyData.user.id, userPayload);
+          setCompanyData(prev => (prev ? { ...prev, user: { ...prev.user, first_name: updated.first_name, last_name: updated.last_name } } : prev));
+        } catch (e) {
+          const err: any = e as any;
+          const msg = err?.response?.data?.detail || 'Failed to update account information.';
+          setSaveError(msg);
+          setSaveLoading(false);
+          return;
+        }
+      }
+    }
+
     setCompanyData(prev => {
       if (!prev) return prev;
       return {
         ...prev,
-        company_name: formData.company_name ?? prev.company_name,
-        registration_number: formData.registration_number ?? prev.registration_number,
-        phone_number: formData.phone_number ?? prev.phone_number,
+        // registration_number is read-only
+        registration_number: prev.registration_number,
         description: formData.description ?? prev.description,
-        city: formData.city ?? prev.city,
-        wilaya: formData.wilaya ?? prev.wilaya,
-        social_links: formData.social_links ?? prev.social_links,
-        logo_url: formData.logo_url ?? prev.logo_url,
+        business_type: resolvedBusinessType,
+        tax_id: formData.tax_id ?? prev.tax_id ?? null,
+        representative: formData.representative ?? prev.representative ?? null,
+        industry: formData.industry ?? prev.industry ?? null,
+        logo: formData.logo ?? prev.logo,
       };
     });
     setIsEditing(false);
+    setSaveSuccess('Profile updated successfully.');
+    setSaveLoading(false);
   };
 
   const handleChange = (field: string, value: any) => {
     setFormData(prev => ({ ...prev, [field]: value }));
   };
 
+  const handleUserChange = (field: 'first_name' | 'last_name', value: string) => {
+    setFormData(prev => ({
+      ...prev,
+      user: {
+        id: companyData?.user.id || prev.user?.id || 0,
+        email: companyData?.user.email || prev.user?.email || '',
+        first_name: field === 'first_name' ? value : (prev.user?.first_name ?? companyData?.user.first_name ?? ''),
+        last_name: field === 'last_name' ? value : (prev.user?.last_name ?? companyData?.user.last_name ?? ''),
+      },
+    }));
+  };
+
   const handleLogoUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
     const previewUrl = URL.createObjectURL(file);
-    setCompanyData(prev => (prev ? { ...prev, logo_url: previewUrl } : prev));
-    setFormData(prev => ({ ...prev, logo_url: previewUrl }));
+    setCompanyData(prev => (prev ? { ...prev, logo: previewUrl } : prev));
+    setFormData(prev => ({ ...prev, logo: previewUrl }));
     // TODO: POST /companies/<id>/upload-logo
   };
 
@@ -107,12 +149,18 @@ const ClientCompanyProfile: React.FC = () => {
         <main className={styles.mainContent}>
           {activeTab === 'profile' && (
             <div className={styles.profileSection}>
+              {saveError && (
+                <div className={`${styles.alert} ${styles.alertError}`}>{saveError}</div>
+              )}
+              {saveSuccess && (
+                <div className={`${styles.alert} ${styles.alertSuccess}`}>{saveSuccess}</div>
+              )}
               {/* Header */}
               <div className={styles.profileHeader}>
                 <div className={styles.profileImageSection}>
-                  {companyData?.logo_url ? (
+                  {companyData?.logo ? (
                     <img
-                      src={companyData.logo_url}
+                      src={companyData.logo}
                       alt="Company Logo"
                       className={styles.profileImage}
                       style={{ width: '96px', height: '96px', borderRadius: '12px' }}
@@ -148,13 +196,48 @@ const ClientCompanyProfile: React.FC = () => {
                 </div>
 
                 <div className={styles.profileInfo}>
-                  <h2>{isEditing ? formData.company_name ?? companyData?.company_name : companyData?.company_name}</h2>
+                  <h2>{(`${companyData?.user.first_name || ''} ${companyData?.user.last_name || ''}`).trim() || companyData?.registration_number || 'Company Account'}</h2>
                   <p className={styles.role}>Client Company</p>
-                  <p className={styles.location}>
-                    {isEditing
-                      ? `${formData.city ?? companyData?.city ?? ''}, ${formData.wilaya ?? companyData?.wilaya ?? ''}`
-                      : `${companyData?.city || ''}, ${companyData?.wilaya || ''}`}
-                  </p>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                    <span className={styles.readOnly}>{companyData?.user.email}</span>
+                    {companyData?.is_verified ? (
+                      <span style={{
+                        display: 'inline-flex',
+                        alignItems: 'center',
+                        gap: 6,
+                        padding: '4px 8px',
+                        borderRadius: 12,
+                        background: 'var(--teal-light)',
+                        color: 'var(--blue-royal)',
+                        fontSize: 12
+                      }}>
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                          <path d="M9 11l3 3L22 4" />
+                          <path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11" />
+                        </svg>
+                        Verified
+                      </span>
+                    ) : (
+                      <span style={{
+                        display: 'inline-flex',
+                        alignItems: 'center',
+                        gap: 6,
+                        padding: '4px 8px',
+                        borderRadius: 12,
+                        background: '#fff4e5',
+                        color: '#a35b00',
+                        fontSize: 12,
+                        border: '1px solid #ffd8a8'
+                      }}>
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                          <circle cx="12" cy="12" r="10" />
+                          <line x1="12" y1="8" x2="12" y2="12" />
+                          <line x1="12" y1="16" x2="12.01" y2="16" />
+                        </svg>
+                        Not Verified
+                      </span>
+                    )}
+                  </div>
                 </div>
 
                 {!isEditing && (
@@ -170,40 +253,47 @@ const ClientCompanyProfile: React.FC = () => {
               {/* Company Information */}
               <section className={styles.section}>
                 <div className={styles.sectionHeader}>
-                  <h3>Company Information</h3>
+                  <h3>Company Information:</h3>
                 </div>
 
                 <div className={styles.formGrid}>
                   <div className={styles.formGroup}>
-                    <label>Company Name</label>
+                    <label> First Name: </label>
                     {isEditing ? (
-                      <input type="text" value={formData.company_name || ''} onChange={e => handleChange('company_name', e.target.value)} />
+                      <input
+                        type="text"
+                        value={formData.user?.first_name ?? companyData?.user.first_name ?? ''}
+                        onChange={e => handleUserChange('first_name', e.target.value)}
+                      />
                     ) : (
-                      <p>{companyData?.company_name}</p>
+                      <p>{companyData?.user.first_name}</p>
                     )}
                   </div>
 
                   <div className={styles.formGroup}>
-                    <label>Registration Number</label>
+                    <label>Last Name: </label>
                     {isEditing ? (
-                      <input type="text" value={formData.registration_number || ''} onChange={e => handleChange('registration_number', e.target.value)} />
+                      <input
+                        type="text"
+                        value={formData.user?.last_name ?? companyData?.user.last_name ?? ''}
+                        onChange={e => handleUserChange('last_name', e.target.value)}
+                      />
                     ) : (
-                      <p>{companyData?.registration_number}</p>
+                      <p>{companyData?.user.last_name}</p>
                     )}
+                  </div>
+                  <div className={styles.formGroup}>
+                    <label>Registration Number:</label>
+                    <p className={styles.readOnly}>{companyData?.registration_number}</p>
                   </div>
 
                   <div className={styles.formGroup}>
-                    <label>Email Address</label>
+                    <label>Email Address:</label>
                     <p className={styles.readOnly}>{companyData?.user.email}</p>
                   </div>
 
                   <div className={styles.formGroup}>
-                    <label>Phone</label>
-                    {isEditing ? (
-                      <input type="tel" value={formData.phone_number || ''} onChange={e => handleChange('phone_number', e.target.value)} />
-                    ) : (
-                      <p>{companyData?.phone_number}</p>
-                    )}
+                    {/* Phone is not part of Company model */}
                   </div>
 
                   <div className={styles.formGroup} style={{ gridColumn: '1 / -1' }}>
@@ -232,69 +322,82 @@ const ClientCompanyProfile: React.FC = () => {
                 </div>
               </section>
 
-              {/* Location */}
+              {/* Company Details */}
               <section className={styles.section}>
                 <div className={styles.sectionHeader}>
-                  <h3>Location</h3>
-                </div>
-                <div className={styles.formGroup}>
-                  <label>City</label>
-                  {isEditing ? (
-                    <input type="text" value={formData.city || ''} onChange={e => handleChange('city', e.target.value)} />
-                  ) : (
-                    <p>{companyData?.city}</p>
-                  )}
-                </div>
-                <div className={styles.formGroup}>
-                  <label>Wilaya</label>
-                  {isEditing ? (
-                    <WilayaDropdown value={formData.wilaya || ''} onChange={val => handleChange('wilaya', typeof val === 'string' ? val : '')} error={''} disabled={false} />
-                  ) : (
-                    <p>{companyData?.wilaya}</p>
-                  )}
-                </div>
-              </section>
-
-              {/* Social Links */}
-              <section className={styles.section}>
-                <div className={styles.sectionHeader}>
-                  <h3>Social Links</h3>
+                  <h3>Company Details:</h3>
                 </div>
                 <div className={styles.formGrid}>
                   <div className={styles.formGroup}>
-                    <label>Website</label>
+                    <label>Business Type:</label>
                     {isEditing ? (
-                      <input
-                        type="url"
-                        value={formData.social_links?.website || ''}
-                        onChange={e => handleChange('social_links', { ...formData.social_links, website: e.target.value })}
-                        placeholder="https://company.com"
-                      />
+                      <div>
+                        <select
+                          value={formData.business_type || ''}
+                          onChange={e => handleChange('business_type', e.target.value)}
+                          className={styles.select}
+                          aria-label="Select business type"
+                        >
+                          <option value="">Select business type</option>
+                          {BUSINESS_TYPES.map(type => (
+                            <option key={type} value={type}>{type}</option>
+                          ))}
+                        </select>
+                        {(formData.business_type === 'Other') && (
+                          <input
+                            type="text"
+                            placeholder="Specify business type"
+                            value={customBusinessType}
+                            onChange={e => setCustomBusinessType(e.target.value)}
+                            style={{ marginTop: 8, padding: '10px 12px', border: '1px solid #dddddd', borderRadius: 8 }}
+                          />
+                        )}
+                      </div>
                     ) : (
-                      <p>{companyData?.social_links?.website || 'Not provided'}</p>
+                      <p>{companyData?.business_type || 'Not provided'}</p>
                     )}
                   </div>
+
                   <div className={styles.formGroup}>
-                    <label>LinkedIn</label>
+                    <label>Tax ID:</label>
                     {isEditing ? (
-                      <input
-                        type="url"
-                        value={formData.social_links?.linkedin || ''}
-                        onChange={e => handleChange('social_links', { ...formData.social_links, linkedin: e.target.value })}
-                        placeholder="https://linkedin.com/company/yourcompany"
-                      />
+                      <input type="text" value={formData.tax_id || ''} onChange={e => handleChange('tax_id', e.target.value)} />
                     ) : (
-                      <p>{companyData?.social_links?.linkedin || 'Not provided'}</p>
+                      <p>{companyData?.tax_id || 'Not provided'}</p>
+                    )}
+                  </div>
+
+                  <div className={styles.formGroup}>
+                    <label>Representative:</label>
+                    {isEditing ? (
+                      <input type="text" value={formData.representative || ''} onChange={e => handleChange('representative', e.target.value)} />
+                    ) : (
+                      <p>{companyData?.representative || 'Not provided'}</p>
+                    )}
+                  </div>
+
+                  <div className={styles.formGroup}>
+                    <label>Industry:</label>
+                    {isEditing ? (
+                      <input type="text" value={formData.industry || ''} onChange={e => handleChange('industry', e.target.value)} />
+                    ) : (
+                      <p>{companyData?.industry || 'Not provided'}</p>
                     )}
                   </div>
                 </div>
               </section>
+
+              
+
+             
 
               {/* Action Buttons */}
               {isEditing && (
                 <div className={styles.actionButtons}>
                   <button className={styles.cancelButton} onClick={handleCancel}>Cancel</button>
-                  <button className={styles.saveButton} onClick={handleSave}>Save Changes</button>
+                  <button className={styles.saveButton} onClick={handleSave} disabled={saveLoading}>
+                    {saveLoading ? 'Saving…' : 'Save Changes'}
+                  </button>
                 </div>
               )}
             </div>

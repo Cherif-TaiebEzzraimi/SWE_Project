@@ -20,6 +20,65 @@ interface SettingsProps {
   userRole: 'freelancer' | 'client' | 'company';
 }
 
+type PasswordFieldProps = {
+  label: string;
+  value: string;
+  onChange: (val: string) => void;
+  required?: boolean;
+  minLength?: number;
+  name?: string;
+  autoComplete?: string;
+};
+
+const PasswordField: React.FC<PasswordFieldProps> = ({
+  label,
+  value,
+  onChange,
+  required,
+  minLength,
+  name,
+  autoComplete,
+}) => {
+  const [show, setShow] = useState(false);
+  return (
+    <div className={styles.formGroup}>
+      <label>{label}</label>
+      <div className={styles.inputWrapper}>
+        <input
+          type={show ? 'text' : 'password'}
+          value={value}
+          onChange={(e) => onChange(e.target.value)}
+          required={required}
+          minLength={minLength}
+          name={name}
+          autoComplete={autoComplete}
+        />
+        <button
+          type="button"
+          className={styles.passwordToggle}
+          aria-label={show ? 'Hide password' : 'Show password'}
+          onClick={() => setShow((v) => !v)}
+        >
+          {show ? (
+            // Visible state: show open eye icon
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z" />
+              <circle cx="12" cy="12" r="3" />
+            </svg>
+          ) : (
+            // Hidden state: show eye-off icon
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <path d="M17.94 17.94A10.94 10.94 0 0 1 12 20C7 20 2.73 16.11 1 12c.69-1.58 1.71-3.03 2.95-4.24M9.9 4.24A10.94 10.94 0 0 1 12 4c5 0 9.27 3.89 11 8-1.05 2.41-2.76 4.47-4.9 6.06" />
+              <path d="M14.12 14.12a3 3 0 0 1-4.24-4.24" />
+              <path d="M1 1l22 22" />
+            </svg>
+          )}
+        </button>
+      </div>
+    </div>
+  );
+};
+
 const Settings: React.FC<SettingsProps> = ({ userId, userRole }) => {
   const [activeSection, setActiveSection] = useState<'password' | 'notifications' | 'help' | 'account'>('password');
   
@@ -30,9 +89,6 @@ const Settings: React.FC<SettingsProps> = ({ userId, userRole }) => {
     confirm_password: '',
   });
   const [passwordMessage, setPasswordMessage] = useState('');
-  const [showOld, setShowOld] = useState(false);
-  const [showNew, setShowNew] = useState(false);
-  const [showConfirm, setShowConfirm] = useState(false);
   const [newPasswordErrors, setNewPasswordErrors] = useState<string[]>([]);
 
   // Notifications State
@@ -97,16 +153,6 @@ const Settings: React.FC<SettingsProps> = ({ userId, userRole }) => {
       );
     } catch (error) {
       console.error('Error marking notification as read:', error);
-    }
-  };
-
-  const deleteNotification = async (notificationId: number) => {
-    try {
-      await apiClient.delete(`/notifications/${notificationId}/`);
-      // Update local state
-      setNotifications(prev => prev.filter(n => n.id !== notificationId));
-    } catch (error) {
-      console.error('Error deleting notification:', error);
     }
   };
 
@@ -245,106 +291,38 @@ const Settings: React.FC<SettingsProps> = ({ userId, userRole }) => {
             </p>
 
             <form onSubmit={handlePasswordChange} className={styles.form}>
-              <div className={styles.formGroup}>
-                <label>Current Password</label>
-                <div className={styles.inputWrapper}>
-                  <input
-                    type={showOld ? 'text' : 'password'}
-                    value={passwordData.old_password}
-                    onChange={(e) => setPasswordData({ ...passwordData, old_password: e.target.value })}
-                    required
-                  />
-                  <button
-                    type="button"
-                    className={styles.passwordToggle}
-                    aria-label={showOld ? 'Hide password' : 'Show password'}
-                    onClick={() => setShowOld((v) => !v)}
-                  >
-                    {showOld ? (
-                      // Visible state: show open eye icon
-                      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                        <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z" />
-                        <circle cx="12" cy="12" r="3" />
-                      </svg>
-                    ) : (
-                      // Hidden state: show eye-off icon
-                      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                        <path d="M17.94 17.94A10.94 10.94 0 0 1 12 20C7 20 2.73 16.11 1 12c.69-1.58 1.71-3.03 2.95-4.24M9.9 4.24A10.94 10.94 0 0 1 12 4c5 0 9.27 3.89 11 8-1.05 2.41-2.76 4.47-4.9 6.06" />
-                        <path d="M14.12 14.12a3 3 0 0 1-4.24-4.24" />
-                        <path d="M1 1l22 22" />
-                      </svg>
-                    )}
-                  </button>
-                </div>
-              </div>
+              <PasswordField
+                label="Current Password"
+                value={passwordData.old_password}
+                onChange={(val) => setPasswordData({ ...passwordData, old_password: val })}
+                required
+                name="currentPassword"
+                autoComplete="current-password"
+              />
 
-              <div className={styles.formGroup}>
-                <label>New Password</label>
-                <div className={styles.inputWrapper}>
-                  <input
-                    type={showNew ? 'text' : 'password'}
-                    value={passwordData.new_password}
-                    onChange={(e) => setPasswordData({ ...passwordData, new_password: e.target.value })}
-                    required
-                    minLength={8}
-                  />
-                  <button
-                    type="button"
-                    className={styles.passwordToggle}
-                    aria-label={showNew ? 'Hide password' : 'Show password'}
-                    onClick={() => setShowNew((v) => !v)}
-                  >
-                    {showNew ? (
-                      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                        <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z" />
-                        <circle cx="12" cy="12" r="3" />
-                      </svg>
-                    ) : (
-                      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                        <path d="M17.94 17.94A10.94 10.94 0 0 1 12 20C7 20 2.73 16.11 1 12c.69-1.58 1.71-3.03 2.95-4.24M9.9 4.24A10.94 10.94 0 0 1 12 4c5 0 9.27 3.89 11 8-1.05 2.41-2.76 4.47-4.9 6.06" />
-                        <path d="M14.12 14.12a3 3 0 0 1-4.24-4.24" />
-                        <path d="M1 1l22 22" />
-                      </svg>
-                    )}
-                  </button>
+              <PasswordField
+                label="New Password"
+                value={passwordData.new_password}
+                onChange={(val) => setPasswordData({ ...passwordData, new_password: val })}
+                required
+                minLength={8}
+                name="newPassword"
+                autoComplete="new-password"
+              />
+              {newPasswordErrors.length > 0 && (
+                <div className={styles.validationMessage}>
+                  {newPasswordErrors.join(' • ')}
                 </div>
-                {newPasswordErrors.length > 0 && (
-                  <div className={styles.validationMessage}>
-                    {newPasswordErrors.join(' • ')}
-                  </div>
-                )}
-              </div>
+              )}
 
-              <div className={styles.formGroup}>
-                <label>Confirm New Password</label>
-                <div className={styles.inputWrapper}>
-                  <input
-                    type={showConfirm ? 'text' : 'password'}
-                    value={passwordData.confirm_password}
-                    onChange={(e) => setPasswordData({ ...passwordData, confirm_password: e.target.value })}
-                    required
-                  />
-                  <button
-                    type="button"
-                    className={styles.passwordToggle}
-                    aria-label={showConfirm ? 'Hide password' : 'Show password'}
-                    onClick={() => setShowConfirm((v) => !v)}
-                  >
-                    {showConfirm ? (
-                      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                        <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z" />
-                        <circle cx="12" cy="12" r="3" />
-                      </svg>
-                    ) : (
-                      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                        <path d="M17.94 17.94A10.94 10.94 0 0 1 12 20C7 20 2.73 16.11 1 12c.69-1.58 1.71-3.03 2.95-4.24M9.9 4.24A10.94 10.94 0 0 1 12 4c5 0 9.27 3.89 11 8-1.05 2.41-2.76 4.47-4.9 6.06" />
-                        <path d="M14.12 14.12a3 3 0 0 1-4.24-4.24" />
-                        <path d="M1 1l22 22" />
-                      </svg>
-                    )}
-                  </button>
-                </div>
-              </div>
+              <PasswordField
+                label="Confirm New Password"
+                value={passwordData.confirm_password}
+                onChange={(val) => setPasswordData({ ...passwordData, confirm_password: val })}
+                required
+                name="confirmPassword"
+                autoComplete="new-password"
+              />
 
               {passwordMessage && (
                 <div className={passwordMessage.includes('success') ? styles.successMessage : styles.errorMessage}>
@@ -391,15 +369,6 @@ const Settings: React.FC<SettingsProps> = ({ userId, userRole }) => {
                           </svg>
                         </button>
                       )}
-                      <button className={styles.deleteButton} onClick={() => deleteNotification(n.id)} title="Delete">
-                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
-                          <polyline points="3 6 5 6 21 6" />
-                          <path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6" />
-                          <path d="M10 11v6" />
-                          <path d="M14 11v6" />
-                          <path d="M9 6l1-3h4l1 3" />
-                        </svg>
-                      </button>
                     </div>
                   </div>
                 ))

@@ -2,7 +2,7 @@ import React, { useEffect, useState } from 'react';
 import styles from './FreelancerProfile.module.css';
 import WilayaDropdown from '../../components/WilayaDropdown';
 import Settings from './Settings';
-import FreelancerHistory from './FreelancerHistory';
+import ClientHistory from './ClientHistory';
 
 interface ClientData {
   user: {
@@ -13,13 +13,8 @@ interface ClientData {
   };
   profile_picture: string | null;
   phone_number: string;
-  description: string;
   city: string;
   wilaya: string;
-  social_links: {
-    linkedin?: string;
-    [key: string]: string | undefined;
-  };
 }
 
 const ClientIndividualProfile: React.FC = () => {
@@ -38,10 +33,8 @@ const ClientIndividualProfile: React.FC = () => {
       user: { id: 3, first_name: 'Sara', last_name: 'Kaci', email: 'sara.kaci@example.com' },
       profile_picture: null,
       phone_number: '0555 987 654',
-      description: 'Individual client interested in hiring top freelancers for web and mobile projects.',
       city: 'Oran',
       wilaya: 'Oran',
-      social_links: { linkedin: 'https://linkedin.com/in/sarakaci' },
     };
     setClientData(dummy);
     setFormData(dummy);
@@ -66,10 +59,8 @@ const ClientIndividualProfile: React.FC = () => {
           email: prev.user.email, // read-only
         },
         phone_number: formData.phone_number ?? prev.phone_number,
-        description: formData.description ?? prev.description,
         city: formData.city ?? prev.city,
         wilaya: formData.wilaya ?? prev.wilaya,
-        social_links: formData.social_links ?? prev.social_links,
         profile_picture: formData.profile_picture ?? prev.profile_picture,
       };
     });
@@ -235,30 +226,6 @@ const ClientIndividualProfile: React.FC = () => {
                       <p>{clientData?.phone_number}</p>
                     )}
                   </div>
-
-                  <div className={styles.formGroup} style={{ gridColumn: '1 / -1' }}>
-                    <label>About Me</label>
-                    {isEditing ? (
-                      <div style={{ background: 'var(--teal-light)', border: '1px solid var(--teal-strong)', borderRadius: 8, padding: 12 }}>
-                        <textarea
-                          value={formData.description || ''}
-                          onChange={e => handleChange('description', e.target.value)}
-                          rows={6}
-                          placeholder="Briefly describe your interests and what projects you hire for."
-                          style={{ width: '100%', border: '1px solid #e0e0e0', borderRadius: 6, padding: '10px 12px' }}
-                        />
-                        <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: 8 }}>
-                          <span style={{ fontSize: 12, color: 'var(--blue-royal)' }}>{(formData.description?.length || 0)} characters</span>
-                          <span style={{ fontSize: 12, color: 'var(--text-dark-blue)' }}>Tip: Share relevant context for freelancers.</span>
-                        </div>
-                      </div>
-                    ) : (
-                      <div style={{ background: 'var(--card-white)', border: '1px solid var(--teal-strong)', borderRadius: 8, padding: 16 }}>
-                        <h4 style={{ margin: 0, color: 'var(--text-dark-blue)' }}>Overview</h4>
-                        <p style={{ margin: '8px 0 0', color: 'var(--text-dark-blue)', lineHeight: 1.7 }}>{clientData?.description}</p>
-                      </div>
-                    )}
-                  </div>
                 </div>
               </section>
 
@@ -285,27 +252,7 @@ const ClientIndividualProfile: React.FC = () => {
                 </div>
               </section>
 
-              {/* Social Links */}
-              <section className={styles.section}>
-                <div className={styles.sectionHeader}>
-                  <h3>Social Links</h3>
-                </div>
-                <div className={styles.formGrid}>
-                  <div className={styles.formGroup}>
-                    <label>LinkedIn</label>
-                    {isEditing ? (
-                      <input
-                        type="url"
-                        value={formData.social_links?.linkedin || ''}
-                        onChange={e => handleChange('social_links', { ...formData.social_links, linkedin: e.target.value })}
-                        placeholder="https://linkedin.com/in/yourprofile"
-                      />
-                    ) : (
-                      <p>{clientData?.social_links?.linkedin || 'Not provided'}</p>
-                    )}
-                  </div>
-                </div>
-              </section>
+              
 
               {isEditing && (
                 <div className={styles.actionButtons}>
@@ -325,7 +272,7 @@ const ClientIndividualProfile: React.FC = () => {
           {activeTab === 'history' && (
             <div className={styles.historySection}>
               <h1 className={styles.pageTitle}>Project History</h1>
-              <FreelancerHistory userId={clientData?.user.id || 0} />
+              <ClientHistory userId={clientData?.user.id || 0} />
             </div>
           )}
         </main>

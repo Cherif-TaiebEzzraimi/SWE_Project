@@ -97,7 +97,7 @@ const ForgotPassword: React.FC = () => {
         </button>
       </form>
       {message && <div style={{ color: '#15803d', marginTop: 16 }}>{message}</div>}
-      {/* No extra error box below, all errors are shown under the input */}
+      
     </div>
   );
 };

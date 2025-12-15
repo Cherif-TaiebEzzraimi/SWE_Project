@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import LogoText from '../../assets/logo/LogoText.svg';
 import { useNavigate } from 'react-router-dom';
 import styles from './SelectRole.module.css';
 
@@ -22,7 +23,9 @@ const ClientTypeSelection: React.FC = () => {
       {/* Header (copied from SelectRole, but button navigates to /signup/freelancer) */}
       <header className={styles.header}>
         <div className={styles.headerContent}>
-          <span className={styles.logo}>Skillink</span>
+          <span className={styles.logo}>
+            <img src={LogoText} alt="Skillink Logo" style={{ height: 48 }} />
+          </span>
           <div className={styles.headerLinks}>
             <span className={styles.headerText}>Looking for work?</span>
             <button

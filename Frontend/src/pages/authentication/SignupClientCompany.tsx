@@ -1,10 +1,12 @@
 import React, { useState } from 'react';
+import LogoText from '../../assets/logo/LogoText.svg';
 //import WilayaDropdown from '../../components/WilayaDropdown';
 import { useNavigate } from 'react-router-dom';
 import Input from '../../components/Input';
 import { registerClientCompany } from '../../api/authApi';
 import { saveToken, saveRole, saveUserId } from '../../lib/auth';
 import styles from './SignupClientCompany.module.css';
+import { BUSINESS_TYPES } from '../../lib/businessTypes';
 
 const SignupClientCompany: React.FC = () => {
   const navigate = useNavigate();
@@ -15,12 +17,9 @@ const SignupClientCompany: React.FC = () => {
     password: '',
     confirmPassword: '',
     registration_number: '',
-    tax_id: '',
-    representative: '',
-    business_type: '',
-    description: '',
-    industry: ''
+    business_type: ''
   });
+  const [customBusinessType, setCustomBusinessType] = useState('');
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [loading, setLoading] = useState(false);
   const [agreedToTerms, setAgreedToTerms] = useState(false);
@@ -54,20 +53,10 @@ const SignupClientCompany: React.FC = () => {
     if (!formData.registration_number.trim()) {
       newErrors.registration_number = 'Registration number is required';
     }
-    if (!formData.tax_id.trim()) {
-      newErrors.tax_id = 'Tax ID is required';
-    }
-    if (!formData.representative.trim()) {
-      newErrors.representative = 'Representative is required';
-    }
     if (!formData.business_type.trim()) {
       newErrors.business_type = 'Business type is required';
-    }
-    if (!formData.description.trim()) {
-      newErrors.description = 'Description is required';
-    }
-    if (!formData.industry.trim()) {
-      newErrors.industry = 'Industry is required';
+    } else if (formData.business_type === 'Other' && !customBusinessType.trim()) {
+      newErrors.business_type = 'Please specify your business type';
     }
     if (!agreedToTerms) {
       newErrors.terms = 'You must agree to the terms of service';
@@ -96,17 +85,18 @@ const SignupClientCompany: React.FC = () => {
         setLoading(false);
         return;
       }
+      const resolvedBusinessType = formData.business_type === 'Other' && customBusinessType.trim()
+        ? customBusinessType.trim()
+        : formData.business_type;
+
       const payload = {
         email: formData.email,
         password: formData.password,
         first_name: formData.first_name,
         last_name: formData.last_name,
         registration_number: formData.registration_number,
-        tax_id: formData.tax_id,
-        representative: formData.representative,
-        business_type: formData.business_type,
-        description: formData.description,
-        industry: formData.industry
+        business_type: resolvedBusinessType,
+        
       };
       // Use correct API call
       const response = await registerClientCompany(payload);
@@ -138,7 +128,9 @@ const SignupClientCompany: React.FC = () => {
     <div className={styles.container}>
       <header className={styles.header}>
         <div className={styles.headerContent}>
-          <div className={styles.logo}>Skillink</div>
+          <div className={styles.logo}>
+            <img src={LogoText} alt="Skillink Logo" style={{ height: 48 }} />
+          </div>
           <div className={styles.headerLinks}>
             <span className={styles.headerText}>Here to find work?</span>
             <button
@@ -289,51 +281,33 @@ const SignupClientCompany: React.FC = () => {
             error={errors.registration_number}
             disabled={loading}
           />
-          <Input
-            label="Tax ID"
-            type="text"
-            name="tax_id"
-            value={formData.tax_id}
-            onChange={handleChange}
-            error={errors.tax_id}
-            disabled={loading}
-          />
-          <Input
-            label="Representative"
-            type="text"
-            name="representative"
-            value={formData.representative}
-            onChange={handleChange}
-            error={errors.representative}
-            disabled={loading}
-          />
-          <Input
-            label="Business Type"
-            type="text"
-            name="business_type"
-            value={formData.business_type}
-            onChange={handleChange}
-            error={errors.business_type}
-            disabled={loading}
-          />
-          <Input
-            label="Description"
-            type="text"
-            name="description"
-            value={formData.description}
-            onChange={handleChange}
-            error={errors.description}
-            disabled={loading}
-          />
-          <Input
-            label="Industry"
-            type="text"
-            name="industry"
-            value={formData.industry}
-            onChange={handleChange}
-            error={errors.industry}
-            disabled={loading}
-          />
+          <div className={styles.formGroup}>
+            <label className={styles.label}>Business Type</label>
+            <select
+              name="business_type"
+              value={formData.business_type}
+              onChange={handleChange}
+              className={`${styles.select} ${errors.business_type ? styles.error : ''}`}
+              disabled={loading}
+            >
+              <option value="">Select business type</option>
+              {BUSINESS_TYPES.map((type) => (
+                <option key={type} value={type}>{type}</option>
+              ))}
+            </select>
+            {errors.business_type && <span className={styles.error}>{errors.business_type}</span>}
+          </div>
+          {formData.business_type === 'Other' && (
+            <Input
+              label="Specify Business Type"
+              type="text"
+              name="customBusinessType"
+              value={customBusinessType}
+              onChange={(e) => setCustomBusinessType(e.target.value)}
+              error={errors.business_type}
+              disabled={loading}
+            />
+          )}
           <div className={styles.checkboxGroup}>
             <label className={styles.checkboxLabel}>
               <input

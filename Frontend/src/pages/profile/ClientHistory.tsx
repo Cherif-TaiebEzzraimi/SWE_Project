@@ -11,14 +11,12 @@ interface ClientProjectItem {
 		id: number;
 		title: string;
 		description: string;
-		client_id: { user: { first_name: string; last_name: string; email: string } };
-		freelancer_id?: { user: { first_name: string; last_name: string; email: string } };
-		status: string; // accepted | in_progress | open | cancelled | done
+		client: { user: { first_name: string; last_name: string; email: string } };
+		freelancer?: { user: { first_name: string; last_name: string; email: string } };
+		status: 'open' | 'accepted' | 'in_progress' | 'done' | 'cancelled' | string;
+		created_at: string;
+		deadline?: string | null;
 	};
-	title: string;
-	start_date: string;
-	end_date: string;
-	created_at: string;
 }
 
 const ClientHistory: React.FC<ClientHistoryProps> = ({ userId }) => {
@@ -41,14 +39,12 @@ const ClientHistory: React.FC<ClientHistoryProps> = ({ userId }) => {
 						id: 9101,
 						title: 'E-commerce storefront',
 						description: 'React storefront for brand',
-						client_id: { user: { first_name: 'Sara', last_name: 'K.', email: 'sara@example.com' } },
-						freelancer_id: { user: { first_name: 'Nadia', last_name: 'M.', email: 'nadia@example.com' } },
+						client: { user: { first_name: 'Sara', last_name: 'K.', email: 'sara@example.com' } },
+						freelancer: { user: { first_name: 'Nadia', last_name: 'M.', email: 'nadia@example.com' } },
 						status: 'accepted',
+						created_at: new Date(Date.now() - 21 * 86400000).toISOString(),
+						deadline: new Date(Date.now() - 12 * 86400000).toISOString(),
 					},
-					title: 'E-commerce storefront',
-					start_date: new Date(Date.now() - 20 * 86400000).toISOString(),
-					end_date: new Date(Date.now() - 12 * 86400000).toISOString(),
-					created_at: new Date(Date.now() - 21 * 86400000).toISOString(),
 				},
 				{
 					id: 402,
@@ -56,14 +52,12 @@ const ClientHistory: React.FC<ClientHistoryProps> = ({ userId }) => {
 						id: 9102,
 						title: 'Mobile App MVP',
 						description: 'Initial MVP for mobile app',
-						client_id: { user: { first_name: 'Sara', last_name: 'K.', email: 'sara@example.com' } },
-						freelancer_id: { user: { first_name: 'Yacine', last_name: 'B.', email: 'yacine@example.com' } },
+						client: { user: { first_name: 'Sara', last_name: 'K.', email: 'sara@example.com' } },
+						freelancer: { user: { first_name: 'Yacine', last_name: 'B.', email: 'yacine@example.com' } },
 						status: 'in_progress',
+						created_at: new Date(Date.now() - 11 * 86400000).toISOString(),
+						deadline: '',
 					},
-					title: 'Mobile App MVP',
-					start_date: new Date(Date.now() - 10 * 86400000).toISOString(),
-					end_date: '',
-					created_at: new Date(Date.now() - 11 * 86400000).toISOString(),
 				},
 				{
 					id: 403,
@@ -71,13 +65,11 @@ const ClientHistory: React.FC<ClientHistoryProps> = ({ userId }) => {
 						id: 9103,
 						title: 'Data Analysis Dashboard',
 						description: 'Dashboard spec and posting',
-						client_id: { user: { first_name: 'Sara', last_name: 'K.', email: 'sara@example.com' } },
+						client: { user: { first_name: 'Sara', last_name: 'K.', email: 'sara@example.com' } },
 						status: 'open',
+						created_at: new Date(Date.now() - 5 * 86400000).toISOString(),
+						deadline: '',
 					},
-					title: 'Data Analysis Dashboard',
-					start_date: '',
-					end_date: '',
-					created_at: new Date(Date.now() - 5 * 86400000).toISOString(),
 				},
 			];
 			setProjects(demo);
@@ -99,7 +91,7 @@ const ClientHistory: React.FC<ClientHistoryProps> = ({ userId }) => {
 			done: { label: 'Completed', className: styles.statusCompleted },
 			in_progress: { label: 'In Progress', className: styles.statusInProgress },
 			pending: { label: 'Pending', className: styles.statusPending },
-			accepted: { label: 'Accepted', className: styles.statusCompleted },
+			accepted: { label: 'Accepted', className: styles.statusPending },
 			open: { label: 'Open', className: styles.statusPending },
 			cancelled: { label: 'Cancelled', className: styles.statusPending },
 		};
@@ -108,7 +100,7 @@ const ClientHistory: React.FC<ClientHistoryProps> = ({ userId }) => {
 	};
 
 	const filteredProjects = filter === 'done'
-		? projects.filter(p => p.negotiation.status === 'accepted')
+		? projects.filter(p => ['accepted', 'in_progress', 'done'].includes(p.negotiation.status))
 		: projects;
 
 	if (loading) {
@@ -153,11 +145,11 @@ const ClientHistory: React.FC<ClientHistoryProps> = ({ userId }) => {
 						<div key={project.id} className={styles.projectCard}>
 							<div className={styles.projectHeader}>
 								<div>
-									<h3 className={styles.projectTitle}>{project.title || project.negotiation.title}</h3>
-									{project.negotiation.freelancer_id?.user && (
+									<h3 className={styles.projectTitle}>{project.negotiation.title}</h3>
+									{project.negotiation.freelancer?.user && (
 										<div className={styles.projectClient}>
-											Freelancer: {project.negotiation.freelancer_id.user.first_name}{' '}
-											{project.negotiation.freelancer_id.user.last_name}
+											Freelancer: {project.negotiation.freelancer.user.first_name}{' '}
+											{project.negotiation.freelancer.user.last_name}
 										</div>
 									)}
 								</div>
@@ -166,12 +158,12 @@ const ClientHistory: React.FC<ClientHistoryProps> = ({ userId }) => {
 
 							<div className={styles.projectDetails}>
 								<div className={styles.projectDetail}>
-									<span className={styles.detailLabel}>Start Date:</span>
-									<span className={styles.detailValue}>{formatDate(project.start_date)}</span>
+									<span className={styles.detailLabel}>Created:</span>
+									<span className={styles.detailValue}>{formatDate(project.negotiation.created_at)}</span>
 								</div>
 								<div className={styles.projectDetail}>
-									<span className={styles.detailLabel}>End Date:</span>
-									<span className={styles.detailValue}>{formatDate(project.end_date)}</span>
+									<span className={styles.detailLabel}>Deadline:</span>
+									<span className={styles.detailValue}>{formatDate(project.negotiation.deadline || '')}</span>
 								</div>
 								{/* Client view intentionally omits Price */}
 							</div>

@@ -1,34 +1,36 @@
 import React, { useState, useEffect } from 'react';
 import styles from './FreelancerHistory.module.css';
 
-interface Project {
+// Backend-aligned structures: history items are derived from negotiations
+interface Negotiation {
   id: number;
-  negotiation: {
-    id: number;
-    title: string;
-    description: string;
-    client_id: {
-      user: {
-        first_name: string;
-        last_name: string;
-        email: string;
-      };
-    };
-    freelancer_id: {
-      user: {
-        first_name: string;
-        last_name: string;
-        email: string;
-      };
-    };
-    final_price: number;
-    deadline: string;
-    status: string;
-  };
   title: string;
-  start_date: string;
-  end_date: string;
+  description: string;
+  client: {
+    user: {
+      first_name: string;
+      last_name: string;
+      email: string;
+    };
+  };
+  freelancer: {
+    user: {
+      first_name: string;
+      last_name: string;
+      email: string;
+    };
+  };
+  final_price: number | null;
+  deadline: string | null;
+  status: 'accepted' | 'in_progress' | 'done' | string;
+}
+
+interface WorkItem {
+  id: number;
+  negotiation: Negotiation;
   created_at: string;
+  start_date?: string;
+  end_date?: string;
 }
 
 interface FreelancerHistoryProps {
@@ -36,7 +38,7 @@ interface FreelancerHistoryProps {
 }
 
 const FreelancerHistory: React.FC<FreelancerHistoryProps> = ({ userId }) => {
-  const [projects, setProjects] = useState<Project[]>([]);
+  const [projects, setProjects] = useState<WorkItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [filter, setFilter] = useState<'all' | 'done'>('done');
 
@@ -48,22 +50,19 @@ const FreelancerHistory: React.FC<FreelancerHistoryProps> = ({ userId }) => {
     try {
       setLoading(true);
       // Dummy data for UI preview
-      const demo: Project[] = [
+      const demo: WorkItem[] = [
         {
           id: 301,
           negotiation: {
             id: 9001,
             title: 'E-commerce frontend build',
             description: 'React storefront for client brand',
-            client_id: { user: { first_name: 'Nadia', last_name: 'M.', email: 'nadia@example.com' } },
-            freelancer_id: { user: { first_name: 'Ahmed', last_name: 'Benali', email: 'ahmed@example.com' } },
+            client: { user: { first_name: 'Nadia', last_name: 'M.', email: 'nadia@example.com' } },
+            freelancer: { user: { first_name: 'Ahmed', last_name: 'Benali', email: 'ahmed@example.com' } },
             final_price: 120000,
             deadline: new Date(Date.now() - 10 * 86400000).toISOString(),
             status: 'accepted',
           },
-          title: 'E-commerce storefront',
-          start_date: new Date(Date.now() - 20 * 86400000).toISOString(),
-          end_date: new Date(Date.now() - 12 * 86400000).toISOString(),
           created_at: new Date(Date.now() - 21 * 86400000).toISOString(),
         },
         {
@@ -72,15 +71,12 @@ const FreelancerHistory: React.FC<FreelancerHistoryProps> = ({ userId }) => {
             id: 9002,
             title: 'Internal dashboard',
             description: 'Analytics dashboard for operations',
-            client_id: { user: { first_name: 'Karim', last_name: 'S.', email: 'karim@example.com' } },
-            freelancer_id: { user: { first_name: 'Ahmed', last_name: 'Benali', email: 'ahmed@example.com' } },
+            client: { user: { first_name: 'Karim', last_name: 'S.', email: 'karim@example.com' } },
+            freelancer: { user: { first_name: 'Ahmed', last_name: 'Benali', email: 'ahmed@example.com' } },
             final_price: 80000,
             deadline: new Date(Date.now() - 30 * 86400000).toISOString(),
             status: 'in_progress',
           },
-          title: 'Ops analytics dashboard',
-          start_date: new Date(Date.now() - 40 * 86400000).toISOString(),
-          end_date: '',
           created_at: new Date(Date.now() - 41 * 86400000).toISOString(),
         },
       ];
@@ -111,7 +107,7 @@ const FreelancerHistory: React.FC<FreelancerHistoryProps> = ({ userId }) => {
       done: { label: 'Completed', className: styles.statusCompleted },
       in_progress: { label: 'In Progress', className: styles.statusInProgress },
       pending: { label: 'Pending', className: styles.statusPending },
-      accepted: { label: 'Accepted', className: styles.statusCompleted },
+      accepted: { label: 'Accepted', className: styles.statusPending },
     };
 
     const config = statusConfig[status] || { label: status, className: '' };
@@ -127,8 +123,8 @@ const FreelancerHistory: React.FC<FreelancerHistoryProps> = ({ userId }) => {
   }
 
 const filteredProjects = filter === 'done'
-    ? projects.filter(p => p.negotiation.status === 'accepted') // Projects are created from accepted negotiations
-    : projects;
+  ? projects.filter(p => ['accepted', 'in_progress', 'done'].includes(p.negotiation.status))
+  : projects;
 
   return (
     <div className={styles.historyContainer}>
@@ -177,10 +173,10 @@ const filteredProjects = filter === 'done'
             <div key={project.id} className={styles.projectCard}>
               <div className={styles.projectHeader}>
                 <div>
-                  <h3 className={styles.projectTitle}>{project.title || project.negotiation.title}</h3>
+                  <h3 className={styles.projectTitle}>{project.negotiation.title}</h3>
                   <div className={styles.projectClient}>
-                    Client: {project.negotiation.client_id.user.first_name}{' '}
-                    {project.negotiation.client_id.user.last_name}
+                    Client: {project.negotiation.client.user.first_name}{' '}
+                    {project.negotiation.client.user.last_name}
                   </div>
                 </div>
                 {getStatusBadge(project.negotiation.status)}
@@ -188,12 +184,12 @@ const filteredProjects = filter === 'done'
 
               <div className={styles.projectDetails}>
                 <div className={styles.projectDetail}>
-                  <span className={styles.detailLabel}>Start Date:</span>
-                  <span className={styles.detailValue}>{formatDate(project.start_date)}</span>
+                  <span className={styles.detailLabel}>Created:</span>
+                  <span className={styles.detailValue}>{formatDate(project.created_at)}</span>
                 </div>
                 <div className={styles.projectDetail}>
-                  <span className={styles.detailLabel}>End Date:</span>
-                  <span className={styles.detailValue}>{formatDate(project.end_date)}</span>
+                  <span className={styles.detailLabel}>Deadline:</span>
+                  <span className={styles.detailValue}>{formatDate(project.negotiation.deadline || '')}</span>
                 </div>
                 <div className={styles.projectDetail}>
                   <span className={styles.detailLabel}>Price:</span>

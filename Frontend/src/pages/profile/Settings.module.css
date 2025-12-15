@@ -1,3 +1,17 @@
+/* Hide native password reveal button (Edge/IE) to avoid double eye icon */
+:global(input[type="password"]::-ms-reveal) {
+  display: none;
+}
+
+:global(input[type="password"]::-ms-clear) {
+  display: none;
+}
+
+/* Also guard against Chromium variants that may expose a reveal button */
+:global(input[type="password"]) {
+  /* Prevent any built-in reveal control from overlapping */
+  caret-color: inherit;
+}
 .settingsContainer {
   display: flex;
   gap: 30px;

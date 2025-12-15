@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import LogoText from '../../assets/logo/LogoText.svg';
 import WilayaDropdown from '../../components/WilayaDropdown';
 import { useNavigate } from 'react-router-dom';
 import Input from '../../components/Input';
@@ -148,7 +149,9 @@ const SignupFreelancer: React.FC = () => {
     <div className={styles.container}>
       <header className={styles.header}>
         <div className={styles.headerContent}>
-          <div className={styles.logo}>Skillink</div>
+          <div className={styles.logo}>
+            <img src={LogoText} alt="Skillink Logo" style={{ height: 48 }} />
+          </div>
           <div className={styles.headerLinks}>
             <span className={styles.headerText}>Here to hire talent?</span>
             <button

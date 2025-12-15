@@ -4,11 +4,7 @@ export interface RegisterClientCompanyRequest {
   first_name: string;
   last_name: string;
   registration_number: string;
-  tax_id?: string;
-  representative?: string;
-  business_type?: string;
-  description?: string;
-  industry?: string;
+  business_type: string;
 }
 
 export const registerClientCompany = async (data: RegisterClientCompanyRequest): Promise<RegisterResponse> => {
