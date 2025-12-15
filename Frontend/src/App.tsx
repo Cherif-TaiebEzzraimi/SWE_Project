@@ -1,26 +1,84 @@
-import { BrowserRouter as Router, Routes , Route } from 'react-router-dom' ; 
-import './styles/App.css' ; 
-import LandingPage from './pages/landing_page/LandingPage' ;
+import { BrowserRouter, Routes, Route, useNavigate } from 'react-router-dom';
+import './styles/App.css';
+import LandingPage from './pages/landing_page/LandingPage';
 import Header from "./../src/pages/landing_page/components/Header";
-import Jobs from "./../src/pages/landing_page/components/Jobs";
-import FindTalent from "./../src/pages/landing_page/components/FindTalent";
 import AboutUs from "./../src/pages/landing_page/components/AboutUs";
+import ProjectProgressPage from './pages/project_progress/ProjectProgressPage.tsx';
+import Dashboard from './pages/landing_page/components/Dashboard.tsx';
+import FreelancerDashboard from './pages/landing_page/components/FreelancerDashboard.tsx';
+import FreelancersPage from './pages/landing_page/components/FreelancersPage.tsx';
+import AddPostPage from './pages/landing_page/components/addPost.tsx';
+import { PostsProvider } from './context/PostsContext.tsx';
 
 function App() {
   return (
-    <Router>
-      <div className="app">
+    <PostsProvider>
+      <BrowserRouter>
         <Routes>
-          {/* Routes will be added here */}
+          {/* Landing/Home Page */}
           <Route path="/" element={<LandingPage />} />
-          {/* <Route path="/" element={<Home />} /> */}
-          <Route path="/jobs" element={<Jobs />} />
-          <Route path="/find-talent" element={<FindTalent />} />
+          
+          {/* About Us Page */}
           <Route path="/about-us" element={<AboutUs />} />
+          
+          {/* Jobs/Dashboard Page */}
+          <Route path="/dashboard" element={<MainAppSections section="client-dashboard" />} />
+          
+          {/* Freelancers Browse Page */}
+          <Route path="/freelancersPage" element={<FreelancersPage />} />
+          
+          {/* Project Progress Page */}
+          <Route path="/project-progress" element={<MainAppSections section="project-progress" />} />
+          
+          {/* Client Dashboard with nested routes */}
+          <Route path="/client-dashboard/*" element={<MainAppSections section="client-dashboard" />} />
+          
+          {/* Freelancer Dashboard */}
+          <Route path="/freelancer-dashboard" element={<MainAppSections section="freelancer-dashboard" />} />
         </Routes>
-      </div>
-    </Router>
-  )
+      </BrowserRouter>
+    </PostsProvider>
+  );
 }
 
-export default App
+import { Routes as NestedRoutes, Route as NestedRoute } from 'react-router-dom';
+
+function MainAppSections({ section }: { section: 'project-progress' | 'client-dashboard' | 'freelancer-dashboard' }) {
+  const navigate = useNavigate();
+
+  let content = null;
+  
+  if (section === 'project-progress') {
+    content = <ProjectProgressPage />;
+  } else if (section === 'client-dashboard') {
+    // Nested routing for addPost under client-dashboard
+    content = (
+      <NestedRoutes>
+        <NestedRoute index element={<Dashboard />} />
+        <NestedRoute path="addPost" element={<AddPostPage />} />
+      </NestedRoutes>
+    );
+  } else if (section === 'freelancer-dashboard') {
+    content = <FreelancerDashboard />;
+  }
+
+  return (
+    <div className="app min-h-screen bg-background-light dark:bg-background-dark">
+      <Header
+        {...({
+          section,
+          onSectionChange: (s: string) => {
+            if (s === 'project-progress') navigate('/project-progress');
+            else if (s === 'client-dashboard') navigate('/client-dashboard');
+            else if (s === 'freelancer-dashboard') navigate('/freelancer-dashboard');
+          },
+        } as any)}
+      />
+      <main>
+        {content}
+      </main>
+    </div>
+  );
+}
+
+export default App;
