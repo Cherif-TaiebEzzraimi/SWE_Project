@@ -1,4 +1,5 @@
 import React from "react";
+import { useNavigate } from 'react-router-dom';
 import "../styles/explore.css";
 
 const categories = [
@@ -55,14 +56,18 @@ const categories = [
 ];
 
 const Explore: React.FC = () => {
+  const navigate = useNavigate();
   return (
     <section className="explore-section">
       <div className="explore-container">
         <h2 className="explore-title">Explore millions of pros</h2>
-        
         <div className="categories-grid">
           {categories.map((category) => (
-            <div key={category.id} className="category-card">
+            <div
+              key={category.id}
+              className="category-card cursor-pointer"
+              onClick={() => navigate(`/freelancersPage?category=${encodeURIComponent(category.title)}`)}
+            >
               <div className="category-icon">
                 <span className="material-symbols-outlined text-blue-600 text-3xl">{category.icon}</span>
               </div>

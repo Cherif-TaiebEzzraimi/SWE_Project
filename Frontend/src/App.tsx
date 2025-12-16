@@ -1,4 +1,5 @@
 import { BrowserRouter, Routes, Route, useNavigate } from 'react-router-dom';
+import { UserTypeProvider } from './context/UserTypeContext';
 import './styles/App.css';
 import LandingPage from './pages/landing_page/LandingPage';
 import Header from "./../src/pages/landing_page/components/Header";
@@ -12,32 +13,28 @@ import { PostsProvider } from './context/PostsContext.tsx';
 
 function App() {
   return (
-    <PostsProvider>
-      <BrowserRouter>
-        <Routes>
-          {/* Landing/Home Page */}
-          <Route path="/" element={<LandingPage />} />
-          
-          {/* About Us Page */}
-          <Route path="/about-us" element={<AboutUs />} />
-          
-          {/* Jobs/Dashboard Page */}
-          <Route path="/dashboard" element={<MainAppSections section="client-dashboard" />} />
-          
-          {/* Freelancers Browse Page */}
-          <Route path="/freelancersPage" element={<FreelancersPage />} />
-          
-          {/* Project Progress Page */}
-          <Route path="/project-progress" element={<MainAppSections section="project-progress" />} />
-          
-          {/* Client Dashboard with nested routes */}
-          <Route path="/client-dashboard/*" element={<MainAppSections section="client-dashboard" />} />
-          
-          {/* Freelancer Dashboard */}
-          <Route path="/freelancer-dashboard" element={<MainAppSections section="freelancer-dashboard" />} />
-        </Routes>
-      </BrowserRouter>
-    </PostsProvider>
+    <UserTypeProvider>
+      <PostsProvider>
+        <BrowserRouter>
+          <Routes>
+            {/* Landing/Home Page */}
+            <Route path="/" element={<LandingPage />} />
+            {/* About Us Page */}
+            <Route path="/about-us" element={<AboutUs />} />
+            {/* Jobs/Dashboard Page */}
+            <Route path="/dashboard" element={<MainAppSections section="client-dashboard" />} />
+            {/* Freelancers Browse Page */}
+            <Route path="/freelancersPage" element={<FreelancersPage />} />
+            {/* Project Progress Page */}
+            <Route path="/project-progress" element={<MainAppSections section="project-progress" />} />
+            {/* Client Dashboard with nested routes */}
+            <Route path="/client-dashboard/*" element={<MainAppSections section="client-dashboard" />} />
+            {/* Freelancer Dashboard */}
+            <Route path="/freelancer-dashboard" element={<MainAppSections section="freelancer-dashboard" />} />
+          </Routes>
+        </BrowserRouter>
+      </PostsProvider>
+    </UserTypeProvider>
   );
 }
 

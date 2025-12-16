@@ -1,8 +1,9 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
+import { useUserType } from '../../../context/UserTypeContext';
 import ConfirmModal from '../../../components/ConfirmModal';
 import Layout from './Layout';
 import { categoriesWithSkills as allCategoriesWithSkills } from '../../../components/categories';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
 // import { usePosts } from '../../../context/PostsContext';
 
 // Dummy data for freelancers (keep local)
@@ -21,11 +22,22 @@ const freelancers: Array<{
 ];
 
 const FreelancersPage: React.FC = () => {
-  const [selectedCategory, setSelectedCategory] = useState<string>('All');
-  const [search, setSearch] = useState('');
-  const [userType, setUserType] = useState<'client' | 'freelancer' | 'guest'>('client');
+  const location = useLocation();
+  const params = new URLSearchParams(location.search);
+  const initialCategory = params.get('category') || 'All';
+  const initialSearch = params.get('search') || '';
+  const [selectedCategory, setSelectedCategory] = useState<string>(initialCategory);
+  const [search, setSearch] = useState(initialSearch);
+  const { userType, setUserType } = useUserType();
   const [modal, setModal] = useState<{ open: boolean; action: null | 'hire' | 'login'; freelancer?: any }>({ open: false, action: null });
   const navigate = useNavigate();
+
+  // Update state if URL changes (for navigation/bookmarks)
+  useEffect(() => {
+    const params = new URLSearchParams(location.search);
+    setSelectedCategory(params.get('category') || 'All');
+    setSearch(params.get('search') || '');
+  }, [location.search]);
 
   // Filter freelancers by category and search
   const filteredFreelancers = useMemo(() => {

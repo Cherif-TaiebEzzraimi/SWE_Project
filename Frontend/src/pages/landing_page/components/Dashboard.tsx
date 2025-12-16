@@ -1,4 +1,5 @@
 import React, { useState, useMemo } from 'react';
+import { useUserType } from '../../../context/UserTypeContext';
 import ConfirmModal from '../../../components/ConfirmModal';
 import { categoriesWithSkills as allCategoriesWithSkills } from '../../../components/categories';
 import { useNavigate } from 'react-router-dom';
@@ -12,8 +13,7 @@ const Dashboard: React.FC = () => {
   const [search, setSearch] = useState('');
   const [minPrice, setMinPrice] = useState('');
   const [maxPrice, setMaxPrice] = useState('');
-  // Remove view state, this page is now only for jobs
-  const [userType, setUserType] = useState<'client' | 'freelancer' | 'guest'>('client');
+  const { userType, setUserType } = useUserType();
   const [userId] = useState<number>(1); // Simulate logged-in user ID
   const { posts, startEdit, updatePost } = usePosts();
   const navigate = useNavigate();
@@ -86,11 +86,11 @@ const Dashboard: React.FC = () => {
           >
             G
           </button>
-        </div>
+        </div>                                                                                      
         {/* Floating Add Post Button (client only, not visible in freelancers view) */}
   {/* Add Post button for client or guest */}
   {(userType === 'client' || userType === 'guest') && (
-    <button
+    <button                                                                                                                                                
       className="fixed bottom-8 right-8 z-40 w-14 h-14 flex items-center justify-center rounded-xl bg-blue-600 text-white shadow-lg hover:bg-blue-700 transition-all duration-200 focus:outline-none focus:ring-4 focus:ring-blue-200 text-3xl"
       onClick={() => {
         if (userType === 'guest') setModal({ open: true, action: 'login' });

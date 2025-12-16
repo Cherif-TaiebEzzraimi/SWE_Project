@@ -30,9 +30,15 @@
 import React from "react";
 import { Link } from "react-router-dom";
 import "../styles/header.css";
+import { useUserType } from '../../../context/UserTypeContext';
 
 // Header component
 const Header: React.FC = () => {
+  const { userType } = useUserType();
+  // just a dummy pfp for now
+  const user = userType === 'client' ? { name: 'Client', avatar: 'https://randomuser.me/api/portraits/men/32.jpg' }
+    : userType === 'freelancer' ? { name: 'Freelancer', avatar: 'https://randomuser.me/api/portraits/women/44.jpg' }
+    : null;
   return (
     <header className="navbar">
       <div className="navbar-logo">
@@ -47,8 +53,16 @@ const Header: React.FC = () => {
         <Link to="/about-us">About Us</Link>
       </nav>
       <div className="navbar-actions">
-        <button className="login-btn">Login</button>
-        <button className="signup-btn">Sign Up</button>
+        {userType === 'guest' ? (
+          <>
+            <button className="login-btn">Login</button>
+            <button className="signup-btn">Sign Up</button>
+          </>
+        ) : (
+          <button className="profile-btn" title="Profile" style={{ background: 'none', border: 'none', padding: 0, cursor: 'pointer' }}>
+            <img src={user?.avatar} alt="Profile" style={{ width: 36, height: 36, borderRadius: '50%' }} />
+          </button>
+        )}
       </div>
     </header>
   );

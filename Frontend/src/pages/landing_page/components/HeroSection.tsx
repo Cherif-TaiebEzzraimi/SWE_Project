@@ -1,4 +1,5 @@
 import React, { useState } from "react";
+import { useNavigate } from 'react-router-dom';
 import "../styles/hero.css";
 
 const backgroundImage =
@@ -8,8 +9,15 @@ const HeroSection: React.FC = () => {
   const [search, setSearch] = useState("");
   const [activeTab, setActiveTab] = useState<"find-talent" | "browse-jobs">("find-talent");
 
+  const navigate = useNavigate();
   const handleSearch = () => {
-    console.log("Searching for:", search, "in tab:", activeTab);
+    if (activeTab === 'find-talent') {
+      // Go to freelancers page with search param
+      navigate(`/freelancersPage?search=${encodeURIComponent(search)}`);
+    } else {
+      // Go to jobs page
+      navigate('/dashboard');
+    }
   };
 
   return (
@@ -66,7 +74,7 @@ const HeroSection: React.FC = () => {
                 <h2 className="content-title">
                   Build your freelancing career on Upwork, with thousands of jobs posted every week.
                 </h2>
-                <button className="explore-btn">
+                <button className="explore-btn" onClick={() => navigate('/dashboard')}>
                   Explore recently posted jobs
                 </button>
               </div>
