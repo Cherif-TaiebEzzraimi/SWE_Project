@@ -169,7 +169,10 @@ const FreelancersPage: React.FC = () => {
                     className="flex-1 px-5 py-2 rounded-lg border-2 border-blue-200 text-blue-500 font-bold text-sm shadow-sm bg-blue-50 transition-all duration-300 hover:bg-blue-100 hover:text-blue-600 hover:border-blue-300 hover:shadow-[0_0_0_3px_#bfdbfe] focus:outline-none focus:ring-2 focus:ring-blue-200"
                     onClick={() => {
                       if (userType === 'guest') setModal({ open: true, action: 'login', freelancer: f });
-                      // else: navigate to profile (to be implemented)
+                      else if (userType === 'freelancer' || userType === 'client') {
+                        // SPA navigation
+                        navigate(`/profile/freelancer/${f.id}`);
+                      }
                     }}
                   >
                     View Profile

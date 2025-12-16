@@ -214,8 +214,8 @@ const Dashboard: React.FC = () => {
             <h3 className="modal-title">Get Started</h3>
             <p className="modal-description">Please sign up or log in to continue</p>
             <div className="modal-buttons">
-              <button className="modal-btn modal-btn-signup">Sign Up</button>
-              <button className="modal-btn modal-btn-login">Log In</button>
+              <button className="modal-btn modal-btn-signup" onClick={() => { setModal({ open: false, action: null }); navigate('/signup/client-type'); }}>Sign Up</button>
+              <button className="modal-btn modal-btn-login" onClick={() => { setModal({ open: false, action: null }); navigate('/login'); }}>Log In</button>
             </div>
           </div>
         </div>

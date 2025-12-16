@@ -1,8 +1,10 @@
 import React, { useState } from "react";
+import { useNavigate } from 'react-router-dom';
 import "../styles/cta.css";
 
 const CTASection: React.FC = () => {
   const [showModal, setShowModal] = useState(false);
+  const navigate = useNavigate();
 
   const handleButtonClick = () => {
     setShowModal(true);
@@ -44,8 +46,8 @@ const CTASection: React.FC = () => {
               Please sign up or log in to continue
             </p>
             <div className="modal-buttons">
-              <button className="modal-btn modal-btn-signup">Sign Up</button>
-              <button className="modal-btn modal-btn-login">Log In</button>
+              <button className="modal-btn modal-btn-signup" onClick={() => { setShowModal(false); navigate('/signup'); }}>Sign Up</button>
+              <button className="modal-btn modal-btn-login" onClick={() => { setShowModal(false); navigate('/login'); }}>Log In</button>
             </div>
           </div>
         </div>
