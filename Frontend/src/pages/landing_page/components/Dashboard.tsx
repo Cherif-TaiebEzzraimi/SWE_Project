@@ -10,23 +10,18 @@ import { usePosts } from '../../../context/PostsContext';
 const Dashboard: React.FC = () => {
   const [selectedCategory, setSelectedCategory] = useState<string>('All');
   const [search, setSearch] = useState('');
-  const [priceRange, setPriceRange] = useState('all');
+  const [minPrice, setMinPrice] = useState('');
+  const [maxPrice, setMaxPrice] = useState('');
   // Remove view state, this page is now only for jobs
-  const [userType, setUserType] = useState<'client' | 'freelancer'>('client');
+  const [userType, setUserType] = useState<'client' | 'freelancer' | 'guest'>('client');
   const [userId] = useState<number>(1); // Simulate logged-in user ID
   const { posts, startEdit, updatePost } = usePosts();
   const navigate = useNavigate();
   // Modal state for confirmation dialogs
-  const [modal, setModal] = useState<{ open: boolean; action: null | 'refuse' | 'accept' | 'hire' | 'apply'; post?: any; applicant?: any; freelancer?: any }>({ open: false, action: null });
+  const [modal, setModal] = useState<{ open: boolean; action: null | 'refuse' | 'accept' | 'hire' | 'apply' | 'login'; post?: any; applicant?: any; freelancer?: any }>({ open: false, action: null });
 
 
-  // Price range options
-  const priceRanges = [
-    { value: 'all', label: 'All Prices' },
-    { value: '0-500', label: '$0 - $500' },
-    { value: '500-2000', label: '$500 - $2000' },
-    { value: '2000+', label: '$2000+' },
-  ];
+  // Remove price range options, use min/max DZD
 
   // Category icon mapping (Material Symbols)
   const categoryIcons: Record<string, string> = {
@@ -44,26 +39,22 @@ const Dashboard: React.FC = () => {
 
   // Filtered posts with search, category, and price
   const filteredPosts = useMemo(() => {
+    // Split search into keywords, ignore order, match all
+    const keywords = search.trim().toLowerCase().split(/\s+/).filter(Boolean);
     return posts.filter(p => {
       // Category
       if (selectedCategory !== 'All' && p.category !== selectedCategory) return false;
-      // Search
-      if (search && !(
-        p.title.toLowerCase().includes(search.toLowerCase()) ||
-        p.description.toLowerCase().includes(search.toLowerCase())
-      )) return false;
-      // Price
-      if (priceRange !== 'all') {
-        const [min, max] = priceRange.split('-');
-        if (max) {
-          if (p.minPrice > +max || p.maxPrice < +min) return false;
-        } else if (min === '2000+') {
-          if (p.minPrice < 2000 && p.maxPrice < 2000) return false;
-        }
+      // Search: all keywords must be present in title or description
+      if (keywords.length > 0) {
+        const text = `${p.title} ${p.description}`.toLowerCase();
+        if (!keywords.every(kw => text.includes(kw))) return false;
       }
+      // Price: filter by min/max DZD
+      if (minPrice && p.maxPrice < parseInt(minPrice)) return false;
+      if (maxPrice && p.minPrice > parseInt(maxPrice)) return false;
       return true;
     });
-  }, [posts, selectedCategory, search, priceRange]);
+  }, [posts, selectedCategory, search, minPrice, maxPrice]);
 
 
   // Filter freelancers by category and search
@@ -82,22 +73,39 @@ const Dashboard: React.FC = () => {
             C
           </button>
           <button
-            className={`w-8 h-8 flex items-center justify-center rounded-md border-2 shadow text-xs font-bold transition-all duration-200 ${userType === 'freelancer' ? 'bg-blue-700 text-white border-blue-700' : 'bg-white text-blue-700 border-blue-700 hover:bg-blue-50'}`}
+            className={`w-8 h-8 flex items-center justify-center rounded-md border-2 mb-1 shadow text-xs font-bold transition-all duration-200 ${userType === 'freelancer' ? 'bg-blue-700 text-white border-blue-700' : 'bg-white text-blue-700 border-blue-700 hover:bg-blue-50'}`}
             onClick={() => setUserType('freelancer')}
             aria-label="Freelancer View"
           >
             F
           </button>
+          <button
+            className={`w-8 h-8 flex items-center justify-center rounded-md border-2 shadow text-xs font-bold transition-all duration-200 ${userType === 'guest' ? 'bg-blue-700 text-white border-blue-700' : 'bg-white text-blue-700 border-blue-700 hover:bg-blue-50'}`}
+            onClick={() => setUserType('guest')}
+            aria-label="Guest View"
+          >
+            G
+          </button>
         </div>
         {/* Floating Add Post Button (client only, not visible in freelancers view) */}
-  {userType === 'client' && (
-          <button
-            className="fixed bottom-8 left-1/2 -translate-x-1/2 z-40 w-24 h-24 flex items-center justify-center rounded-xl bg-blue-600 text-white shadow-lg hover:bg-blue-700 transition-all duration-200 focus:outline-none focus:ring-4 focus:ring-blue-200"
-            onClick={() => navigate('/client-dashboard/addPost')}
-            aria-label="Offer a Job"
-          >
-            <span className="material-symbols-outlined text-6xl font-bold">add</span>
-          </button>
+  {/* Add Post button for client or guest */}
+  {(userType === 'client' || userType === 'guest') && (
+    <button
+      className="fixed bottom-8 right-8 z-40 w-14 h-14 flex items-center justify-center rounded-xl bg-blue-600 text-white shadow-lg hover:bg-blue-700 transition-all duration-200 focus:outline-none focus:ring-4 focus:ring-blue-200 text-3xl"
+      onClick={() => {
+        if (userType === 'guest') setModal({ open: true, action: 'login' });
+        else {
+          // Clear editing state before navigating to add post
+          if (typeof window !== 'undefined' && window.localStorage) {
+            window.localStorage.removeItem('editingPost');
+          }
+          window.location.href = '/client-dashboard/addPost';
+        }
+      }}
+      aria-label="Offer a Job"
+    >
+      <span className="material-symbols-outlined font-bold">add</span>
+    </button>
   )}
         {/* Search and Filters Bar */}
   {/* Jobs/posts view only, no view toggle needed */}
@@ -127,18 +135,26 @@ const Dashboard: React.FC = () => {
                 </select>
                 <span className="absolute right-4 top-1/2 -translate-y-1/2 material-symbols-outlined text-slate-400 pointer-events-none text-[20px]">keyboard_arrow_down</span>
               </div>
-              {/* Price Range Filter */}
-              <div className="relative min-w-[140px]">
-                <select
-                  className="w-full h-12 pl-4 pr-10 bg-background-light dark:bg-background-dark border-transparent focus:border-primary focus:ring-0 rounded-lg text-sm appearance-none cursor-pointer text-slate-600 dark:text-slate-300"
-                  value={priceRange}
-                  onChange={e => setPriceRange(e.target.value)}
-                >
-                  {priceRanges.map(r => (
-                    <option key={r.value} value={r.value}>{r.label}</option>
-                  ))}
-                </select>
-                <span className="absolute right-4 top-1/2 -translate-y-1/2 material-symbols-outlined text-slate-400 pointer-events-none text-[20px]">keyboard_arrow_down</span>
+              {/* Price Filter: Min/Max DZD */}
+              <div className="flex gap-2 items-center">
+                <input
+                  type="number"
+                  min="0"
+                  placeholder="Min DZD"
+                  className="w-24 h-12 pl-4 pr-2 bg-background-light dark:bg-background-dark border border-slate-200 rounded-lg text-sm text-slate-600 dark:text-slate-300 focus:border-primary focus:ring-0"
+                  value={minPrice}
+                  onChange={e => setMinPrice(e.target.value)}
+                />
+                <span className="text-slate-400">-</span>
+                <input
+                  type="number"
+                  min="0"
+                  placeholder="Max DZD"
+                  className="w-24 h-12 pl-4 pr-2 bg-background-light dark:bg-background-dark border border-slate-200 rounded-lg text-sm text-slate-600 dark:text-slate-300 focus:border-primary focus:ring-0"
+                  value={maxPrice}
+                  onChange={e => setMaxPrice(e.target.value)}
+                />
+                <span className="text-xs text-slate-500 ml-1">DZD</span>
               </div>
               <button className="h-12 w-12 flex items-center justify-center bg-background-light dark:bg-background-dark rounded-lg text-slate-500 hover:text-primary transition-colors border border-transparent hover:border-primary/20">
                 <span className="material-symbols-outlined">filter_list</span>
@@ -168,7 +184,7 @@ const Dashboard: React.FC = () => {
                   <div className="flex flex-col gap-4 mt-auto">
                     <div className="flex items-center gap-2 text-sm text-slate-600 dark:text-slate-300">
                       <span className="material-symbols-outlined text-[18px] text-slate-400">payments</span>
-                      <span className="font-medium">${p.minPrice} - ${p.maxPrice}</span>
+                      <span className="font-medium">{p.minPrice} - {p.maxPrice} DZD</span>
                     </div>
                     <div className="flex items-center justify-between border-t border-slate-100 dark:border-slate-700 pt-4">
                       <div className="flex items-center gap-2">
@@ -178,6 +194,7 @@ const Dashboard: React.FC = () => {
                         <span className="text-xs text-slate-500">Client</span>
                       </div>
                       <div className="flex gap-2">
+                        {/* Hide edit button for guest */}
                         {userType === 'client' && userId === (p as any).userId && (
                           <button
                             className="px-3 py-1.5 rounded-lg border-2 border-blue-600 text-blue-700 font-bold text-xs shadow-sm bg-white transition-all duration-300 hover:bg-blue-50 hover:text-blue-800 hover:border-blue-700 hover:shadow-[0_0_0_3px_#e0e7ff] focus:outline-none focus:ring-2 focus:ring-blue-300"
@@ -189,6 +206,20 @@ const Dashboard: React.FC = () => {
                             Edit
                           </button>
                         )}
+      {/* Guest Login/Signup Modal (reuse CTASection style) */}
+      {modal.open && modal.action === 'login' && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-20" onClick={() => setModal({ open: false, action: null })}>
+          <div className="modal-content" onClick={e => e.stopPropagation()}>
+            <button className="modal-close" onClick={() => setModal({ open: false, action: null })}>×</button>
+            <h3 className="modal-title">Get Started</h3>
+            <p className="modal-description">Please sign up or log in to continue</p>
+            <div className="modal-buttons">
+              <button className="modal-btn modal-btn-signup">Sign Up</button>
+              <button className="modal-btn modal-btn-login">Log In</button>
+            </div>
+          </div>
+        </div>
+      )}
                         {userType === 'freelancer' && (
                           (() => {
                             // Simulate logged-in freelancer
@@ -255,29 +286,29 @@ const Dashboard: React.FC = () => {
             )}
         </div>
 
-        {/* Confirmation Modal */}
+        {/* Confirmation Modal - only show if not login */}
         <ConfirmModal
-          open={modal.open}
+          open={modal.open && modal.action !== 'login'}
           title={
-            modal.action === 'refuse' ? 'Refuse Applicant'
+            modal.action === 'refuse' ? 'Cancel Application'
             : modal.action === 'accept' ? 'Accept Applicant'
             : modal.action === 'hire' ? 'Hire Freelancer'
             : modal.action === 'apply' ? 'Apply for Job'
             : 'Confirmation'}
           message={
-            modal.action === 'refuse' ? 'Are you sure you want to refuse this freelancer?'
+            modal.action === 'refuse' ? 'Are you sure you want to cancel your application?'
             : modal.action === 'accept' ? 'Are you sure you want to accept this applicant?'
             : modal.action === 'hire' ? 'Are you sure you want to hire this freelancer?'
             : modal.action === 'apply' ? 'Are you sure you want to apply for this job?'
             : ''
           }
           confirmText={
-            modal.action === 'refuse' ? 'Refuse'
+            modal.action === 'refuse' ? 'Cancel'
             : modal.action === 'accept' ? 'Accept'
             : modal.action === 'hire' ? 'Hire'
             : modal.action === 'apply' ? 'Apply'
             : 'Confirm'}
-          cancelText="Cancel"
+          cancelText="Back"
           onCancel={() => setModal({ open: false, action: null })}
           onConfirm={() => {
             if (modal.action === 'refuse' && modal.post && modal.applicant) {

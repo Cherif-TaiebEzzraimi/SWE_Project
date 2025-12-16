@@ -1,4 +1,5 @@
 import React, { useRef, useState, useRef as useReactRef } from 'react';
+import ConfirmModal from '../../../components/ConfirmModal';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { categoriesWithSkills } from '../../../components/categories';
 import { usePosts } from '../../../context/PostsContext';
@@ -33,6 +34,7 @@ const MAX_FILE_SIZE_MB = 25;
   const [description, setDescription] = useState(editingPost ? editingPost.description : '');
   const [files, setFiles] = useState<File[]>([]); // File uploads not persisted for edit
   const [neededSkills, setNeededSkills] = useState<string[]>(editingPost ? editingPost.requirements : []);
+  const [showDiscardModal, setShowDiscardModal] = useState(false);
 
   // Reset form fields to blank when editingPost becomes null (e.g., after Discard)
   React.useEffect(() => {
@@ -47,6 +49,11 @@ const MAX_FILE_SIZE_MB = 25;
       setErrors({});
     }
   }, [editingPost, directHire, directFreelancer]);
+
+  // Always clear neededSkills when category changes (unless direct hire)
+  React.useEffect(() => {
+    if (!directHire) setNeededSkills([]);
+  }, [category]);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   // Get skills for selected category
@@ -81,6 +88,10 @@ const MAX_FILE_SIZE_MB = 25;
 
   const handleDiscard = (e?: React.MouseEvent) => {
     if (e) e.preventDefault();
+    setShowDiscardModal(true);
+  };
+
+  const confirmDiscard = () => {
     if (editingPost) {
       deletePost(editingPost.id);
     } else {
@@ -95,6 +106,7 @@ const MAX_FILE_SIZE_MB = 25;
       setErrors({});
     }
     if (onClose) onClose();
+    setShowDiscardModal(false);
     navigate('/client-dashboard');
   };
 
@@ -373,11 +385,21 @@ const MAX_FILE_SIZE_MB = 25;
             type="submit"
             className="px-8 py-2 rounded-lg font-bold text-base bg-[#0a65f1] text-white shadow-[0_0_15px_rgba(10,101,241,0.4)] border-2 border-blue-200 hover:bg-blue-800 transition-all duration-200"
           >
-            {directHire && directFreelancer ? 'Confirm' : 'Publish Post'}
+            {directHire && directFreelancer ? 'Confirm' : editingPost ? 'Update Post' : 'Publish Post'}
           </button>
         </div>
+        {/* Discard Confirmation Modal */}
+        <ConfirmModal
+          open={showDiscardModal}
+          title="Discard Changes?"
+          message="Are you sure you want to discard this post? All unsaved changes will be lost."
+          confirmText="Discard"
+          cancelText="Cancel"
+          onCancel={() => setShowDiscardModal(false)}
+          onConfirm={confirmDiscard}
+        />
       </form>
-  </div>
+    </div>
   );
-} 
+}
 export default AddPostPage;

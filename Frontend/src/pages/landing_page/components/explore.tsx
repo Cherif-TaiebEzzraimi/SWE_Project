@@ -4,52 +4,52 @@ import "../styles/explore.css";
 const categories = [
   {
     id: 1,
-    icon: "⚙️",
+    icon: "smart_toy",
     title: "AI Services",
   },
   {
     id: 2,
-    icon: "<//>",
+    icon: "code",
     title: "Development & IT",
   },
   {
     id: 3,
-    icon: "🎨",
+    icon: "palette",
     title: "Design & Creative",
   },
   {
     id: 4,
-    icon: "🤝",
+    icon: "campaign",
     title: "Sales & Marketing",
   },
   {
     id: 5,
-    icon: "✍️",
+    icon: "draw",
     title: "Writing & Translation",
   },
   {
     id: 6,
-    icon: "👨‍💼",
-    title: "Admin & Support",
+    icon: "support_agent",
+    title: "Admin & Customer Support",
   },
   {
     id: 7,
-    icon: "🏛️",
+    icon: "payments",
     title: "Finance & Accounting",
   },
   {
     id: 8,
-    icon: "⚖️",
+    icon: "gavel",
     title: "Legal",
   },
   {
     id: 9,
-    icon: "👥",
+    icon: "group",
     title: "HR & Training",
   },
   {
     id: 10,
-    icon: "🔧",
+    icon: "apartment",
     title: "Engineering & Architecture",
   },
 ];
@@ -63,7 +63,9 @@ const Explore: React.FC = () => {
         <div className="categories-grid">
           {categories.map((category) => (
             <div key={category.id} className="category-card">
-              <div className="category-icon">{category.icon}</div>
+              <div className="category-icon">
+                <span className="material-symbols-outlined text-blue-600 text-3xl">{category.icon}</span>
+              </div>
               <h3 className="category-title">{category.title}</h3>
             </div>
           ))}

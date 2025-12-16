@@ -18,27 +18,25 @@ const freelancers: Array<{
   { id: 1, name: 'Amina Dev', category: 'Development & IT', skills: ['Web Developers', 'Java Engineer'], rating: 4.8, avatar: 'https://randomuser.me/api/portraits/women/44.jpg', bio: 'Experienced React and backend developer. Built 10+ scalable apps. Passionate about clean code, scalable systems, and mentoring junior devs.' },
   { id: 2, name: 'Yacine Design', category: 'Design & Creative', skills: ['Graphic Designers', 'Logo Designers'], rating: 4.6, avatar: 'https://randomuser.me/api/portraits/men/32.jpg', bio: 'Creative designer with a passion for branding and UI/UX. Has worked with 30+ startups and specializes in minimal, memorable design.' },
   { id: 3, name: 'Sara AI', category: 'AI Services', skills: ['Machine Learning Engineers', 'Data Scientists'], rating: 4.9, avatar: 'https://randomuser.me/api/portraits/women/65.jpg', bio: 'AI/ML expert, Kaggle Grandmaster, loves solving real-world problems. Built models for healthcare, finance, and e-commerce.' },
-  { id: 1, name: 'Amina Dev', category: 'Development & IT', skills: ['Web Developers', 'Java Engineer'], rating: 4.8, avatar: 'https://randomuser.me/api/portraits/women/44.jpg', bio: 'Experienced React and backend developer. Built 10+ scalable apps. Passionate about clean code, scalable systems, and mentoring junior devs.' },
-  { id: 2, name: 'Yacine Design', category: 'Design & Creative', skills: ['Graphic Designers', 'Logo Designers'], rating: 4.6, avatar: 'https://randomuser.me/api/portraits/men/32.jpg', bio: 'Creative designer with a passion for branding and UI/UX. Has worked with 30+ startups and specializes in minimal, memorable design.' },
-  { id: 3, name: 'Sara AI', category: 'AI Services', skills: ['Machine Learning Engineers', 'Data Scientists'], rating: 4.9, avatar: 'https://randomuser.me/api/portraits/women/65.jpg', bio: 'AI/ML expert, Kaggle Grandmaster, loves solving real-world problems. Built models for healthcare, finance, and e-commerce.' },
-
 ];
 
 const FreelancersPage: React.FC = () => {
   const [selectedCategory, setSelectedCategory] = useState<string>('All');
   const [search, setSearch] = useState('');
-  const [userType, setUserType] = useState<'client' | 'freelancer'>('client');
-  const [modal, setModal] = useState<{ open: boolean; action: null | 'hire'; freelancer?: any }>({ open: false, action: null });
+  const [userType, setUserType] = useState<'client' | 'freelancer' | 'guest'>('client');
+  const [modal, setModal] = useState<{ open: boolean; action: null | 'hire' | 'login'; freelancer?: any }>({ open: false, action: null });
   const navigate = useNavigate();
 
   // Filter freelancers by category and search
   const filteredFreelancers = useMemo(() => {
+    const keywords = search.trim().toLowerCase().split(/\s+/).filter(Boolean);
     return freelancers.filter(f => {
       if (selectedCategory !== 'All' && f.category !== selectedCategory) return false;
-      if (search && !(
-        f.name.toLowerCase().includes(search.toLowerCase()) ||
-        f.bio.toLowerCase().includes(search.toLowerCase())
-      )) return false;
+      // All keywords must be present in name, bio, or skills
+      if (keywords.length > 0) {
+        const text = `${f.name} ${f.bio} ${f.skills.join(' ')}`.toLowerCase();
+        if (!keywords.every(kw => text.includes(kw))) return false;
+      }
       return true;
     });
   }, [selectedCategory, search]);
@@ -58,11 +56,18 @@ const FreelancersPage: React.FC = () => {
           C
         </button>
         <button
-          className={`w-8 h-8 flex items-center justify-center rounded-md border-2 shadow text-xs font-bold transition-all duration-200 ${userType === 'freelancer' ? 'bg-blue-700 text-white border-blue-700' : 'bg-white text-blue-700 border-blue-700 hover:bg-blue-50'}`}
+          className={`w-8 h-8 flex items-center justify-center rounded-md border-2 mb-1 shadow text-xs font-bold transition-all duration-200 ${userType === 'freelancer' ? 'bg-blue-700 text-white border-blue-700' : 'bg-white text-blue-700 border-blue-700 hover:bg-blue-50'}`}
           onClick={() => setUserType('freelancer')}
           aria-label="Freelancer View"
         >
           F
+        </button>
+        <button
+          className={`w-8 h-8 flex items-center justify-center rounded-md border-2 shadow text-xs font-bold transition-all duration-200 ${userType === 'guest' ? 'bg-blue-700 text-white border-blue-700' : 'bg-white text-blue-700 border-blue-700 hover:bg-blue-50'}`}
+          onClick={() => setUserType('guest')}
+          aria-label="Guest View"
+        >
+          G
         </button>
       </div>
       {/* Search and Filters Bar */}
@@ -102,7 +107,7 @@ const FreelancersPage: React.FC = () => {
           filteredFreelancers.map((f) => (
             <div
               key={f.id}
-              className="relative group bg-white dark:bg-blue-900/60 border-2 border-blue-100 shadow-[0_0_12px_0_rgba(96,165,250,0.10)] rounded-3xl p-8 flex flex-col items-center transition-all duration-300 ease-in-out hover:scale-[1.015] hover:border-blue-300 hover:shadow-[0_0_16px_2px_rgba(96,165,250,0.18)]"
+              className="relative group bg-white dark:bg-blue-900/60 border-2 border-blue-100 shadow-[0_0_12px_0_rgba(96,165,250,0.10)] rounded-3xl p-8 flex flex-col items-center transition-all duration-300 ease-in-out hover:scale-[1.015] hover:border-blue-300 hover:shadow-[0_0_16px_2px_rgba(96,165,250,0.18)] animate-in"
               style={{ minHeight: 420, background: 'white' }}
             >
               {/* Avatar with ring and lighter rating badge */}
@@ -146,7 +151,18 @@ const FreelancersPage: React.FC = () => {
                     Hire Now
                   </button>
                 )}
-                <button className="flex-1 px-5 py-2 rounded-lg border-2 border-blue-200 text-blue-500 font-bold text-sm shadow-sm bg-blue-50 transition-all duration-300 hover:bg-blue-100 hover:text-blue-600 hover:border-blue-300 hover:shadow-[0_0_0_3px_#bfdbfe] focus:outline-none focus:ring-2 focus:ring-blue-200">View Profile</button>
+                {/* Only show View Profile for guest, hide Hire Now */}
+                {(userType === 'guest' || userType === 'client' || userType === 'freelancer') && (
+                  <button
+                    className="flex-1 px-5 py-2 rounded-lg border-2 border-blue-200 text-blue-500 font-bold text-sm shadow-sm bg-blue-50 transition-all duration-300 hover:bg-blue-100 hover:text-blue-600 hover:border-blue-300 hover:shadow-[0_0_0_3px_#bfdbfe] focus:outline-none focus:ring-2 focus:ring-blue-200"
+                    onClick={() => {
+                      if (userType === 'guest') setModal({ open: true, action: 'login', freelancer: f });
+                      // else: navigate to profile (to be implemented)
+                    }}
+                  >
+                    View Profile
+                  </button>
+                )}
               </div>
             </div>
           ))
@@ -154,10 +170,10 @@ const FreelancersPage: React.FC = () => {
       </div>
       {/* Confirmation Modal */}
       <ConfirmModal
-        open={modal.open}
-        title={modal.action === 'hire' ? 'Hire Freelancer' : 'Confirmation'}
-        message={modal.action === 'hire' ? 'Are you sure you want to hire this freelancer?' : ''}
-        confirmText={modal.action === 'hire' ? 'Hire' : 'Confirm'}
+        open={modal.open && modal.action === 'hire'}
+        title={'Hire Freelancer'}
+        message={'Are you sure you want to hire this freelancer?'}
+        confirmText={'Hire'}
         cancelText="Cancel"
         onCancel={() => setModal({ open: false, action: null })}
         onConfirm={() => {
@@ -167,6 +183,20 @@ const FreelancersPage: React.FC = () => {
           setModal({ open: false, action: null });
         }}
       />
+      {/* Guest Login/Signup Modal (reuse CTASection style) */}
+      {modal.open && modal.action === 'login' && (
+        <div className="modal-overlay" onClick={() => setModal({ open: false, action: null })}>
+          <div className="modal-content" onClick={e => e.stopPropagation()}>
+            <button className="modal-close" onClick={() => setModal({ open: false, action: null })}>×</button>
+            <h3 className="modal-title">Get Started</h3>
+            <p className="modal-description">Please sign up or log in to continue</p>
+            <div className="modal-buttons">
+              <button className="modal-btn modal-btn-signup">Sign Up</button>
+              <button className="modal-btn modal-btn-login">Log In</button>
+            </div>
+          </div>
+        </div>
+      )}
       </div>
       </Layout>
     </>

@@ -43,7 +43,7 @@ const Header: React.FC = () => {
       <nav className="navbar-links">
         <Link to="/">Home</Link>
         <Link to="/dashboard">Jobs</Link>
-        <Link to="/freelancersPage">Skill Browse</Link>
+        <Link to="/freelancersPage">Browse Skills</Link>
         <Link to="/about-us">About Us</Link>
       </nav>
       <div className="navbar-actions">
