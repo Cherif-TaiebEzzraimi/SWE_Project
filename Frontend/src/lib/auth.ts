@@ -1,5 +1,8 @@
 export const saveToken = (token: string): void => {
   localStorage.setItem('token', token);
+  if (token === 'session-authenticated') {
+    saveAuthFlag(true);
+  }
 };
 
 export const getToken = (): string | null => {
@@ -8,6 +11,21 @@ export const getToken = (): string | null => {
 
 export const removeToken = (): void => {
   localStorage.removeItem('token');
+  clearAuthFlag();
+};
+
+const AUTH_FLAG_KEY = 'authFlag';
+
+export const saveAuthFlag = (isAuthenticated: boolean): void => {
+  localStorage.setItem(AUTH_FLAG_KEY, isAuthenticated ? 'true' : 'false');
+};
+
+export const getAuthFlag = (): boolean => {
+  return localStorage.getItem(AUTH_FLAG_KEY) === 'true';
+};
+
+export const clearAuthFlag = (): void => {
+  localStorage.removeItem(AUTH_FLAG_KEY);
 };
 
 export const saveRole = (role: string): void => {
@@ -41,8 +59,11 @@ export const clearAuth = (): void => {
   localStorage.removeItem('role');
   localStorage.removeItem('userId');
   localStorage.removeItem('isCompany');
+  clearAuthFlag();
 };
 
 export const isAuthenticated = (): boolean => {
-  return !!getToken();
+  // For this backend, the real auth is the session cookie.
+  // This flag is just a UI hint that the user has logged in.
+  return !!(getAuthFlag() && getRole() && getUserId());
 };

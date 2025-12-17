@@ -1,6 +1,6 @@
 import axios, { AxiosError } from 'axios';
 import type { InternalAxiosRequestConfig, AxiosResponse } from 'axios';
-import { getToken } from './auth';
+import { clearAuth, getToken } from './auth';
 
 const apiClient = axios.create({
   baseURL: 'http://localhost:8000',
@@ -14,7 +14,9 @@ const apiClient = axios.create({
 apiClient.interceptors.request.use(
   (config: InternalAxiosRequestConfig) => {
     const token = getToken();
-    if (token) {
+    // Backend uses session authentication (cookies). If a real token is ever introduced,
+    // only attach it when it's not the session marker.
+    if (token && token !== 'session-authenticated') {
       config.headers.Authorization = `Bearer ${token}`;
     }
     return config;
@@ -29,10 +31,7 @@ apiClient.interceptors.response.use(
   (response: AxiosResponse) => response,
   (error: AxiosError) => {
     if (error.response?.status === 401) {
-      // Token expired or invalid
-      localStorage.removeItem('token');
-      localStorage.removeItem('role');
-      localStorage.removeItem('userId');
+      clearAuth();
       window.location.href = '/login';
     }
     return Promise.reject(error);

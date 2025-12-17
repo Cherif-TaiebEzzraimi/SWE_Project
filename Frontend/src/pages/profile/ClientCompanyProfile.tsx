@@ -2,7 +2,7 @@ import React, { useEffect, useState } from 'react';
 import styles from './FreelancerProfile.module.css';
 import Settings from './Settings';
 import { BUSINESS_TYPES } from '../../lib/businessTypes';
-import { updateUser } from '../../api/userApi';
+import { updateCompanyProfile } from '../../api/companyApi';
 
 interface CompanyData {
   user: {
@@ -65,43 +65,39 @@ const ClientCompanyProfile: React.FC = () => {
     setSaveError('');
     setSaveSuccess('');
     setSaveLoading(true);
-    // TODO: PUT /companies/<id>/update
     const resolvedBusinessType = (formData.business_type === 'Other' ? (customBusinessType.trim() || formData.business_type) : formData.business_type) || companyData?.business_type || null;
-    // Update user fields if changed
+
+    // Backend does not expose PUT/PATCH /users/<id>/; company updates go through /companies/<id>/update/
     if (companyData?.user.id) {
-      const userPayload: any = {};
-      const newFirst = formData.user?.first_name;
-      const newLast = formData.user?.last_name;
-      if (typeof newFirst === 'string' && newFirst !== companyData.user.first_name) userPayload.first_name = newFirst;
-      if (typeof newLast === 'string' && newLast !== companyData.user.last_name) userPayload.last_name = newLast;
-      if (Object.keys(userPayload).length > 0) {
-        try {
-          const updated = await updateUser(companyData.user.id, userPayload);
-          setCompanyData(prev => (prev ? { ...prev, user: { ...prev.user, first_name: updated.first_name, last_name: updated.last_name } } : prev));
-        } catch (e) {
-          const err: any = e as any;
-          const msg = err?.response?.data?.detail || 'Failed to update account information.';
-          setSaveError(msg);
-          setSaveLoading(false);
-          return;
-        }
+      try {
+        const updated = await updateCompanyProfile(companyData.user.id, {
+          description: formData.description ?? companyData.description,
+          business_type: resolvedBusinessType,
+          tax_id: (formData.tax_id ?? companyData.tax_id ?? null) as any,
+          representative: (formData.representative ?? companyData.representative ?? null) as any,
+          industry: (formData.industry ?? companyData.industry ?? null) as any,
+        });
+
+        setCompanyData(prev => {
+          if (!prev) return prev;
+          return {
+            ...prev,
+            description: updated.description ?? prev.description,
+            business_type: updated.business_type ?? prev.business_type,
+            tax_id: updated.tax_id ?? prev.tax_id ?? null,
+            representative: updated.representative ?? prev.representative ?? null,
+            industry: updated.industry ?? prev.industry ?? null,
+          };
+        });
+      } catch (e) {
+        const err: any = e as any;
+        const msg = err?.response?.data?.detail || 'Failed to update company profile.';
+        setSaveError(msg);
+        setSaveLoading(false);
+        return;
       }
     }
 
-    setCompanyData(prev => {
-      if (!prev) return prev;
-      return {
-        ...prev,
-        // registration_number is read-only
-        registration_number: prev.registration_number,
-        description: formData.description ?? prev.description,
-        business_type: resolvedBusinessType,
-        tax_id: formData.tax_id ?? prev.tax_id ?? null,
-        representative: formData.representative ?? prev.representative ?? null,
-        industry: formData.industry ?? prev.industry ?? null,
-        logo: formData.logo ?? prev.logo,
-      };
-    });
     setIsEditing(false);
     setSaveSuccess('Profile updated successfully.');
     setSaveLoading(false);

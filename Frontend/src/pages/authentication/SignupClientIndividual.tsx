@@ -4,7 +4,7 @@ import WilayaDropdown from '../../components/WilayaDropdown';
 import { useNavigate } from 'react-router-dom';
 import Input from '../../components/Input';
 import { registerClientIndividual } from '../../api/authApi';
-import { saveToken, saveRole, saveUserId } from '../../lib/auth';
+import { saveAuthFlag, saveRole, saveUserId } from '../../lib/auth';
 import styles from './SignupClientIndividual.module.css';
 
 const SignupClientIndividual: React.FC = () => {
@@ -106,7 +106,7 @@ const SignupClientIndividual: React.FC = () => {
       const response = await registerClientIndividual(payload);
       saveUserId(response.user.id);
       saveRole(response.user.role);
-      saveToken('session-authenticated');
+      saveAuthFlag(true);
       navigate('/client/individual/dashboard');
     } catch (error: any) {
       if (error.response?.data?.detail) {

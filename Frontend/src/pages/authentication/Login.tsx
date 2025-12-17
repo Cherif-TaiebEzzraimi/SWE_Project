@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { login } from '../../api/authApi';
-import { saveToken, saveRole, saveUserId } from '../../lib/auth';
+import { saveAuthFlag, saveRole, saveUserId } from '../../lib/auth';
 import Input from '../../components/Input';
 import styles from './Login.module.css';
 
@@ -61,16 +61,17 @@ const Login: React.FC = () => {
       saveUserId(response.user.id);
       saveRole(response.user.role);
       // Backend uses session authentication (cookies), no token returned
-      // We save a marker to track authentication state
-      saveToken('session-authenticated');
+      // We save a UI marker to track authentication state
+      saveAuthFlag(true);
 
       // Redirect based on role
       const role = response.user.role;
       if (role === 'freelancer') {
         navigate('/freelancer/dashboard');
       } else if (role === 'client') {
-        // Client could be individual or company - backend will differentiate
-        navigate('/client/dashboard');
+        navigate('/client/individual/dashboard');
+      } else if (role === 'company') {
+        navigate('/client/company/dashboard');
       } else if (role === 'admin') {
         navigate('/admin/dashboard');
       } else {

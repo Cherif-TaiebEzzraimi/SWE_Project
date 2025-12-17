@@ -4,7 +4,7 @@ import LogoText from '../../assets/logo/LogoText.svg';
 import { useNavigate } from 'react-router-dom';
 import Input from '../../components/Input';
 import { registerClientCompany } from '../../api/authApi';
-import { saveToken, saveRole, saveUserId } from '../../lib/auth';
+import { saveAuthFlag, saveRole, saveUserId } from '../../lib/auth';
 import styles from './SignupClientCompany.module.css';
 import { BUSINESS_TYPES } from '../../lib/businessTypes';
 
@@ -102,7 +102,7 @@ const SignupClientCompany: React.FC = () => {
       const response = await registerClientCompany(payload);
       saveUserId(response.user.id);
       saveRole(response.user.role);
-      saveToken('session-authenticated');
+      saveAuthFlag(true);
       navigate('/client/company/dashboard');
     } catch (error: any) {
       if (error.response?.data?.detail) {

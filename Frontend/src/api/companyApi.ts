@@ -27,6 +27,22 @@ export const getCompany = async (id: number): Promise<Company> => {
   return response.data;
 };
 
+export interface UpdateCompanyPayload {
+  description?: string | null;
+  business_type?: string | null;
+  tax_id?: string | null;
+  representative?: string | null;
+  industry?: string | null;
+}
+
+export const updateCompanyProfile = async (
+  userId: number,
+  data: UpdateCompanyPayload
+): Promise<Company> => {
+  const response = await apiClient.put<Company>(`/companies/${userId}/update/`, data);
+  return response.data;
+};
+
 // Helper to check if a user ID has a company profile
 export const isCompany = async (userId: number): Promise<boolean> => {
   try {

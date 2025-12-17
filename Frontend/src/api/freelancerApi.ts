@@ -36,6 +36,16 @@ export interface FreelancerProfile {
   }> | null;
 }
 
+export interface MediaFile {
+  id: number;
+  owner?: FreelancerUser;
+  entity_type: string;
+  entity_id: number;
+  file_url: string;
+  file_type: string;
+  created_at: string;
+}
+
 // You already have this, keep it:
 export const registerFreelancer = async (data: any) => {
   const response = await apiClient.post("/auth/register/freelancer/", data);
@@ -95,12 +105,15 @@ export const updateFreelancerProfile = async (
 export const uploadFreelancerPhoto = async (
   userId: number,
   photoFile: File
-): Promise<FreelancerProfile> => {
+): Promise<MediaFile> => {
   const formData = new FormData();
-  formData.append('profile_picture', photoFile);
+  // Backend generic media upload expects: file (or attachment), entity_type, entity_id
+  formData.append('file', photoFile);
+  formData.append('entity_type', 'freelancer');
+  formData.append('entity_id', userId.toString());
   
-  const response = await apiClient.post<FreelancerProfile>(
-    `/freelancers/${userId}/upload-photo/`,
+  const response = await apiClient.post<MediaFile>(
+    `/media/upload/`,
     formData,
     {
       headers: {
@@ -111,12 +124,26 @@ export const uploadFreelancerPhoto = async (
   return response.data;
 };
 
-// Delete profile photo
+export const listFreelancerMedia = async (userId: number): Promise<MediaFile[]> => {
+  const response = await apiClient.get<MediaFile[]>(`/media/freelancer/${userId}/`);
+  return response.data;
+};
+
+export const deleteMedia = async (mediaId: number): Promise<{ detail: string }> => {
+  const response = await apiClient.delete<{ detail: string }>(`/media/${mediaId}/`);
+  return response.data;
+};
+
+// Delete freelancer profile photo (via media)
 export const deleteFreelancerPhoto = async (
   userId: number
 ): Promise<{ detail: string }> => {
-  const response = await apiClient.delete<{ detail: string }>(
-    `/freelancers/${userId}/photo/`
-  );
-  return response.data;
+  const media = await listFreelancerMedia(userId);
+  const candidate = media
+    .filter((m) => (m.file_type || '').startsWith('image/'))
+    .sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime())[0];
+  if (!candidate) {
+    return { detail: 'No profile photo found' };
+  }
+  return deleteMedia(candidate.id);
 };

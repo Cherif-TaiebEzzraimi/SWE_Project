@@ -4,7 +4,7 @@ import WilayaDropdown from '../../components/WilayaDropdown';
 import { useNavigate } from 'react-router-dom';
 import Input from '../../components/Input';
 import { registerFreelancer } from '../../api/authApi';
-import { saveToken, saveRole, saveUserId } from '../../lib/auth';
+import { saveAuthFlag, saveRole, saveUserId } from '../../lib/auth';
 import styles from './SignupFreelancer.module.css';
 
 const SignupFreelancer: React.FC = () => {
@@ -121,7 +121,7 @@ const SignupFreelancer: React.FC = () => {
       const response = await registerFreelancer(payload);
       saveUserId(response.user.id);
       saveRole(response.user.role);
-      saveToken('session-authenticated');
+      saveAuthFlag(true);
       navigate('/freelancer/dashboard');
     } catch (error: any) {
       console.error('Registration error:', error);

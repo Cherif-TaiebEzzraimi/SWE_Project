@@ -7,9 +7,12 @@ import ClientTypeSelection from '../pages/authentication/ClientTypeSelection';
 import SignupFreelancer from '../pages/authentication/SignupFreelancer';
 import SignupClientIndividual from '../pages/authentication/SignupClientIndividual';
 import SignupClientCompany from '../pages/authentication/SignupClientCompany';
+import VerifyEmail from '../pages/authentication/VerifyEmail';
 import FreelancerProfile from '../pages/profile/FreelancerProfile';
 import ClientIndividualProfile from '../pages/profile/ClientIndividualProfile';
 import ClientCompanyProfile from '../pages/profile/ClientCompanyProfile';
+import RequireRole from '../lib/RequireRole';
+import RoleRedirect from './RoleRedirect';
 
 const AppRouter = () => {
   return (
@@ -21,6 +24,7 @@ const AppRouter = () => {
       <Route path="/login" element={<Login />} />
       <Route path="/forgot-password" element={<ForgotPassword />} />
       <Route path="/reset-password" element={<ResetPassword />} />
+      <Route path="/auth/verify-email/:token" element={<VerifyEmail />} />
       <Route path="/signup" element={<SelectRole />} />
       <Route path="/signup/client-type" element={<ClientTypeSelection />} />
       <Route path="/signup/freelancer" element={<SignupFreelancer />} />
@@ -33,9 +37,46 @@ const AppRouter = () => {
       <Route path="/profile/company/:id" element={<ClientCompanyProfile />} />
       
       {/* Dashboard placeholders  */}
-      <Route path="/freelancer/dashboard" element={<div>Freelancer Dashboard (To be implemented)</div>} />
-      <Route path="/client/dashboard" element={<div>Client Dashboard (To be implemented)</div>} />
-      <Route path="/admin/dashboard" element={<div>Admin Dashboard (To be implemented)</div>} />
+      <Route path="/dashboard" element={<RoleRedirect />} />
+
+      <Route
+        path="/freelancer/dashboard"
+        element={
+          <RequireRole role="freelancer">
+            <div>Freelancer Dashboard (To be implemented)</div>
+          </RequireRole>
+        }
+      />
+
+      <Route
+        path="/client/individual/dashboard"
+        element={
+          <RequireRole role="client">
+            <div>Client Individual Dashboard (To be implemented)</div>
+          </RequireRole>
+        }
+      />
+
+      <Route
+        path="/client/company/dashboard"
+        element={
+          <RequireRole role="company">
+            <div>Client Company Dashboard (To be implemented)</div>
+          </RequireRole>
+        }
+      />
+
+      <Route
+        path="/admin/dashboard"
+        element={
+          <RequireRole role="admin">
+            <div>Admin Dashboard (To be implemented)</div>
+          </RequireRole>
+        }
+      />
+
+      {/* Backward compat */}
+      <Route path="/client/dashboard" element={<RoleRedirect />} />
       
       {/* Catch all - redirect to login */}
       <Route path="*" element={<Navigate to="/login" replace />} />
