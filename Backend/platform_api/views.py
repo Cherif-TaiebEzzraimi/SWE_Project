@@ -1,4 +1,5 @@
 from django.contrib.auth import authenticate, login, logout
+from django.views.decorators.csrf import csrf_exempt
 from rest_framework.decorators import api_view, permission_classes
 from rest_framework.response import Response
 from rest_framework import status
@@ -114,6 +115,7 @@ def soft_get_user(request):
 
 
 @api_view(['POST'])
+@permission_classes([AllowAny])
 def register_freelancer(request):
     data = request.data.copy()
     email = data.get('email')
@@ -136,6 +138,7 @@ def register_freelancer(request):
 
 
 @api_view(['POST'])
+@permission_classes([AllowAny])
 def register_client(request):
     data = request.data.copy()
     email = data.get('email')
@@ -155,6 +158,7 @@ def register_client(request):
 
 
 @api_view(['POST'])
+@permission_classes([AllowAny])
 def register_company(request):
     data = request.data.copy()
     email = data.get('email')
@@ -194,6 +198,7 @@ def register_company(request):
 
 
 @api_view(['POST'])
+@permission_classes([AllowAny])
 def login_view(request):
     email = request.data.get('email')
     password = request.data.get('password')
