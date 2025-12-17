@@ -10,20 +10,41 @@ const apiClient = axios.create({
   withCredentials: true,
 });
 
+// Add CSRF cookie reader function at the top
+function getCookie(name: string): string | null {
+  let cookieValue = null;
+  if (document.cookie && document.cookie !== '') {
+    const cookies = document.cookie.split(';');
+    for (let cookie of cookies) {
+      cookie = cookie.trim();
+      if (cookie.startsWith(name + '=')) {
+        cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+        break;
+      }
+    }
+  }
+  return cookieValue;
+}
+
 // Request interceptor to add token
 apiClient.interceptors.request.use(
   (config: InternalAxiosRequestConfig) => {
     const token = getToken();
-    // Backend uses session authentication (cookies). If a real token is ever introduced,
-    // only attach it when it's not the session marker.
+    const csrfToken = getCookie('csrftoken');
+
+    // CSRF for Django session auth
+    if (csrfToken) {
+      config.headers['X-CSRFToken'] = csrfToken;
+    }
+
+    // Optional: future JWT support
     if (token && token !== 'session-authenticated') {
       config.headers.Authorization = `Bearer ${token}`;
     }
+
     return config;
   },
-  (error: AxiosError) => {
-    return Promise.reject(error);
-  }
+  (error: AxiosError) => Promise.reject(error)
 );
 
 // Response interceptor for error handling
