@@ -1,6 +1,6 @@
 import axios, { AxiosError } from 'axios';
 import type { InternalAxiosRequestConfig, AxiosResponse } from 'axios';
-import { clearAuth, getToken } from './auth';
+import { clearAuth } from './auth';
 
 const apiClient = axios.create({
   baseURL: 'http://localhost:8000',
@@ -10,7 +10,7 @@ const apiClient = axios.create({
   withCredentials: true,
 });
 
-// Add CSRF cookie reader function at the top
+// CSRF cookie reader
 function getCookie(name: string): string | null {
   let cookieValue = null;
   if (document.cookie && document.cookie !== '') {
@@ -26,28 +26,19 @@ function getCookie(name: string): string | null {
   return cookieValue;
 }
 
-// Request interceptor to add token
+// Attach CSRF token for Django
 apiClient.interceptors.request.use(
   (config: InternalAxiosRequestConfig) => {
-    const token = getToken();
     const csrfToken = getCookie('csrftoken');
-
-    // CSRF for Django session auth
     if (csrfToken) {
       config.headers['X-CSRFToken'] = csrfToken;
     }
-
-    // Optional: future JWT support
-    if (token && token !== 'session-authenticated') {
-      config.headers.Authorization = `Bearer ${token}`;
-    }
-
     return config;
   },
   (error: AxiosError) => Promise.reject(error)
 );
 
-// Response interceptor for error handling
+// Handle unauthorized responses
 apiClient.interceptors.response.use(
   (response: AxiosResponse) => response,
   (error: AxiosError) => {

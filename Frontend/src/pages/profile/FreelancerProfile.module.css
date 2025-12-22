@@ -362,15 +362,61 @@
   border: 1px solid #e0e0e0;
 }
 
-.cvDisplay a {
+.cvList {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.cvRow {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 10px 12px;
+  background: var(--card-white);
+  border: 1px solid #e0e0e0;
+  border-radius: 8px;
+}
+
+.cvLink {
   color: var(--blue-primary);
   text-decoration: none;
   font-size: 14px;
-  font-weight: 500;
+  font-weight: 600;
 }
 
-.cvDisplay a:hover {
+.cvLink:hover {
   text-decoration: underline;
+}
+
+.cvLinkContent {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.cvLinkIcon {
+  flex: 0 0 auto;
+}
+
+.cvRemoveButton {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  border-radius: 8px;
+  border: 1px solid var(--brick-red-light);
+  background: transparent;
+  color: var(--brick-red);
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.cvRemoveButton:hover {
+  background-color: var(--brick-red-light);
+  border-color: var(--brick-red);
 }
 
 .fileUpload input[type="file"] {
@@ -387,6 +433,16 @@
   font-size: 14px;
   color: var(--text-dark-blue);
   transition: all 0.2s;
+}
+
+.uploadLabelContent {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.uploadLabelIcon {
+  flex: 0 0 auto;
 }
 
 .uploadLabel:hover {

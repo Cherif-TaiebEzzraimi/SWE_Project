@@ -22,3 +22,19 @@ export const getClient = async (id: number): Promise<Client> => {
   const response = await apiClient.get<Client>(`/clients/${id}/`);
   return response.data;
 };
+
+export interface UpdateClientPayload {
+  first_name?: string;
+  last_name?: string;
+  phone_number?: string | null;
+  city?: string | null;
+  wilaya?: string | null;
+}
+
+export const updateClientProfile = async (
+  userId: number,
+  data: UpdateClientPayload
+): Promise<Client> => {
+  const response = await apiClient.put<Client>(`/clients/${userId}/update/`, data);
+  return response.data;
+};

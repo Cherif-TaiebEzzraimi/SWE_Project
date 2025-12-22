@@ -74,6 +74,7 @@ export interface UpdateFreelancerPayload {
   skills?: string[] | null;
   years_experience?: number | null;
   national_id?: string | null;
+  cvatta?: string | null;
   social_links?: {
     linkedin?: string;
     github?: string;
@@ -105,24 +106,38 @@ export const updateFreelancerProfile = async (
 export const uploadFreelancerPhoto = async (
   userId: number,
   photoFile: File
-): Promise<MediaFile> => {
+): Promise<FreelancerProfile> => {
   const formData = new FormData();
-  // Backend generic media upload expects: file (or attachment), entity_type, entity_id
-  formData.append('file', photoFile);
-  formData.append('entity_type', 'freelancer');
-  formData.append('entity_id', userId.toString());
-  
-  const response = await apiClient.post<MediaFile>(
-    `/media/upload/`,
+  formData.append('photo', photoFile);
+
+  const response = await apiClient.post(
+    `/freelancers/${userId}/upload-photo/`,
     formData,
-    {
-      headers: {
-        'Content-Type': 'multipart/form-data',
-      },
-    }
+    { headers: { 'Content-Type': 'multipart/form-data' } }
   );
+
   return response.data;
 };
+
+// Upload CV via generic media endpoint, then store returned file_url in cvatta via update endpoint
+export const uploadFreelancerCV = async (
+  userId: number,
+  file: File
+): Promise<MediaFile> => {
+  const formData = new FormData();
+  formData.append('file', file);
+  formData.append('entity_type', 'freelancer');
+  formData.append('entity_id', userId.toString());
+
+  const response = await apiClient.post<MediaFile>(
+    '/media/upload/',
+    formData,
+    { headers: { 'Content-Type': 'multipart/form-data' } }
+  );
+
+  return response.data;
+};
+
 
 export const listFreelancerMedia = async (userId: number): Promise<MediaFile[]> => {
   const response = await apiClient.get<MediaFile[]>(`/media/freelancer/${userId}/`);

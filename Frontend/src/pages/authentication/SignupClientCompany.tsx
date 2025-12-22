@@ -3,7 +3,7 @@ import LogoText from '../../assets/logo/LogoText.svg';
 //import WilayaDropdown from '../../components/WilayaDropdown';
 import { useNavigate } from 'react-router-dom';
 import Input from '../../components/Input';
-import { registerClientCompany } from '../../api/authApi';
+import { login, registerClientCompany } from '../../api/authApi';
 import { saveAuthFlag, saveRole, saveUserId } from '../../lib/auth';
 import styles from './SignupClientCompany.module.css';
 import { BUSINESS_TYPES } from '../../lib/businessTypes';
@@ -98,12 +98,23 @@ const SignupClientCompany: React.FC = () => {
         business_type: resolvedBusinessType,
         
       };
-      // Use correct API call
-      const response = await registerClientCompany(payload);
-      saveUserId(response.user.id);
-      saveRole(response.user.role);
+
+      // 1) Register
+      await registerClientCompany(payload);
+
+      // 2) Auto-login to establish the Django session cookie
+      const loginResponse = await login({
+        email: formData.email,
+        password: formData.password,
+      });
+
+      // 3) Persist UI auth state
+      saveUserId(loginResponse.user.id);
+      saveRole(loginResponse.user.role);
       saveAuthFlag(true);
-      navigate('/client/company/dashboard');
+
+      // 4) Redirect based on role
+      navigate('/dashboard');
     } catch (error: any) {
       if (error.response?.data?.detail) {
         setApiError(error.response.data.detail);

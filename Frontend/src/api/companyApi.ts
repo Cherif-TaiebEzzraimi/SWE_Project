@@ -1,17 +1,13 @@
-export const registerCompany = async (data: any) => {
-  const response = await apiClient.post("/auth/register/company/", data);
-  return response.data;
-};
 import apiClient from '../lib/axios';
 
+export const registerCompany = async (data: any) => {
+  const response = await apiClient.post('/auth/register/company/', data);
+  return response.data;
+};
+
 export interface Company {
-  user: {
-    id: number;
-    first_name: string;
-    last_name: string;
-    email: string;
-    role: string;
-  };
+  // Backend CompanySerializer uses fields='__all__', so `user` is the user PK.
+  user: number;
   registration_number: string;
   tax_id: string | null;
   representative: string | null;
@@ -40,6 +36,23 @@ export const updateCompanyProfile = async (
   data: UpdateCompanyPayload
 ): Promise<Company> => {
   const response = await apiClient.put<Company>(`/companies/${userId}/update/`, data);
+  return response.data;
+};
+
+// Upload company logo (Company.logo is an ImageField on backend)
+export const uploadCompanyLogo = async (
+  userId: number,
+  file: File
+): Promise<Company> => {
+  const formData = new FormData();
+  formData.append('logo', file);
+
+  const response = await apiClient.put<Company>(
+    `/companies/${userId}/update/`,
+    formData,
+    { headers: { 'Content-Type': 'multipart/form-data' } }
+  );
+
   return response.data;
 };
 

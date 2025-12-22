@@ -2,18 +2,16 @@ import React, { useEffect, useState } from 'react';
 import styles from './FreelancerProfile.module.css';
 import Settings from './Settings';
 import { BUSINESS_TYPES } from '../../lib/businessTypes';
-import { updateCompanyProfile } from '../../api/companyApi';
+import { useParams } from 'react-router-dom';
+import apiClient from '../../lib/axios';
+import { getUserId } from '../../lib/auth';
+import { getCompany, type Company as CompanyDTO, updateCompanyProfile, uploadCompanyLogo } from '../../api/companyApi';
 
 interface CompanyData {
-  user: {
-    id: number;
-    email: string;
-    first_name: string;
-    last_name: string;
-  };
+  user: number;
   registration_number: string;
   logo: string | null;
-  description: string;
+  description: string | null;
   business_type?: string | null;
   tax_id?: string | null;
   representative?: string | null;
@@ -22,6 +20,27 @@ interface CompanyData {
 }
 
 const ClientCompanyProfile: React.FC = () => {
+  const params = useParams<{ id: string }>();
+  const routeId = params.id ? Number.parseInt(params.id, 10) : null;
+  const viewerUserId = getUserId();
+
+  const isPublicView = !!(routeId && viewerUserId && routeId !== viewerUserId);
+  const profileIdToLoad = isPublicView ? routeId : viewerUserId ?? routeId;
+
+  const resolveMediaUrl = (url?: string | null) => {
+    if (!url) return null;
+    const trimmed = url.trim();
+    if (!trimmed) return null;
+    if (trimmed.startsWith('http://') || trimmed.startsWith('https://')) return trimmed;
+    if (trimmed.startsWith('//')) return `${window.location.protocol}${trimmed}`;
+
+    const base = (apiClient.defaults.baseURL || '').toString().replace(/\/$/, '');
+    if (!base) return trimmed;
+
+    if (trimmed.startsWith('/')) return `${base}${trimmed}`;
+    return `${base}/${trimmed}`;
+  };
+
   const [activeTab, setActiveTab] = useState<'profile' | 'settings'>('profile');
   const [isEditing, setIsEditing] = useState(false);
   const [companyData, setCompanyData] = useState<CompanyData | null>(null);
@@ -33,28 +52,35 @@ const ClientCompanyProfile: React.FC = () => {
   const [saveError, setSaveError] = useState('');
 
   useEffect(() => {
+    if (isPublicView) {
+      setIsEditing(false);
+      setActiveTab('profile');
+    }
     fetchCompanyData();
-  }, []);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [profileIdToLoad, isPublicView]);
 
   const fetchCompanyData = async () => {
-    const dummy: CompanyData = {
-      user: { id: 2, email: 'contact@acme.inc', first_name: 'Ahmed', last_name: 'Benali' },
-      registration_number: 'RC-ALG-2020-000123',
-      logo: null,
-      description:
-        'ACME Innovations is a technology company specializing in AI-driven business solutions and software engineering services.',
-      business_type: 'Software Company',
-      tax_id: null,
-      representative: null,
-      industry: null,
-      is_verified: false,
-    };
-    setCompanyData(dummy);
-    setFormData(dummy);
+    if (!profileIdToLoad) return;
+    try {
+      const profile = await getCompany(profileIdToLoad);
+      const merged: CompanyData = {
+        ...(profile as CompanyDTO),
+        logo: resolveMediaUrl(profile.logo),
+      };
+      setCompanyData(merged);
+      setFormData(merged);
+    } catch (error) {
+      console.error('Failed to load company profile', error);
+    }
   };
 
-  const handleEdit = () => setIsEditing(true);
+  const handleEdit = () => {
+    if (isPublicView) return;
+    setIsEditing(true);
+  };
   const handleCancel = () => {
+    if (isPublicView) return;
     setIsEditing(false);
     setFormData(companyData || {});
     setSaveError('');
@@ -62,71 +88,88 @@ const ClientCompanyProfile: React.FC = () => {
   };
 
   const handleSave = async () => {
+    if (isPublicView) return;
     setSaveError('');
     setSaveSuccess('');
+    const userId = getUserId();
+    if (!userId) {
+      setSaveError('You must be logged in to update this profile.');
+      return;
+    }
+    if (!companyData?.user) {
+      setSaveError('Company profile is missing an owner user id.');
+      return;
+    }
+    if (companyData.user !== userId) {
+      setSaveError('You can only update your own company profile.');
+      return;
+    }
+
     setSaveLoading(true);
     const resolvedBusinessType = (formData.business_type === 'Other' ? (customBusinessType.trim() || formData.business_type) : formData.business_type) || companyData?.business_type || null;
 
     // Backend does not expose PUT/PATCH /users/<id>/; company updates go through /companies/<id>/update/
-    if (companyData?.user.id) {
-      try {
-        const updated = await updateCompanyProfile(companyData.user.id, {
-          description: formData.description ?? companyData.description,
-          business_type: resolvedBusinessType,
-          tax_id: (formData.tax_id ?? companyData.tax_id ?? null) as any,
-          representative: (formData.representative ?? companyData.representative ?? null) as any,
-          industry: (formData.industry ?? companyData.industry ?? null) as any,
-        });
+    try {
+      const updated = await updateCompanyProfile(userId, {
+        description: formData.description ?? companyData.description,
+        business_type: resolvedBusinessType,
+        tax_id: (formData.tax_id ?? companyData.tax_id ?? null) as any,
+        representative: (formData.representative ?? companyData.representative ?? null) as any,
+        industry: (formData.industry ?? companyData.industry ?? null) as any,
+      });
 
-        setCompanyData(prev => {
-          if (!prev) return prev;
-          return {
-            ...prev,
-            description: updated.description ?? prev.description,
-            business_type: updated.business_type ?? prev.business_type,
-            tax_id: updated.tax_id ?? prev.tax_id ?? null,
-            representative: updated.representative ?? prev.representative ?? null,
-            industry: updated.industry ?? prev.industry ?? null,
-          };
-        });
-      } catch (e) {
-        const err: any = e as any;
-        const msg = err?.response?.data?.detail || 'Failed to update company profile.';
-        setSaveError(msg);
-        setSaveLoading(false);
-        return;
-      }
+      const preservedLogo = companyData.logo || resolveMediaUrl(updated.logo);
+      const merged: CompanyData = { ...(updated as CompanyData), logo: preservedLogo };
+      setCompanyData(merged);
+      setFormData(merged);
+      setIsEditing(false);
+      setSaveSuccess('Profile updated successfully.');
+    } catch (e) {
+      const err: any = e as any;
+      const msg = err?.response?.data?.detail || 'Failed to update company profile.';
+      setSaveError(msg);
+    } finally {
+      setSaveLoading(false);
     }
-
-    setIsEditing(false);
-    setSaveSuccess('Profile updated successfully.');
-    setSaveLoading(false);
   };
 
   const handleChange = (field: string, value: any) => {
     setFormData(prev => ({ ...prev, [field]: value }));
   };
 
-  const handleUserChange = (field: 'first_name' | 'last_name', value: string) => {
-    setFormData(prev => ({
-      ...prev,
-      user: {
-        id: companyData?.user.id || prev.user?.id || 0,
-        email: companyData?.user.email || prev.user?.email || '',
-        first_name: field === 'first_name' ? value : (prev.user?.first_name ?? companyData?.user.first_name ?? ''),
-        last_name: field === 'last_name' ? value : (prev.user?.last_name ?? companyData?.user.last_name ?? ''),
-      },
-    }));
-  };
-
   const handleLogoUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (isPublicView) return;
     const file = e.target.files?.[0];
     if (!file) return;
-    const previewUrl = URL.createObjectURL(file);
-    setCompanyData(prev => (prev ? { ...prev, logo: previewUrl } : prev));
-    setFormData(prev => ({ ...prev, logo: previewUrl }));
-    // TODO: POST /companies/<id>/upload-logo
+    const userId = getUserId();
+    if (!userId) return;
+
+    setSaveError('');
+    setSaveSuccess('');
+    setSaveLoading(true);
+
+    try {
+      // Upload logo to Company.logo (ImageField) via multipart PUT
+      const updated = await uploadCompanyLogo(userId, file);
+
+      // Update UI state with resolved URL
+      const resolvedLogo = resolveMediaUrl(updated.logo);
+      const merged: CompanyData = { ...(updated as CompanyData), logo: resolvedLogo };
+      setCompanyData(merged);
+      setFormData(merged);
+      setSaveSuccess('Logo updated successfully.');
+    } catch (e) {
+      const err: any = e as any;
+      const msg = err?.response?.data?.detail || 'Failed to upload company logo.';
+      setSaveError(msg);
+    } finally {
+      setSaveLoading(false);
+    }
   };
+
+  if (!companyData) {
+    return <div>Loading profile...</div>;
+  }
 
   return (
     <>
@@ -136,9 +179,11 @@ const ClientCompanyProfile: React.FC = () => {
             <button className={activeTab === 'profile' ? styles.active : ''} onClick={() => setActiveTab('profile')}>
               My Profile
             </button>
-            <button className={activeTab === 'settings' ? styles.active : ''} onClick={() => setActiveTab('settings')}>
-              Settings
-            </button>
+            {!isPublicView && (
+              <button className={activeTab === 'settings' ? styles.active : ''} onClick={() => setActiveTab('settings')}>
+                Settings
+              </button>
+            )}
           </nav>
         </aside>
 
@@ -160,6 +205,7 @@ const ClientCompanyProfile: React.FC = () => {
                       alt="Company Logo"
                       className={styles.profileImage}
                       style={{ width: '96px', height: '96px', borderRadius: '12px' }}
+                      onError={() => setCompanyData((prev) => (prev ? { ...prev, logo: null } : prev))}
                     />
                   ) : (
                     <div
@@ -182,20 +228,24 @@ const ClientCompanyProfile: React.FC = () => {
                       </svg>
                     </div>
                   )}
-                  <input type="file" id="logoUpload" accept="image/*" onChange={handleLogoUpload} style={{ display: 'none' }} />
-                  <label htmlFor="logoUpload" className={styles.uploadButton} aria-label="Upload logo">
-                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                      <path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h3l2-3h8l2 3h3a2 2 0 0 1 2 2z" />
-                      <circle cx="12" cy="13" r="4" />
-                    </svg>
-                  </label>
+                  {!isPublicView && (
+                    <>
+                      <input type="file" id="logoUpload" accept="image/*" onChange={handleLogoUpload} style={{ display: 'none' }} />
+                      <label htmlFor="logoUpload" className={styles.uploadButton} aria-label="Upload logo">
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                          <path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h3l2-3h8l2 3h3a2 2 0 0 1 2 2z" />
+                          <circle cx="12" cy="13" r="4" />
+                        </svg>
+                      </label>
+                    </>
+                  )}
                 </div>
 
                 <div className={styles.profileInfo}>
-                  <h2>{(`${companyData?.user.first_name || ''} ${companyData?.user.last_name || ''}`).trim() || companyData?.registration_number || 'Company Account'}</h2>
+                  <h2>{companyData?.registration_number || 'Company Account'}</h2>
                   <p className={styles.role}>Client Company</p>
                   <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                    <span className={styles.readOnly}>{companyData?.user.email}</span>
+                    <span className={styles.readOnly}>User ID: {companyData?.user}</span>
                     {companyData?.is_verified ? (
                       <span style={{
                         display: 'inline-flex',
@@ -236,7 +286,7 @@ const ClientCompanyProfile: React.FC = () => {
                   </div>
                 </div>
 
-                {!isEditing && (
+                {!isEditing && !isPublicView && (
                   <button className={styles.editButton} onClick={handleEdit} aria-label="Edit profile">
                     <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                       <path d="M12 20h9" />
@@ -254,29 +304,13 @@ const ClientCompanyProfile: React.FC = () => {
 
                 <div className={styles.formGrid}>
                   <div className={styles.formGroup}>
-                    <label> First Name: </label>
-                    {isEditing ? (
-                      <input
-                        type="text"
-                        value={formData.user?.first_name ?? companyData?.user.first_name ?? ''}
-                        onChange={e => handleUserChange('first_name', e.target.value)}
-                      />
-                    ) : (
-                      <p>{companyData?.user.first_name}</p>
-                    )}
+                    <label>First Name:</label>
+                    <p className={styles.readOnly}>Managed in Settings</p>
                   </div>
 
                   <div className={styles.formGroup}>
                     <label>Last Name: </label>
-                    {isEditing ? (
-                      <input
-                        type="text"
-                        value={formData.user?.last_name ?? companyData?.user.last_name ?? ''}
-                        onChange={e => handleUserChange('last_name', e.target.value)}
-                      />
-                    ) : (
-                      <p>{companyData?.user.last_name}</p>
-                    )}
+                    <p className={styles.readOnly}>Managed in Settings</p>
                   </div>
                   <div className={styles.formGroup}>
                     <label>Registration Number:</label>
@@ -285,7 +319,7 @@ const ClientCompanyProfile: React.FC = () => {
 
                   <div className={styles.formGroup}>
                     <label>Email Address:</label>
-                    <p className={styles.readOnly}>{companyData?.user.email}</p>
+                    <p className={styles.readOnly}>Managed in Settings</p>
                   </div>
 
                   <div className={styles.formGroup}>
@@ -401,10 +435,10 @@ const ClientCompanyProfile: React.FC = () => {
 
           
 
-          {activeTab === 'settings' && (
+          {!isPublicView && activeTab === 'settings' && (
             <div className={styles.settingsSection}>
               <h1 className={styles.pageTitle}>Settings</h1>
-              <Settings userId={companyData?.user.id || 0} userRole="company" />
+              <Settings userId={companyData?.user || 0} userRole="company" />
             </div>
           )}
         </main>

@@ -5,48 +5,76 @@ import { categoriesWithSkills } from '../../lib/categories';
 import FreelancerReviews from './FreelancerReviews';
 import FreelancerHistory from './FreelancerHistory';
 import Settings from './Settings';
-
-interface FreelancerData {
-  user: {
-    id: number;
-    first_name: string;
-    last_name: string;
-    email: string;
-  };
-  profile_picture: string | null;
-  phone_number: string;
-  description: string;
-  categories: string[];
-  skills: string[];
-  city: string;
-  wilaya: string;
-  years_experience: number | null;
-  national_id: string;
-  social_links: {
-    linkedin?: string;
-    github?: string;
-    portfolio?: string;
-    [key: string]: string | undefined;
-  };
-  rate: number | null;
-  education: Array<{
-    degree: string;
-    institution: string;
-    year: string;
-  }>;
-  ccp_account: string;
-  barid_account: string;
-  cvatta: string;
-}
+import apiClient from '../../lib/axios';
+import { useParams } from 'react-router-dom';
+import {
+  getFreelancerProfile,
+  type FreelancerProfile as FreelancerProfileDTO,
+  type MediaFile,
+  updateFreelancerProfile,
+  uploadFreelancerPhoto,
+  uploadFreelancerCV,
+  listFreelancerMedia,
+  deleteMedia,
+} from '../../api/freelancerApi';
+import { getUserId } from '../../lib/auth';
 
 const FreelancerProfile: React.FC = () => {
+  console.log('FreelancerProfile REAL FILE');
+
+  const params = useParams<{ id: string }>();
+  const routeId = params.id ? Number.parseInt(params.id, 10) : null;
+  const viewerUserId = getUserId();
+
+  // Public-view mode: user is logged in but viewing someone else's profile via URL.
+  const isPublicView = !!(routeId && viewerUserId && routeId !== viewerUserId);
+  const profileIdToLoad = isPublicView ? routeId : viewerUserId ?? routeId;
+
   const [activeTab, setActiveTab] = useState<'profile' | 'reviews' | 'history' | 'settings'>('profile');
   const [isEditing, setIsEditing] = useState(false);
-  const [freelancerData, setFreelancerData] = useState<FreelancerData | null>(null);
-  const [formData, setFormData] = useState<Partial<FreelancerData>>({});
+  const [freelancerData, setFreelancerData] = useState<FreelancerProfileDTO | null>(null);
+  const [formData, setFormData] = useState<Partial<FreelancerProfileDTO>>({});
   
   // Education state
   const [educationList, setEducationList] = useState<Array<{ degree: string; institution: string; year: string }>>([]);
+
+  // Media state (CVs, profile photo fallback)
+  const [cvFiles, setCvFiles] = useState<MediaFile[]>([]);
+
+  const resolveMediaUrl = (url?: string | null) => {
+    if (!url) return null;
+    const trimmed = url.trim();
+    if (!trimmed) return null;
+    if (trimmed.startsWith('http://') || trimmed.startsWith('https://')) return trimmed;
+    if (trimmed.startsWith('//')) return `${window.location.protocol}${trimmed}`;
+
+    const base = (apiClient.defaults.baseURL || '').toString().replace(/\/$/, '');
+    if (!base) return trimmed;
+
+    if (trimmed.startsWith('/')) return `${base}${trimmed}`;
+    return `${base}/${trimmed}`;
+  };
+
+  const isCvFileType = (fileType?: string | null) => {
+    const t = (fileType || '').toLowerCase();
+    return (
+      t === 'application/pdf' ||
+      t === 'application/msword' ||
+      t === 'application/vnd.openxmlformats-officedocument.wordprocessingml.document'
+    );
+  };
+
+  const dedupeByFileUrl = (files: MediaFile[]) => {
+    const seen = new Set<string>();
+    const unique: MediaFile[] = [];
+    for (const f of files) {
+      if (!f.file_url) continue;
+      if (seen.has(f.file_url)) continue;
+      seen.add(f.file_url);
+      unique.push(f);
+    }
+    return unique;
+  };
   
   // Skills and Categories state
   const [skillInput, setSkillInput] = useState('');
@@ -57,130 +85,104 @@ const FreelancerProfile: React.FC = () => {
   const [selectedSkill, setSelectedSkill] = useState<string>('');
 
   useEffect(() => {
-    // TODO: Fetch freelancer data from API
-    // GET /freelancers/<id>/
+    // When switching into public view, force-safe UI state.
+    if (isPublicView) {
+      setIsEditing(false);
+      setActiveTab('profile');
+    }
     fetchFreelancerData();
-  }, []);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [profileIdToLoad, isPublicView]);
 
   const fetchFreelancerData = async () => {
-    // TODO: Uncomment to connect to backend
-    // const userId = localStorage.getItem('userId');
-    // const response = await fetch(`http://localhost:8000/freelancers/${userId}/`);
-    // const data = await response.json();
-    // setFreelancerData(data);
-    // setFormData(data);
-    // setSkills(data.skills || []);
-    // setCategories(data.categories || []);
-    // setEducationList(data.education || []);
+    if (!profileIdToLoad) return;
 
-    // DUMMY DATA for UI testing
-    const dummyData: FreelancerData = {
-      user: {
-        id: 1,
-        first_name: 'Ahmed',
-        last_name: 'Benali',
-        email: 'ahmed.benali@example.com',
-      },
-      profile_picture: null,
-      phone_number: '0555123456',
-      description: 'Experienced full-stack developer with 5+ years of expertise in React, Node.js, and Django. Passionate about building scalable web applications and delivering high-quality solutions.',
-      categories: ['Development & IT', 'AI Services'],
-      skills: ['React', 'TypeScript', 'Node.js', 'Django', 'PostgreSQL', 'Python'],
-      city: 'Algiers',
-      wilaya: 'Alger',
-      years_experience: 5,
-      national_id: '1234567890',
-      social_links: {
-        linkedin: 'https://linkedin.com/in/ahmed-benali',
-        github: 'https://github.com/ahmedbenali',
-        portfolio: 'https://ahmedbenali.dev',
-      },
-      rate: 4.8,
-      education: [
-        {
-          degree: 'Master in Computer Science',
-          institution: 'University of Science and Technology Houari Boumediene',
-          year: '2018',
-        },
-        {
-          degree: 'Bachelor in Software Engineering',
-          institution: 'University of Algiers',
-          year: '2016',
-        },
-      ],
-      ccp_account: '0012345678901',
-      barid_account: '0020123456789',
-      cvatta: '/media/cvs/ahmed_benali_cv.pdf',
-    };
+    try {
+      const profile = await getFreelancerProfile(profileIdToLoad);
+      const media = await listFreelancerMedia(profileIdToLoad);
 
-    setFreelancerData(dummyData);
-    setFormData(dummyData);
-    setSkills(dummyData.skills || []);
-    setCategories(dummyData.categories || []);
-    setEducationList(dummyData.education || []);
+      const latestImage = media
+        .filter((m) => (m.file_type || '').startsWith('image/'))
+        .sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime())[0];
+
+      const resolvedProfilePicture = resolveMediaUrl(profile.profile_picture || latestImage?.file_url || null);
+
+      const mergedProfile: FreelancerProfileDTO = {
+        ...profile,
+        profile_picture: resolvedProfilePicture,
+      };
+
+      setFreelancerData(mergedProfile);
+      setFormData(mergedProfile);
+      setSkills(mergedProfile.skills ?? []);
+      setCategories(mergedProfile.categories ?? []);
+      setEducationList(mergedProfile.education ?? []);
+
+      const cvs = dedupeByFileUrl(media.filter((m) => isCvFileType(m.file_type)));
+      setCvFiles(cvs);
+    } catch (error) {
+      console.error('Failed to load freelancer profile', error);
+    }
   };
 
   const handleEdit = () => {
+    if (isPublicView) return;
     setIsEditing(true);
-    setSkills(freelancerData?.skills || []);
-    setCategories(freelancerData?.categories || []);
-    setEducationList(freelancerData?.education || []);
+    setSkills(freelancerData?.skills ?? []);
+    setCategories(freelancerData?.categories ?? []);
+    setEducationList(freelancerData?.education ?? []);
   };
 
   const handleCancel = () => {
+    if (isPublicView) return;
     setIsEditing(false);
     setFormData(freelancerData || {});
-    setSkills(freelancerData?.skills || []);
-    setCategories(freelancerData?.categories || []);
-    setEducationList(freelancerData?.education || []);
+    setSkills(freelancerData?.skills ?? []);
+    setCategories(freelancerData?.categories ?? []);
+    setEducationList(freelancerData?.education ?? []);
   };
 
   const handleSave = async () => {
-    // TODO: Update freelancer profile
-    // PUT /freelancers/<id>/update/
+    if (isPublicView) return;
+    const userId = getUserId();
+    if (!userId) return;
+
     try {
-      // Prepare data with skills, categories, education
-      // const updateData = {
-      //   ...formData,
-      //   skills,
-      //   categories,
-      //   education: educationList,
-      // };
-      
-      // const userId = localStorage.getItem('userId');
-      // const response = await fetch(`http://localhost:8000/freelancers/${userId}/update/`, {
-      //   method: 'PUT',
-      //   headers: { 'Content-Type': 'application/json' },
-      //   body: JSON.stringify(updateData)
-      // });
-      // const data = await response.json();
-      // setFreelancerData(data);
-      // Merge edited form values into displayed profile immediately
-      setFreelancerData(prev => {
-        if (!prev) return prev;
-        return {
-          ...prev,
-          user: {
-            ...prev.user,
-            first_name: formData.user?.first_name ?? prev.user.first_name,
-            last_name: formData.user?.last_name ?? prev.user.last_name,
-            email: prev.user.email, // email read-only
-          },
-          phone_number: formData.phone_number ?? prev.phone_number,
-          description: formData.description ?? prev.description,
-          city: formData.city ?? prev.city,
-          wilaya: formData.wilaya ?? prev.wilaya,
-          years_experience: formData.years_experience ?? prev.years_experience,
-          national_id: formData.national_id ?? prev.national_id,
-          social_links: formData.social_links ?? prev.social_links,
-          ccp_account: formData.ccp_account ?? prev.ccp_account,
-          barid_account: formData.barid_account ?? prev.barid_account,
-          cvatta: formData.cvatta ?? prev.cvatta,
-          skills: skills.length ? skills : prev.skills,
-          categories: categories.length ? categories : prev.categories,
-          education: educationList.length ? educationList : prev.education,
-        };
+      const updated = await updateFreelancerProfile(userId, {
+        first_name: formData.user?.first_name,
+        last_name: formData.user?.last_name,
+        phone_number: formData.phone_number ?? null,
+        description: formData.description ?? null,
+        city: formData.city ?? null,
+        wilaya: formData.wilaya ?? null,
+        years_experience: formData.years_experience ?? null,
+        national_id: formData.national_id ?? null,
+        social_links: formData.social_links ?? null,
+        ccp_account: formData.ccp_account ?? null,
+        barid_account: formData.barid_account ?? null,
+        skills,
+        categories,
+        education: educationList,
       });
+
+      // The update endpoint may not return `profile_picture` (or may return it as a relative URL).
+      // Preserve the currently displayed resolved picture so it doesn't disappear after Save.
+      setFreelancerData((prev) => {
+        const preservedPicture = prev?.profile_picture || resolveMediaUrl(updated.profile_picture);
+        return { ...updated, profile_picture: preservedPicture };
+      });
+
+      setFormData((prev) => {
+        const preservedPicture =
+          (prev as FreelancerProfileDTO | null)?.profile_picture ||
+          freelancerData?.profile_picture ||
+          resolveMediaUrl(updated.profile_picture);
+        return { ...updated, profile_picture: preservedPicture };
+      });
+
+      setSkills(updated.skills ?? []);
+      setCategories(updated.categories ?? []);
+      setEducationList(updated.education ?? []);
       setIsEditing(false);
     } catch (error) {
       console.error('Error updating profile:', error);
@@ -192,34 +194,86 @@ const FreelancerProfile: React.FC = () => {
   };
 
   const handlePhotoUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
-    // TODO: Upload photo
-    // POST /freelancers/<id>/upload-photo/
+    if (isPublicView) return;
     const file = event.target.files?.[0];
     if (!file) return;
 
-    const formDataPhoto = new FormData();
-    formDataPhoto.append('photo', file);
+    const userId = getUserId();
+    if (!userId) return;
 
-    // Local preview until backend upload completes
-    const previewUrl = URL.createObjectURL(file);
-    setFreelancerData(prev => prev ? { ...prev, profile_picture: previewUrl } : prev);
-    setFormData(prev => ({ ...prev, profile_picture: previewUrl }));
-
-    // const userId = localStorage.getItem('userId');
-    // await fetch(`http://localhost:8000/freelancers/${userId}/upload-photo/`, {
-    //   method: 'POST',
-    //   body: formDataPhoto
-    // });
+    try {
+      await uploadFreelancerPhoto(userId, file);
+      await fetchFreelancerData();
+    } catch (error) {
+      console.error('Failed to upload photo', error);
+    }
   };
 
   const handleCVUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
-    // TODO: Upload CV
+    if (isPublicView) return;
     const file = event.target.files?.[0];
     if (!file) return;
 
-    // This would typically be handled by a media upload endpoint or included in profile update
-    // Backend has cvatta field which is a string (likely a path/URL)
+    const userId = getUserId();
+    if (!userId) return;
+
+    try {
+      // 1) Upload CV file to generic media endpoint
+      const media = await uploadFreelancerCV(userId, file);
+
+      // 2) Persist CV URL into freelancer profile (cvatta is a string field)
+      const updated = await updateFreelancerProfile(userId, {
+        cvatta: media.file_url,
+      });
+
+      setFreelancerData((prev) => (prev ? { ...updated, profile_picture: prev.profile_picture } : updated));
+      setFormData(updated);
+      // Refresh media list (so user can immediately see/remove uploaded CV)
+      const allMedia = await listFreelancerMedia(userId);
+      setCvFiles(dedupeByFileUrl(allMedia.filter((m) => isCvFileType(m.file_type))));
+    } catch (error) {
+      console.error('Failed to upload CV', error);
+    }
   };
+
+  const handleDeleteCV = async (mediaId: number) => {
+    if (isPublicView) return;
+    const userId = getUserId();
+    if (!userId) return;
+
+    try {
+      const deleted = cvFiles.find((f) => f.id === mediaId);
+      await deleteMedia(mediaId);
+
+      // If the deleted file was the one referenced by cvatta, clear it.
+      if (deleted?.file_url && freelancerData?.cvatta === deleted.file_url) {
+        const updated = await updateFreelancerProfile(userId, { cvatta: null });
+        setFreelancerData((prev) => (prev ? { ...updated, profile_picture: prev.profile_picture } : updated));
+        setFormData(updated);
+      }
+
+      const allMedia = await listFreelancerMedia(userId);
+      setCvFiles(dedupeByFileUrl(allMedia.filter((m) => isCvFileType(m.file_type))));
+    } catch (error) {
+      console.error('Failed to delete CV', error);
+    }
+  };
+
+  const cvViewItems = (() => {
+    const items = dedupeByFileUrl(cvFiles);
+    if (freelancerData?.cvatta) {
+      const alreadyListed = items.some((f) => f.file_url === freelancerData.cvatta);
+      if (!alreadyListed) {
+        items.push({
+          id: 0,
+          file_url: freelancerData.cvatta,
+          file_type: 'application/pdf',
+          created_at: new Date(0).toISOString(),
+        } as MediaFile);
+      }
+    }
+    return items;
+  })();
 
   // Skills management
   const addSkill = () => {
@@ -264,6 +318,10 @@ const FreelancerProfile: React.FC = () => {
     setEducationList(educationList.filter((_, i) => i !== index));
   };
 
+  if (!freelancerData) {
+    return <div>Loading profile...</div>;
+  }
+
   return (
     <>
       {/* ==================== HEADER SECTION - Add Header Component Here ==================== */}
@@ -286,18 +344,22 @@ const FreelancerProfile: React.FC = () => {
           >
             Reviews
           </button>
-          <button 
-            className={activeTab === 'history' ? styles.active : ''}
-            onClick={() => setActiveTab('history')}
-          >
-            Project History
-          </button>
-          <button 
-            className={activeTab === 'settings' ? styles.active : ''}
-            onClick={() => setActiveTab('settings')}
-          >
-            Settings
-          </button>
+          {!isPublicView && (
+            <button 
+              className={activeTab === 'history' ? styles.active : ''}
+              onClick={() => setActiveTab('history')}
+            >
+              Project History
+            </button>
+          )}
+          {!isPublicView && (
+            <button 
+              className={activeTab === 'settings' ? styles.active : ''}
+              onClick={() => setActiveTab('settings')}
+            >
+              Settings
+            </button>
+          )}
         </nav>
       </aside>
 
@@ -316,6 +378,9 @@ const FreelancerProfile: React.FC = () => {
                     alt="Profile" 
                     className={styles.profileImage}
                     style={{ width: '96px', height: '96px', borderRadius: '50%' }}
+                    onError={() =>
+                      setFreelancerData((prev) => (prev ? { ...prev, profile_picture: null } : prev))
+                    }
                   />
                 ) : (
                   <div
@@ -338,19 +403,23 @@ const FreelancerProfile: React.FC = () => {
                     </svg>
                   </div>
                 )}
-                <input 
-                  type="file" 
-                  id="photoUpload" 
-                  accept="image/*" 
-                  onChange={handlePhotoUpload}
-                  style={{ display: 'none' }}
-                />
-                <label htmlFor="photoUpload" className={styles.uploadButton} aria-label="Upload photo">
-                  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                    <path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h3l2-3h8l2 3h3a2 2 0 0 1 2 2z" />
-                    <circle cx="12" cy="13" r="4" />
-                  </svg>
-                </label>
+                {!isPublicView && (
+                  <>
+                    <input 
+                      type="file" 
+                      id="photoUpload" 
+                      accept="image/*" 
+                      onChange={handlePhotoUpload}
+                      style={{ display: 'none' }}
+                    />
+                    <label htmlFor="photoUpload" className={styles.uploadButton} aria-label="Upload photo">
+                      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                        <path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h3l2-3h8l2 3h3a2 2 0 0 1 2 2z" />
+                        <circle cx="12" cy="13" r="4" />
+                      </svg>
+                    </label>
+                  </>
+                )}
               </div>
               
               <div className={styles.profileInfo}>
@@ -367,7 +436,7 @@ const FreelancerProfile: React.FC = () => {
                 </p>
               </div>
 
-              {!isEditing && (
+              {!isEditing && !isPublicView && (
                 <button className={styles.editButton} onClick={handleEdit} aria-label="Edit profile">
                   <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                     <path d="M12 20h9" />
@@ -436,11 +505,11 @@ const FreelancerProfile: React.FC = () => {
                   {isEditing ? (
                     <input 
                       type="tel" 
-                      value={formData.phone_number || ''}
+                      value={formData.phone_number ?? ''}
                       onChange={(e) => handleChange('phone_number', e.target.value)}
                     />
                   ) : (
-                    <p>{freelancerData?.phone_number}</p>
+                    <p>{freelancerData.phone_number ?? ''}</p>
                   )}
                 </div>
 
@@ -449,7 +518,7 @@ const FreelancerProfile: React.FC = () => {
                   {isEditing ? (
                     <div style={{ background: 'var(--teal-light)', border: '1px solid var(--teal-strong)', borderRadius: 8, padding: 12 }}>
                       <textarea 
-                        value={formData.description || ''}
+                        value={formData.description ?? ''}
                         onChange={(e) => handleChange('description', e.target.value)}
                         rows={6}
                         placeholder="Summarize your experience, specialties, and value proposition."
@@ -468,7 +537,7 @@ const FreelancerProfile: React.FC = () => {
                     <div style={{ background: 'var(--card-white)', border: '1px solid var(--teal-strong)', borderRadius: 8, padding: 16 }}>
                       <h4 style={{ margin: 0, color: 'var(--text-dark-blue)' }}>Professional Summary</h4>
                       <p style={{ margin: '8px 0 0', color: 'var(--text-dark-blue)', lineHeight: 1.7 }}>
-                        {freelancerData?.description}
+                        {freelancerData.description ?? ''}
                       </p>
                     </div>
                   )}
@@ -486,7 +555,7 @@ const FreelancerProfile: React.FC = () => {
                 <label>Categories</label>
                 {!isEditing ? (
                   <div className={styles.tagList}>
-                    {freelancerData?.categories?.map((cat, idx) => (
+                    {freelancerData.categories?.map((cat, idx) => (
                       <span key={idx} className={styles.tag}>{cat}</span>
                     ))}
                   </div>
@@ -528,7 +597,7 @@ const FreelancerProfile: React.FC = () => {
                 <label>Skills</label>
                 {!isEditing ? (
                   <div className={styles.tagList}>
-                    {freelancerData?.skills?.map((skill, idx) => (
+                    {freelancerData.skills?.map((skill, idx) => (
                       <span key={idx} className={styles.tag}>{skill}</span>
                     ))}
                   </div>
@@ -631,7 +700,7 @@ const FreelancerProfile: React.FC = () => {
                 </div>
               ) : (
                 <div className={styles.educationList}>
-                  {freelancerData?.education && freelancerData.education.length > 0 ? (
+                  {freelancerData.education && freelancerData.education.length > 0 ? (
                     freelancerData.education.map((edu, index) => (
                       <div key={index} className={styles.educationDisplay}>
                         <h4>{edu.degree}</h4>
@@ -646,36 +715,150 @@ const FreelancerProfile: React.FC = () => {
               )}
             </section>
 
-            {/* CV Upload */}
-            <section className={styles.section}>
-              <div className={styles.sectionHeader}>
-                <h3>CV / Resume</h3>
-              </div>
+            {!isPublicView && (
+              <>
+                {/* CV Upload */}
+                <section className={styles.section}>
+                  <div className={styles.sectionHeader}>
+                    <h3>CV / Resume</h3>
+                  </div>
 
-              <div className={styles.formGroup}>
-                <label>Upload CV</label>
-                {freelancerData?.cvatta && !isEditing && (
-                  <div className={styles.cvDisplay}>
-                    <a href={freelancerData.cvatta} target="_blank" rel="noopener noreferrer">
-                      📄 View CV
-                    </a>
+                  <div className={styles.formGroup}>
+                    <label>Upload CV</label>
+
+                    {cvViewItems.length > 0 && (
+                      <div className={styles.cvDisplay}>
+                        <div className={styles.cvList}>
+                          {cvViewItems.map((cv) => {
+                            const isDeletable = isEditing && cv.id && cv.id > 0;
+                            const href = resolveMediaUrl(cv.file_url) || cv.file_url;
+                            return (
+                              <div key={`${cv.id}-${cv.file_url}`} className={styles.cvRow}>
+                                <a
+                                  href={href}
+                                  target="_blank"
+                                  rel="noopener noreferrer"
+                                  className={styles.cvLink}
+                                >
+                                  <span className={styles.cvLinkContent}>
+                                    <svg
+                                      className={styles.cvLinkIcon}
+                                      width="16"
+                                      height="16"
+                                      viewBox="0 0 24 24"
+                                      fill="none"
+                                      xmlns="http://www.w3.org/2000/svg"
+                                      aria-hidden="true"
+                                    >
+                                      <path
+                                        d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8l-6-6Z"
+                                        stroke="currentColor"
+                                        strokeWidth="2"
+                                        strokeLinecap="round"
+                                        strokeLinejoin="round"
+                                      />
+                                      <path
+                                        d="M14 2v6h6"
+                                        stroke="currentColor"
+                                        strokeWidth="2"
+                                        strokeLinecap="round"
+                                        strokeLinejoin="round"
+                                      />
+                                    </svg>
+                                    <span>View CV</span>
+                                  </span>
+                                </a>
+
+                                {isDeletable && (
+                                  <button
+                                    type="button"
+                                    className={styles.cvRemoveButton}
+                                    onClick={() => handleDeleteCV(cv.id)}
+                                    aria-label="Remove CV"
+                                    title="Remove"
+                                  >
+                                    <svg
+                                      width="16"
+                                      height="16"
+                                      viewBox="0 0 24 24"
+                                      fill="none"
+                                      xmlns="http://www.w3.org/2000/svg"
+                                      aria-hidden="true"
+                                    >
+                                      <path
+                                        d="M18 6 6 18"
+                                        stroke="currentColor"
+                                        strokeWidth="2"
+                                        strokeLinecap="round"
+                                        strokeLinejoin="round"
+                                      />
+                                      <path
+                                        d="M6 6l12 12"
+                                        stroke="currentColor"
+                                        strokeWidth="2"
+                                        strokeLinecap="round"
+                                        strokeLinejoin="round"
+                                      />
+                                    </svg>
+                                  </button>
+                                )}
+                              </div>
+                            );
+                          })}
+                        </div>
+                      </div>
+                    )}
+
+                    {isEditing && (
+                      <div className={styles.fileUpload}>
+                        <input
+                          type="file"
+                          id="cvUpload"
+                          accept=".pdf,.doc,.docx"
+                          onChange={handleCVUpload}
+                        />
+                        <label htmlFor="cvUpload" className={styles.uploadLabel}>
+                          <span className={styles.uploadLabelContent}>
+                            <svg
+                              className={styles.uploadLabelIcon}
+                              width="18"
+                              height="18"
+                              viewBox="0 0 24 24"
+                              fill="none"
+                              xmlns="http://www.w3.org/2000/svg"
+                              aria-hidden="true"
+                            >
+                              <path
+                                d="M12 16V4"
+                                stroke="currentColor"
+                                strokeWidth="2"
+                                strokeLinecap="round"
+                                strokeLinejoin="round"
+                              />
+                              <path
+                                d="m7 9 5-5 5 5"
+                                stroke="currentColor"
+                                strokeWidth="2"
+                                strokeLinecap="round"
+                                strokeLinejoin="round"
+                              />
+                              <path
+                                d="M20 20H4"
+                                stroke="currentColor"
+                                strokeWidth="2"
+                                strokeLinecap="round"
+                                strokeLinejoin="round"
+                              />
+                            </svg>
+                            <span>Upload CV (PDF, DOC, DOCX)</span>
+                          </span>
+                        </label>
+                      </div>
+                    )}
                   </div>
-                )}
-                {isEditing && (
-                  <div className={styles.fileUpload}>
-                    <input
-                      type="file"
-                      id="cvUpload"
-                      accept=".pdf,.doc,.docx"
-                      onChange={handleCVUpload}
-                    />
-                    <label htmlFor="cvUpload" className={styles.uploadLabel}>
-                      Choose CV File (PDF, DOC, DOCX)
-                    </label>
-                  </div>
-                )}
-              </div>
-            </section>
+                </section>
+              </>
+            )}
 
             {/* Location & Experience */}
             <section className={styles.section}>
@@ -688,24 +871,24 @@ const FreelancerProfile: React.FC = () => {
                 {isEditing ? (
                   <input 
                     type="text" 
-                    value={formData.city || ''}
+                    value={formData.city ?? ''}
                     onChange={(e) => handleChange('city', e.target.value)}
                   />
                 ) : (
-                  <p>{freelancerData?.city}</p>
+                  <p>{freelancerData.city ?? ''}</p>
                 )}
               </div>
               <div className={styles.formGroup}>
                 <label>Wilaya</label>
                 {isEditing ? (
                   <WilayaDropdown
-                    value={formData.wilaya || ''}
+                    value={formData.wilaya ?? ''}
                     onChange={(val) => handleChange('wilaya', typeof val === 'string' ? val : '')}
                     error={''}
                     disabled={false}
                   />
                 ) : (
-                  <p>{freelancerData?.wilaya}</p>
+                  <p>{freelancerData.wilaya ?? ''}</p>
                 )}
               </div>
 
@@ -718,20 +901,24 @@ const FreelancerProfile: React.FC = () => {
                     onChange={(e) => handleChange('years_experience', parseInt(e.target.value))}
                   />
                 ) : (
-                  <p>{freelancerData?.years_experience} years</p>
+                  <p>{freelancerData.years_experience ?? 0} years</p>
                 )}
               </div>
 
               <div className={styles.formGroup}>
                 <label>National ID</label>
-                {isEditing ? (
-                  <input 
-                    type="text" 
-                    value={formData.national_id || ''}
-                    onChange={(e) => handleChange('national_id', e.target.value)}
-                  />
-                ) : (
-                  <p>{freelancerData?.national_id}</p>
+                {!isPublicView && (
+                  <>
+                    {isEditing ? (
+                      <input 
+                        type="text" 
+                        value={formData.national_id ?? ''}
+                        onChange={(e) => handleChange('national_id', e.target.value)}
+                      />
+                    ) : (
+                      <p>{freelancerData.national_id ?? ''}</p>
+                    )}
+                  </>
                 )}
               </div>
             </section>
@@ -748,14 +935,14 @@ const FreelancerProfile: React.FC = () => {
                   {isEditing ? (
                     <input
                       type="url"
-                      value={formData.social_links?.linkedin || ''}
+                      value={formData.social_links?.linkedin ?? ''}
                       onChange={(e) =>
                         handleChange('social_links', { ...formData.social_links, linkedin: e.target.value })
                       }
                       placeholder="https://linkedin.com/in/yourprofile"
                     />
                   ) : (
-                    <p>{freelancerData?.social_links?.linkedin || 'Not provided'}</p>
+                    <p>{freelancerData.social_links?.linkedin || 'Not provided'}</p>
                   )}
                 </div>
 
@@ -764,14 +951,14 @@ const FreelancerProfile: React.FC = () => {
                   {isEditing ? (
                     <input
                       type="url"
-                      value={formData.social_links?.github || ''}
+                      value={formData.social_links?.github ?? ''}
                       onChange={(e) =>
                         handleChange('social_links', { ...formData.social_links, github: e.target.value })
                       }
                       placeholder="https://github.com/yourusername"
                     />
                   ) : (
-                    <p>{freelancerData?.social_links?.github || 'Not provided'}</p>
+                    <p>{freelancerData.social_links?.github || 'Not provided'}</p>
                   )}
                 </div>
 
@@ -780,54 +967,58 @@ const FreelancerProfile: React.FC = () => {
                   {isEditing ? (
                     <input
                       type="url"
-                      value={formData.social_links?.portfolio || ''}
+                      value={formData.social_links?.portfolio ?? ''}
                       onChange={(e) =>
                         handleChange('social_links', { ...formData.social_links, portfolio: e.target.value })
                       }
                       placeholder="https://yourportfolio.com"
                     />
                   ) : (
-                    <p>{freelancerData?.social_links?.portfolio || 'Not provided'}</p>
+                    <p>{freelancerData.social_links?.portfolio || 'Not provided'}</p>
                   )}
                 </div>
               </div>
             </section>
 
 
-            {/* Payment Information */}
-            <section className={styles.section}>
-              <div className={styles.sectionHeader}>
-                <h3>Payment Information</h3>
-              </div>
+            {!isPublicView && (
+              <>
+                {/* Payment Information */}
+                <section className={styles.section}>
+                  <div className={styles.sectionHeader}>
+                    <h3>Payment Information</h3>
+                  </div>
 
-              <div className={styles.formGrid}>
-                <div className={styles.formGroup}>
-                  <label>CCP Account</label>
-                  {isEditing ? (
-                    <input 
-                      type="text" 
-                      value={formData.ccp_account || ''}
-                      onChange={(e) => handleChange('ccp_account', e.target.value)}
-                    />
-                  ) : (
-                    <p>{freelancerData?.ccp_account}</p>
-                  )}
-                </div>
+                  <div className={styles.formGrid}>
+                    <div className={styles.formGroup}>
+                      <label>CCP Account</label>
+                      {isEditing ? (
+                        <input 
+                          type="text" 
+                          value={formData.ccp_account ?? ''}
+                          onChange={(e) => handleChange('ccp_account', e.target.value)}
+                        />
+                      ) : (
+                        <p>{freelancerData.ccp_account ?? ''}</p>
+                      )}
+                    </div>
 
-                <div className={styles.formGroup}>
-                  <label>Barid Account</label>
-                  {isEditing ? (
-                    <input 
-                      type="text" 
-                      value={formData.barid_account || ''}
-                      onChange={(e) => handleChange('barid_account', e.target.value)}
-                    />
-                  ) : (
-                    <p>{freelancerData?.barid_account}</p>
-                  )}
-                </div>
-              </div>
-            </section>
+                    <div className={styles.formGroup}>
+                      <label>Barid Account</label>
+                      {isEditing ? (
+                        <input 
+                          type="text" 
+                          value={formData.barid_account ?? ''}
+                          onChange={(e) => handleChange('barid_account', e.target.value)}
+                        />
+                      ) : (
+                        <p>{freelancerData.barid_account ?? ''}</p>
+                      )}
+                    </div>
+                  </div>
+                </section>
+              </>
+            )}
 
             {/* Action Buttons */}
             {isEditing && (
@@ -853,14 +1044,14 @@ const FreelancerProfile: React.FC = () => {
           </div>
         )}
 
-        {activeTab === 'history' && (
+        {!isPublicView && activeTab === 'history' && (
           <div className={styles.historySection}>
             <h1 className={styles.pageTitle}>Project History</h1>
             <FreelancerHistory userId={freelancerData?.user.id || 0} />
           </div>
         )}
 
-        {activeTab === 'settings' && (
+        {!isPublicView && activeTab === 'settings' && (
           <div className={styles.settingsSection}>
             <h1 className={styles.pageTitle}>Settings</h1>
             <Settings userId={freelancerData?.user.id || 0} userRole="freelancer" />
