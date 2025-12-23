@@ -1,6 +1,6 @@
 .reviewsContainer {
   padding: 0;
-  background-color: #f1f5f9;
+  background: transparent;
 }
 
 .loading {
@@ -10,13 +10,14 @@
 }
 
 .ratingsSummary {
-  background: transparent;
-  border: none;
-  border-radius: 0;
-  padding: 0;
+  background: #ffffff;
+  border: 1px solid #e5e7eb;
+  border-radius: 14px;
+  padding: 18px 20px;
   margin-bottom: 16px;
-  color: #172554;
+  color: #0f172a;
   text-align: center;
+  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.06);
 }
 
 .overallRating {
@@ -29,18 +30,18 @@
 .ratingNumber {
   font-size: 36px;
   font-weight: 700;
-  color: #172554;
+  color: #0f172a;
 }
 
 .ratingStars {
   font-size: 18px;
-  color: #0a65f1;
+  color: #2563eb;
 }
 
 .reviewCount {
   font-size: 13px;
   opacity: 0.9;
-  color: #1e3a8a;
+  color: #6b7280;
 }
 
 .stars {
@@ -49,23 +50,24 @@
 }
 
 .starFilled {
-  color: #ffc107;
+  color: #f59e0b;
 }
 
 .starEmpty {
-  color: rgba(10, 101, 241, 0.3);
+  color: #cbd5e1;
 }
 
 .noReviews {
   text-align: center;
   padding: 60px 20px;
-  background-color: #e0f8fb;
-  border-radius: 8px;
+  background: #ffffff;
+  border-radius: 14px;
+  border: 1px solid #e5e7eb;
 }
 
 .noReviews p {
   margin: 10px 0;
-  color: #172554;
+  color: #0f172a;
   font-size: 16px;
 }
 
@@ -81,15 +83,15 @@
 }
 
 .reviewCard {
-  background-color: #ffffff;
-  border: 1px solid #e0e0e0;
-  border-radius: 8px;
-  padding: 20px;
+  background: #ffffff;
+  border: 1px solid #e5e7eb;
+  border-radius: 14px;
+  padding: 18px 20px;
   transition: box-shadow 0.2s, transform 0.1s;
 }
 
 .reviewCard:hover {
-  box-shadow: 0 2px 8px rgba(10, 101, 241, 0.2);
+  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.06);
   transform: translateY(-2px);
 }
 
@@ -110,25 +112,37 @@
   width: 40px;
   height: 40px;
   border-radius: 50%;
-  background: #e7b5b5;
-  border: 2px solid #b91c1c;
-  color: #172554;
+  background: #cbd5e1;
+  border: 1px solid #e5e7eb;
+  color: #0f172a;
   display: flex;
   align-items: center;
   justify-content: center;
-  font-weight: 600;
-  font-size: 14px;
+  font-weight: 700;
+  font-size: 13px;
+  overflow: hidden;
+}
+
+.clientAvatarImage {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+
+.clientAvatarInitials {
+  line-height: 1;
 }
 
 .clientName {
   font-weight: 600;
-  color: #172554;
+  color: #0f172a;
   font-size: 15px;
 }
 
 .reviewDate {
   font-size: 13px;
-  color: #1e3a8a;
+  color: #6b7280;
   margin-top: 2px;
 }
 
@@ -137,15 +151,15 @@
 }
 
 .reviewRating .starFilled {
-  color: #ffc107;
+  color: #f59e0b;
 }
 
 .reviewRating .starEmpty {
-  color: rgba(10, 101, 241, 0.3);
+  color: #cbd5e1;
 }
 
 .reviewFeedback {
-  color: #172554;
+  color: #334155;
   line-height: 1.6;
   font-size: 14px;
 }

@@ -238,9 +238,14 @@ def reset_password(request):
 
 
 # ---------- Profile endpoints (freelancer/client/company) ----------
-@api_view(['GET'])
-def _is_owner_or_staff(request, freelancer):
-    return request.user.is_staff or freelancer.user == request.user
+def _is_owner_or_staff(request, profile_obj):
+    """Helper function to check if user is owner or staff"""
+    # Handle different profile types
+    if hasattr(profile_obj, 'user'):
+        return request.user.is_staff or profile_obj.user == request.user
+    elif hasattr(profile_obj, 'user_id'):
+        return request.user.is_staff or profile_obj.user_id == request.user
+    return False
 
 
 @api_view(['GET'])
@@ -1017,13 +1022,15 @@ def create_review(request):
     freelancer_id = data.get('freelancer_id')
     if not freelancer_id:
         return Response({'detail': 'freelancer_id is required'}, status=status.HTTP_400_BAD_REQUEST)
-    freelancer = Freelancer.objects.filter(id=freelancer_id).first()
+    # Freelancer uses 'user' as primary key, not 'id'
+    freelancer = Freelancer.objects.filter(user=freelancer_id).first()
     if not freelancer:
         return Response({'detail': 'Freelancer not found'}, status=status.HTTP_404_NOT_FOUND)
-    data['client'] = client.id
-    data['client_id'] = client.id
-    data['freelancer'] = freelancer.id
-    data['freelancer_id'] = freelancer.id
+    # Only set the actual model fields - use user (the PK) not id
+    data['client'] = client.user_id
+    data['freelancer'] = freelancer.user
+    # Remove the _id versions as they're not actual fields
+    data.pop('freelancer_id', None)
     serializer = ReviewSerializer(data=data)
     try:
         if serializer.is_valid():
@@ -1037,10 +1044,11 @@ def create_review(request):
 @api_view(['GET'])
 def list_reviews_for_freelancer(request, freelancer_id):
     """GET /reviews/freelancer/{freelancerId} - list reviews for a freelancer"""
-    freelancer = Freelancer.objects.filter(id=freelancer_id).first()
+    # Freelancer uses 'user' as primary key
+    freelancer = Freelancer.objects.filter(user=freelancer_id).first()
     if not freelancer:
         return Response({'detail': 'Freelancer not found'}, status=status.HTTP_404_NOT_FOUND)
-    qs = Review.objects.filter(freelancer=freelancer, is_deleted=False)
+    qs = Review.objects.filter(freelancer=freelancer)
     serializer = ReviewSerializer(qs, many=True)
     return Response(serializer.data)
 
@@ -1049,12 +1057,13 @@ def list_reviews_for_freelancer(request, freelancer_id):
 @permission_classes([IsAuthenticated])
 def update_or_delete_review(request, id):
     """PUT /reviews/{id} - owner only
-       DELETE /reviews/{id} - soft delete (owner or admin)
+       DELETE /reviews/{id} - delete (owner or admin)
     """
     review = Review.objects.filter(id=id).first()
     if not review:
         return Response({'detail': 'Review not found'}, status=status.HTTP_404_NOT_FOUND)
-    owner_user_id = review.client.user_id.id if review.client and review.client.user_id else None
+    # Client model has user_id as primary key (OneToOneField)
+    owner_user_id = review.client.user_id if review.client else None
     if request.method == 'PUT':
         if request.user.id != owner_user_id:
             return Response({'detail': 'Forbidden'}, status=status.HTTP_403_FORBIDDEN)
@@ -1063,12 +1072,11 @@ def update_or_delete_review(request, id):
             serializer.save()
             return Response(serializer.data)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
-    # DELETE: owner or admin can soft-delete
+    # DELETE: owner or admin can delete
     if not (request.user.is_staff or request.user.id == owner_user_id):
         return Response({'detail': 'Forbidden'}, status=status.HTTP_403_FORBIDDEN)
-    review.is_deleted = True
-    review.save()
-    return Response({'detail': 'Review soft-deleted'}, status=status.HTTP_200_OK)
+    review.delete()
+    return Response({'detail': 'Review deleted'}, status=status.HTTP_200_OK)
 
 
 # ---------- Media / Files endpoints ----------

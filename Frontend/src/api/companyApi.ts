@@ -12,8 +12,8 @@ export const registerCompany = async (data: any) => {
    Company DTO (matches backend)
 ========================= */
 export interface Company {
-  id: number;                 // ✅ company.id
-  user: number;               // ✅ user.id (owner)
+  id: number;                 
+  user: number;              
   registration_number: string;
   tax_id: string | null;
   representative: string | null;
@@ -69,7 +69,8 @@ export const uploadCompanyLogo = async (
 
   const response = await apiClient.put<Company>(
     `/companies/${companyId}/update/`,
-    formData
+    formData,
+    { headers: { 'Content-Type': 'multipart/form-data' } }
   );
 
   return response.data;

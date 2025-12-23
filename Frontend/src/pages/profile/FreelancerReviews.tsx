@@ -4,28 +4,22 @@ import apiClient from '../../lib/axios';
 
 interface Review {
   id: number;
-  client_id: {
-    user: {
-      first_name: string;
-      last_name: string;
-      email: string;
-    };
-    profile_picture: string | null;
-    phone_number?: string;
-    city?: string;
-    wilaya?: string;
-  };
-  freelancer_id: {
-    user: {
-      first_name: string;
-      last_name: string;
-      email: string;
-    };
-  };
+  // Backend ReviewSerializer returns FK fields as IDs (client, freelancer).
+  client: number;
+  freelancer: number;
   rating: number;
   feedback: string;
   created_at: string;
 }
+
+type ClientProfile = {
+  user?: {
+    first_name?: string;
+    last_name?: string;
+    email?: string;
+  };
+  profile_picture?: string | null;
+};
 
 interface FreelancerReviewsProps {
   freelancerId: number;
@@ -38,6 +32,28 @@ const FreelancerReviews: React.FC<FreelancerReviewsProps> = ({
 }) => {
   const [reviews, setReviews] = useState<Review[]>([]);
   const [loading, setLoading] = useState(true);
+  const [clientById, setClientById] = useState<Record<number, ClientProfile | null>>({});
+
+  const resolveMediaUrl = (url?: string | null) => {
+    if (!url) return null;
+    const trimmed = url.trim();
+    if (!trimmed) return null;
+    if (trimmed.startsWith('http://') || trimmed.startsWith('https://')) return trimmed;
+    if (trimmed.startsWith('//')) return `${window.location.protocol}${trimmed}`;
+
+    const base = (apiClient.defaults.baseURL || '').toString().replace(/\/$/, '');
+    if (!base) return trimmed;
+
+    if (trimmed.startsWith('/')) return `${base}${trimmed}`;
+    return `${base}/${trimmed}`;
+  };
+
+  const getInitials = (first?: string, last?: string) => {
+    const a = (first || '').trim().charAt(0);
+    const b = (last || '').trim().charAt(0);
+    const initials = `${a}${b}`.trim();
+    return initials || '?';
+  };
 
   useEffect(() => {
     if (freelancerId) {
@@ -48,10 +64,37 @@ const FreelancerReviews: React.FC<FreelancerReviewsProps> = ({
   const fetchReviews = async () => {
     try {
       setLoading(true);
-      const response = await apiClient.get(
-        `/reviews/freelancer/${freelancerId}/`
+      const response = await apiClient.get<Review[]>(`/reviews/freelancer/${freelancerId}/`);
+      const fetchedReviews = Array.isArray(response.data) ? response.data : [];
+      setReviews(fetchedReviews);
+
+      // Load client user info for display (the reviews endpoint returns only IDs).
+      const uniqueClientIds = Array.from(
+        new Set(
+          fetchedReviews
+            .map((r) => r.client)
+            .filter((id): id is number => typeof id === 'number' && !Number.isNaN(id))
+        )
       );
-      setReviews(response.data);
+
+      const missingClientIds = uniqueClientIds.filter((id) => clientById[id] === undefined);
+      if (missingClientIds.length) {
+        const pairs = await Promise.all(
+          missingClientIds.map(async (id) => {
+            try {
+              const clientRes = await apiClient.get<ClientProfile>(`/clients/${id}/`);
+              return [id, clientRes.data] as const;
+            } catch {
+              return [id, null] as const;
+            }
+          })
+        );
+        setClientById((prev) => {
+          const next = { ...prev };
+          for (const [id, client] of pairs) next[id] = client;
+          return next;
+        });
+      }
     } catch (error) {
       console.error('Error fetching reviews:', error);
       setReviews([]);
@@ -121,14 +164,37 @@ const FreelancerReviews: React.FC<FreelancerReviewsProps> = ({
             <div key={review.id} className={styles.reviewCard}>
               <div className={styles.reviewHeader}>
                 <div className={styles.reviewClient}>
-                  <div className={styles.clientAvatar}>
-                    {review.client_id.user.first_name.charAt(0)}
-                    {review.client_id.user.last_name.charAt(0)}
-                  </div>
+                  {(() => {
+                    const client = clientById[review.client];
+                    const first = client?.user?.first_name;
+                    const last = client?.user?.last_name;
+                    const avatarUrl = resolveMediaUrl(client?.profile_picture || null);
+                    const initials = getInitials(first, last);
+
+                    return (
+                      <div className={styles.clientAvatar} aria-label="Reviewer">
+                        {avatarUrl ? (
+                          <img
+                            className={styles.clientAvatarImage}
+                            src={avatarUrl}
+                            alt={`${(first || 'Client').trim()} ${(last || '').trim()}`.trim()}
+                            loading="lazy"
+                          />
+                        ) : (
+                          <span className={styles.clientAvatarInitials}>{initials}</span>
+                        )}
+                      </div>
+                    );
+                  })()}
                   <div>
                     <div className={styles.clientName}>
-                      {review.client_id.user.first_name}{' '}
-                      {review.client_id.user.last_name}
+                      {(() => {
+                        const client = clientById[review.client];
+                        const first = (client?.user?.first_name || '').trim();
+                        const last = (client?.user?.last_name || '').trim();
+                        if (first || last) return `${first} ${last}`.trim();
+                        return `Client #${review.client}`;
+                      })()}
                     </div>
                     <div className={styles.reviewDate}>
                       {formatDate(review.created_at)}

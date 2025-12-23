@@ -61,8 +61,6 @@ class CategorySerializer(serializers.ModelSerializer):
 
 
 class ReviewSerializer(serializers.ModelSerializer):
-    client_id = ClientSerializer(read_only=True)
-    freelancer_id = FreelancerSerializer(read_only=True)
     class Meta:
         model = Review
         fields = '__all__'

@@ -1,4 +1,5 @@
 from django.db import models
+from django.db.models import Avg
 from django.contrib.auth.models import AbstractBaseUser, BaseUserManager, PermissionsMixin
 from django.core.validators import MinValueValidator, MaxValueValidator
 from django.contrib.contenttypes.fields import GenericForeignKey
@@ -218,7 +219,17 @@ class Review(models.Model):
     def save(self, *args, **kwargs):
         """Override save to update freelancer rating"""
         super().save(*args, **kwargs)
-        self.freelancer_id.update_rating()
+        # `freelancer_id` is an int FK value; use the related object.
+        if self.freelancer_id is None:
+            return
+
+        avg_rating = (
+            Review.objects.filter(freelancer_id=self.freelancer_id)
+            .aggregate(avg=Avg('rating'))
+            .get('avg')
+        )
+        self.freelancer.rate = float(avg_rating) if avg_rating is not None else 0.0
+        self.freelancer.save(update_fields=['rate'])
 
 
 

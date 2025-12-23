@@ -1,6 +1,7 @@
 import React, { useEffect, useRef, useState } from 'react';
 import apiClient from '../../lib/axios';
 import styles from './FreelancerReviewForm.module.css';
+import type { AxiosError } from 'axios';
 
 type AddReviewFormProps = {
   freelancerId: number;
@@ -55,9 +56,46 @@ const AddReviewForm: React.FC<AddReviewFormProps> = ({ freelancerId, onSuccess }
       setRating(0);
       setFeedback('');
       onSuccess?.();
-    } catch {
+    } catch (err) {
+      const e = err as AxiosError<any>;
+      const status = e.response?.status;
+      const data = e.response?.data;
+
+      // DRF often responds with { detail: "..." } or field errors.
+      const detail =
+        (typeof data?.detail === 'string' && data.detail) ||
+        (typeof data === 'string' && data) ||
+        (data && typeof data === 'object' ? JSON.stringify(data) : '');
+
       setMessageType('error');
-      setMessage('Failed to submit review.');
+
+      if (status === 400) {
+        // Common case: backend enforces one review per client per freelancer.
+        const normalized = (detail || '').toLowerCase();
+        if (
+          normalized.includes('already reviewed') ||
+          ((normalized.includes('already') &&
+            (normalized.includes('review') || normalized.includes('reviewed'))) ||
+            (normalized.includes('already') && normalized.includes('freelancer'))) ||
+          // Covers DB/serializer uniqueness messages.
+          normalized.includes('unique')
+        ) {
+          setMessage(
+            "You can only leave one review for each freelancer. You’ve already shared your feedback here."
+          );
+          onSuccess?.();
+        } else if (rating < 1) {
+          setMessage('Please select a rating before submitting.');
+        } else {
+          setMessage('We couldn’t submit your review. Please check your information and try again.');
+        }
+      } else if (status === 500) {
+        // Backend bug can throw AFTER persisting the review; refresh to reflect reality.
+        setMessage('Something went wrong, but your review might still have been saved. Updating the page…');
+        onSuccess?.();
+      } else {
+        setMessage('We couldn’t submit your review right now. Please try again in a moment.');
+      }
     } finally {
       setSubmitting(false);
     }
