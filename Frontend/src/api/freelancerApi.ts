@@ -46,13 +46,13 @@ export interface MediaFile {
   created_at: string;
 }
 
-// You already have this, keep it:
+
 export const registerFreelancer = async (data: any) => {
   const response = await apiClient.post("/auth/register/freelancer/", data);
   return response.data;
 };
 
-// NEW: get profile
+
 export const getFreelancerProfile = async (
   userId: number
 ): Promise<FreelancerProfile> => {
@@ -62,7 +62,7 @@ export const getFreelancerProfile = async (
   return response.data;
 };
 
-// Update payload type - only fields that can be updated
+
 export interface UpdateFreelancerPayload {
   first_name?: string;
   last_name?: string;
@@ -90,7 +90,7 @@ export interface UpdateFreelancerPayload {
   }> | null;
 }
 
-// NEW: update profile (partial update)
+
 export const updateFreelancerProfile = async (
   userId: number,
   data: UpdateFreelancerPayload
@@ -102,7 +102,7 @@ export const updateFreelancerProfile = async (
   return response.data;
 };
 
-// Upload profile photo
+
 export const uploadFreelancerPhoto = async (
   userId: number,
   photoFile: File
@@ -119,7 +119,7 @@ export const uploadFreelancerPhoto = async (
   return response.data;
 };
 
-// Upload CV via generic media endpoint, then store returned file_url in cvatta via update endpoint
+
 export const uploadFreelancerCV = async (
   userId: number,
   file: File

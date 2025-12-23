@@ -4,7 +4,7 @@ import WilayaDropdown from '../../components/WilayaDropdown';
 import { useNavigate } from 'react-router-dom';
 import Input from '../../components/Input';
 import { login, registerFreelancer } from '../../api/authApi';
-import { saveAuthFlag, saveRole, saveUserId } from '../../lib/auth';
+import { saveAuthFlag, saveRole, saveUserId, saveUserProfile } from '../../lib/auth';
 import styles from './SignupFreelancer.module.css';
 
 const SignupFreelancer: React.FC = () => {
@@ -131,6 +131,7 @@ const SignupFreelancer: React.FC = () => {
       // 3) Persist UI auth state
       saveUserId(loginResponse.user.id);
       saveRole(loginResponse.user.role);
+      saveUserProfile(loginResponse.user);
       saveAuthFlag(true);
 
       // 4) Redirect based on role

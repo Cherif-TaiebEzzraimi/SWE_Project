@@ -38,3 +38,25 @@ export const updateClientProfile = async (
   const response = await apiClient.put<Client>(`/clients/${userId}/update/`, data);
   return response.data;
 };
+
+export interface UploadClientPhotoResponse {
+  detail: string;
+  photo_url: string;
+  client: Client;
+}
+
+export const uploadClientPhoto = async (
+  userId: number,
+  photoFile: File
+): Promise<UploadClientPhotoResponse> => {
+  const formData = new FormData();
+  formData.append('photo', photoFile);
+
+  const response = await apiClient.post<UploadClientPhotoResponse>(
+    `/clients/${userId}/upload-photo/`,
+    formData,
+    { headers: { 'Content-Type': 'multipart/form-data' } }
+  );
+
+  return response.data;
+};

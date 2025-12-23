@@ -4,7 +4,7 @@ import Settings from './Settings';
 import { BUSINESS_TYPES } from '../../lib/businessTypes';
 import { useParams } from 'react-router-dom';
 import apiClient from '../../lib/axios';
-import { getUserId } from '../../lib/auth';
+import { getUserId, getUserProfile } from '../../lib/auth';
 import { getCompany, type Company as CompanyDTO, updateCompanyProfile, uploadCompanyLogo } from '../../api/companyApi';
 
 interface CompanyData {
@@ -24,7 +24,8 @@ const ClientCompanyProfile: React.FC = () => {
   const routeId = params.id ? Number.parseInt(params.id, 10) : null;
   const viewerUserId = getUserId();
 
-  const isPublicView = !!(routeId && viewerUserId && routeId !== viewerUserId);
+  
+  const isPublicView = !!(routeId && routeId !== viewerUserId);
   const profileIdToLoad = isPublicView ? routeId : viewerUserId ?? routeId;
 
   const resolveMediaUrl = (url?: string | null) => {
@@ -44,12 +45,13 @@ const ClientCompanyProfile: React.FC = () => {
   const [activeTab, setActiveTab] = useState<'profile' | 'settings'>('profile');
   const [isEditing, setIsEditing] = useState(false);
   const [companyData, setCompanyData] = useState<CompanyData | null>(null);
-  const [formData, setFormData] = useState<Partial<CompanyData>>({});
-  // Business type selection follows company signup: plain select with list
+  const [formData, setFormData] = useState<Partial<CompanyData>>({}); 
   const [customBusinessType, setCustomBusinessType] = useState('');
   const [saveLoading, setSaveLoading] = useState(false);
   const [saveSuccess, setSaveSuccess] = useState('');
   const [saveError, setSaveError] = useState('');
+  const [updateDisabled, setUpdateDisabled] = useState(false);
+  const [updateDisabledReason, setUpdateDisabledReason] = useState('');
 
   useEffect(() => {
     if (isPublicView) {
@@ -57,7 +59,7 @@ const ClientCompanyProfile: React.FC = () => {
       setActiveTab('profile');
     }
     fetchCompanyData();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+    
   }, [profileIdToLoad, isPublicView]);
 
   const fetchCompanyData = async () => {
@@ -77,6 +79,11 @@ const ClientCompanyProfile: React.FC = () => {
 
   const handleEdit = () => {
     if (isPublicView) return;
+    if (updateDisabled) {
+      setSaveSuccess('');
+      setSaveError(updateDisabledReason || 'Editing is temporarily unavailable.');
+      return;
+    }
     setIsEditing(true);
   };
   const handleCancel = () => {
@@ -87,8 +94,29 @@ const ClientCompanyProfile: React.FC = () => {
     setSaveSuccess('');
   };
 
+  const getFriendlyApiError = (
+    e: unknown,
+    fallback: string,
+    server500Message: string
+  ) => {
+    const err: any = e as any;
+    const status = err?.response?.status;
+    const detail = err?.response?.data?.detail;
+
+    if (typeof detail === 'string' && detail.trim()) return detail;
+    if (status === 500) return server500Message;
+    if (status === 403) return 'You are not allowed to perform this action.';
+    if (status === 404) return 'Resource not found.';
+    return fallback;
+  };
+
   const handleSave = async () => {
     if (isPublicView) return;
+    if (updateDisabled) {
+      setSaveSuccess('');
+      setSaveError(updateDisabledReason || 'Editing is temporarily unavailable.');
+      return;
+    }
     setSaveError('');
     setSaveSuccess('');
     const userId = getUserId();
@@ -108,7 +136,7 @@ const ClientCompanyProfile: React.FC = () => {
     setSaveLoading(true);
     const resolvedBusinessType = (formData.business_type === 'Other' ? (customBusinessType.trim() || formData.business_type) : formData.business_type) || companyData?.business_type || null;
 
-    // Backend does not expose PUT/PATCH /users/<id>/; company updates go through /companies/<id>/update/
+    
     try {
       const updated = await updateCompanyProfile(userId, {
         description: formData.description ?? companyData.description,
@@ -125,9 +153,20 @@ const ClientCompanyProfile: React.FC = () => {
       setIsEditing(false);
       setSaveSuccess('Profile updated successfully.');
     } catch (e) {
-      const err: any = e as any;
-      const msg = err?.response?.data?.detail || 'Failed to update company profile.';
-      setSaveError(msg);
+      const errAny: any = e as any;
+      const status = errAny?.response?.status;
+      if (status === 500) {
+        setUpdateDisabled(true);
+        setUpdateDisabledReason('Server error (500). Company profile update is failing on the backend.');
+        setIsEditing(false);
+      }
+      setSaveError(
+        getFriendlyApiError(
+          e,
+          'Failed to update company profile.',
+          'Server error (500). Company profile update is failing on the backend.'
+        )
+      );
     } finally {
       setSaveLoading(false);
     }
@@ -139,6 +178,11 @@ const ClientCompanyProfile: React.FC = () => {
 
   const handleLogoUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     if (isPublicView) return;
+    if (updateDisabled) {
+      setSaveSuccess('');
+      setSaveError(updateDisabledReason || 'Logo upload is temporarily unavailable.');
+      return;
+    }
     const file = e.target.files?.[0];
     if (!file) return;
     const userId = getUserId();
@@ -149,19 +193,29 @@ const ClientCompanyProfile: React.FC = () => {
     setSaveLoading(true);
 
     try {
-      // Upload logo to Company.logo (ImageField) via multipart PUT
+      
       const updated = await uploadCompanyLogo(userId, file);
 
-      // Update UI state with resolved URL
+     
       const resolvedLogo = resolveMediaUrl(updated.logo);
       const merged: CompanyData = { ...(updated as CompanyData), logo: resolvedLogo };
       setCompanyData(merged);
       setFormData(merged);
       setSaveSuccess('Logo updated successfully.');
     } catch (e) {
-      const err: any = e as any;
-      const msg = err?.response?.data?.detail || 'Failed to upload company logo.';
-      setSaveError(msg);
+      const errAny: any = e as any;
+      const status = errAny?.response?.status;
+      if (status === 500) {
+        setUpdateDisabled(true);
+        setUpdateDisabledReason('Server error (500). Company profile update is failing on the backend.');
+      }
+      setSaveError(
+        getFriendlyApiError(
+          e,
+          'Failed to upload company logo.',
+          'Server error (500). Company logo upload is failing on the backend.'
+        )
+      );
     } finally {
       setSaveLoading(false);
     }
@@ -170,6 +224,12 @@ const ClientCompanyProfile: React.FC = () => {
   if (!companyData) {
     return <div>Loading profile...</div>;
   }
+
+  const storedUser = getUserProfile();
+  const ownerUser = !isPublicView && storedUser?.id === companyData.user ? storedUser : null;
+  const ownerDisplayName = ownerUser
+    ? [ownerUser.first_name, ownerUser.last_name].filter(Boolean).join(' ').trim()
+    : '';
 
   return (
     <>
@@ -242,10 +302,15 @@ const ClientCompanyProfile: React.FC = () => {
                 </div>
 
                 <div className={styles.profileInfo}>
-                  <h2>{companyData?.registration_number || 'Company Account'}</h2>
+                  <h2>
+                    {ownerDisplayName
+                      ? ownerDisplayName
+                      : (isPublicView
+                        ? (companyData?.business_type || 'Client Company')
+                        : 'Client Company')}
+                  </h2>
                   <p className={styles.role}>Client Company</p>
                   <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                    <span className={styles.readOnly}>User ID: {companyData?.user}</span>
                     {companyData?.is_verified ? (
                       <span style={{
                         display: 'inline-flex',
@@ -303,24 +368,53 @@ const ClientCompanyProfile: React.FC = () => {
                 </div>
 
                 <div className={styles.formGrid}>
-                  <div className={styles.formGroup}>
-                    <label>First Name:</label>
-                    <p className={styles.readOnly}>Managed in Settings</p>
-                  </div>
+                  {!isPublicView && (
+                    <div className={styles.formGroup}>
+                      <label>First Name:</label>
+                      <p className={styles.readOnly}>{ownerUser?.first_name || '—'}</p>
+                    </div>
+                  )}
 
-                  <div className={styles.formGroup}>
-                    <label>Last Name: </label>
-                    <p className={styles.readOnly}>Managed in Settings</p>
-                  </div>
-                  <div className={styles.formGroup}>
-                    <label>Registration Number:</label>
-                    <p className={styles.readOnly}>{companyData?.registration_number}</p>
-                  </div>
+                  {!isPublicView && (
+                    <div className={styles.formGroup}>
+                      <label>Last Name: </label>
+                      <p className={styles.readOnly}>{ownerUser?.last_name || '—'}</p>
+                    </div>
+                  )}
 
-                  <div className={styles.formGroup}>
-                    <label>Email Address:</label>
-                    <p className={styles.readOnly}>Managed in Settings</p>
-                  </div>
+                  {isPublicView && (
+                    <div className={styles.formGroup}>
+                      <label>Business Type:</label>
+                      <p className={styles.readOnly}>{companyData?.business_type || 'Not provided'}</p>
+                    </div>
+                  )}
+
+                  {isPublicView && (
+                    <div className={styles.formGroup}>
+                      <label>Industry:</label>
+                      <p className={styles.readOnly}>{companyData?.industry || 'Not provided'}</p>
+                    </div>
+                  )}
+
+                  {isPublicView && (
+                    <div className={styles.formGroup}>
+                      <label>Representative:</label>
+                      <p className={styles.readOnly}>{companyData?.representative || 'Not provided'}</p>
+                    </div>
+                  )}
+                  {!isPublicView && (
+                    <div className={styles.formGroup}>
+                      <label>Registration Number:</label>
+                      <p className={styles.readOnly}>{companyData?.registration_number}</p>
+                    </div>
+                  )}
+
+                  {!isPublicView && (
+                    <div className={styles.formGroup}>
+                      <label>Email Address:</label>
+                      <p className={styles.readOnly}>{ownerUser?.email || '—'}</p>
+                    </div>
+                  )}
 
                   <div className={styles.formGroup}>
                     {/* Phone is not part of Company model */}
@@ -345,7 +439,9 @@ const ClientCompanyProfile: React.FC = () => {
                     ) : (
                       <div style={{ background: 'var(--card-white)', border: '1px solid var(--teal-strong)', borderRadius: 8, padding: 16 }}>
                         <h4 style={{ margin: 0, color: 'var(--text-dark-blue)' }}>Company Overview</h4>
-                        <p style={{ margin: '8px 0 0', color: 'var(--text-dark-blue)', lineHeight: 1.7 }}>{companyData?.description}</p>
+                        <p style={{ margin: '8px 0 0', color: 'var(--text-dark-blue)', lineHeight: 1.7 }}>
+                          {companyData?.description || 'Not provided'}
+                        </p>
                       </div>
                     )}
                   </div>
@@ -390,7 +486,9 @@ const ClientCompanyProfile: React.FC = () => {
 
                   <div className={styles.formGroup}>
                     <label>Tax ID:</label>
-                    {isEditing ? (
+                    {isPublicView ? (
+                      <p className={styles.readOnly}>Hidden</p>
+                    ) : isEditing ? (
                       <input type="text" value={formData.tax_id || ''} onChange={e => handleChange('tax_id', e.target.value)} />
                     ) : (
                       <p>{companyData?.tax_id || 'Not provided'}</p>

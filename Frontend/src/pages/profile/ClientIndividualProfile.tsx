@@ -5,7 +5,8 @@ import Settings from './Settings';
 import { useParams } from 'react-router-dom';
 import apiClient from '../../lib/axios';
 import { getUserId } from '../../lib/auth';
-import { getClient, type Client as ClientDTO, updateClientProfile } from '../../api/clientApi';
+import { getClient, type Client as ClientDTO, updateClientProfile, uploadClientPhoto } from '../../api/clientApi';
+import ClientHistory from './ClientHistory';
 
 const ClientIndividualProfile: React.FC = () => {
   const params = useParams<{ id: string }>();
@@ -29,7 +30,7 @@ const ClientIndividualProfile: React.FC = () => {
     return `${base}/${trimmed}`;
   };
 
-  const [activeTab, setActiveTab] = useState<'profile' | 'settings'>('profile');
+  const [activeTab, setActiveTab] = useState<'profile' | 'history' | 'settings'>('profile');
   const [isEditing, setIsEditing] = useState(false);
   const [clientData, setClientData] = useState<ClientDTO | null>(null);
   const [formData, setFormData] = useState<Partial<ClientDTO>>({});
@@ -96,8 +97,21 @@ const ClientIndividualProfile: React.FC = () => {
     setFormData(prev => ({ ...prev, [field]: value }));
   };
 
-  // No client photo upload endpoint is validated in the backend routes.
-  // Keep display-only behavior for `profile_picture`.
+  const handlePhotoUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
+    if (isPublicView) return;
+    const file = event.target.files?.[0];
+    if (!file) return;
+
+    const userId = getUserId();
+    if (!userId) return;
+
+    try {
+      await uploadClientPhoto(userId, file);
+      await fetchClientData();
+    } catch (error) {
+      console.error('Failed to upload client photo', error);
+    }
+  };
 
   if (!clientData) {
     return <div>Loading profile...</div>;
@@ -112,9 +126,14 @@ const ClientIndividualProfile: React.FC = () => {
               My Profile
             </button>
             {!isPublicView && (
-              <button className={activeTab === 'settings' ? styles.active : ''} onClick={() => setActiveTab('settings')}>
-                Settings
-              </button>
+              <>
+                <button className={activeTab === 'history' ? styles.active : ''} onClick={() => setActiveTab('history')}>
+                  History
+                </button>
+                <button className={activeTab === 'settings' ? styles.active : ''} onClick={() => setActiveTab('settings')}>
+                  Settings
+                </button>
+              </>
             )}
           </nav>
         </aside>
@@ -154,7 +173,23 @@ const ClientIndividualProfile: React.FC = () => {
                       </svg>
                     </div>
                   )}
-                  {/* No photo upload for client (backend unchanged) */}
+                  {!isPublicView && (
+                    <>
+                      <input
+                        type="file"
+                        id="clientPhotoUpload"
+                        accept="image/*"
+                        onChange={handlePhotoUpload}
+                        style={{ display: 'none' }}
+                      />
+                      <label htmlFor="clientPhotoUpload" className={styles.uploadButton} aria-label="Upload photo">
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                          <path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h3l2-3h8l2 3h3a2 2 0 0 1 2 2z" />
+                          <circle cx="12" cy="13" r="4" />
+                        </svg>
+                      </label>
+                    </>
+                  )}
                 </div>
 
                 <div className={styles.profileInfo}>
@@ -235,14 +270,16 @@ const ClientIndividualProfile: React.FC = () => {
                     <p className={styles.readOnly}>{clientData?.user.email}</p>
                   </div>
 
-                  <div className={styles.formGroup}>
-                    <label>Phone</label>
-                    {isEditing && !isPublicView ? (
-                      <input type="tel" value={formData.phone_number || ''} onChange={e => handleChange('phone_number', e.target.value)} />
-                    ) : (
-                      <p>{clientData?.phone_number}</p>
-                    )}
-                  </div>
+                  {!isPublicView && (
+                    <div className={styles.formGroup}>
+                      <label>Phone</label>
+                      {isEditing ? (
+                        <input type="tel" value={formData.phone_number || ''} onChange={e => handleChange('phone_number', e.target.value)} />
+                      ) : (
+                        <p>{clientData?.phone_number}</p>
+                      )}
+                    </div>
+                  )}
                 </div>
               </section>
 
@@ -284,6 +321,13 @@ const ClientIndividualProfile: React.FC = () => {
             <div className={styles.settingsSection}>
               <h1 className={styles.pageTitle}>Settings</h1>
               <Settings userId={clientData?.user.id || 0} userRole="client" />
+            </div>
+          )}
+
+          {!isPublicView && activeTab === 'history' && (
+            <div className={styles.historySection}>
+              <h1 className={styles.pageTitle}>History</h1>
+              <ClientHistory userId={clientData?.user.id || 0} />
             </div>
           )}
         </main>

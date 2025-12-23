@@ -1,13 +1,19 @@
 import apiClient from '../lib/axios';
 
+/* =========================
+   Register Company
+========================= */
 export const registerCompany = async (data: any) => {
   const response = await apiClient.post('/auth/register/company/', data);
   return response.data;
 };
 
+/* =========================
+   Company DTO (matches backend)
+========================= */
 export interface Company {
-  // Backend CompanySerializer uses fields='__all__', so `user` is the user PK.
-  user: number;
+  id: number;                 // ✅ company.id
+  user: number;               // ✅ user.id (owner)
   registration_number: string;
   tax_id: string | null;
   representative: string | null;
@@ -18,11 +24,17 @@ export interface Company {
   is_verified: boolean;
 }
 
-export const getCompany = async (id: number): Promise<Company> => {
-  const response = await apiClient.get<Company>(`/companies/${id}/`);
+/* =========================
+   GET company (by USER ID)
+========================= */
+export const getCompany = async (userId: number): Promise<Company> => {
+  const response = await apiClient.get<Company>(`/companies/${userId}/`);
   return response.data;
 };
 
+/* =========================
+   Update payload
+========================= */
 export interface UpdateCompanyPayload {
   description?: string | null;
   business_type?: string | null;
@@ -31,32 +43,41 @@ export interface UpdateCompanyPayload {
   industry?: string | null;
 }
 
+/* =========================
+   UPDATE company (by COMPANY ID)
+========================= */
 export const updateCompanyProfile = async (
-  userId: number,
+  companyId: number,
   data: UpdateCompanyPayload
 ): Promise<Company> => {
-  const response = await apiClient.put<Company>(`/companies/${userId}/update/`, data);
+  const response = await apiClient.put<Company>(
+    `/companies/${companyId}/update/`,
+    data
+  );
   return response.data;
 };
 
-// Upload company logo (Company.logo is an ImageField on backend)
+/* =========================
+   Upload company logo (by COMPANY ID)
+========================= */
 export const uploadCompanyLogo = async (
-  userId: number,
+  companyId: number,
   file: File
 ): Promise<Company> => {
   const formData = new FormData();
   formData.append('logo', file);
 
   const response = await apiClient.put<Company>(
-    `/companies/${userId}/update/`,
-    formData,
-    { headers: { 'Content-Type': 'multipart/form-data' } }
+    `/companies/${companyId}/update/`,
+    formData
   );
 
   return response.data;
 };
 
-// Helper to check if a user ID has a company profile
+/* =========================
+   Check if user is a company
+========================= */
 export const isCompany = async (userId: number): Promise<boolean> => {
   try {
     await apiClient.get(`/companies/${userId}/`);

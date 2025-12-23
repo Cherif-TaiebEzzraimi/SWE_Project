@@ -3,6 +3,7 @@ import styles from './FreelancerProfile.module.css';
 import WilayaDropdown from '../../components/WilayaDropdown';
 import { categoriesWithSkills } from '../../lib/categories';
 import FreelancerReviews from './FreelancerReviews';
+import AddReviewForm from './AddReviewForm';
 import FreelancerHistory from './FreelancerHistory';
 import Settings from './Settings';
 import apiClient from '../../lib/axios';
@@ -17,7 +18,7 @@ import {
   listFreelancerMedia,
   deleteMedia,
 } from '../../api/freelancerApi';
-import { getUserId } from '../../lib/auth';
+import { getRole, getUserId } from '../../lib/auth';
 
 const FreelancerProfile: React.FC = () => {
   console.log('FreelancerProfile REAL FILE');
@@ -25,6 +26,7 @@ const FreelancerProfile: React.FC = () => {
   const params = useParams<{ id: string }>();
   const routeId = params.id ? Number.parseInt(params.id, 10) : null;
   const viewerUserId = getUserId();
+  const viewerRole = getRole();
 
   // Public-view mode: user is logged in but viewing someone else's profile via URL.
   const isPublicView = !!(routeId && viewerUserId && routeId !== viewerUserId);
@@ -34,6 +36,7 @@ const FreelancerProfile: React.FC = () => {
   const [isEditing, setIsEditing] = useState(false);
   const [freelancerData, setFreelancerData] = useState<FreelancerProfileDTO | null>(null);
   const [formData, setFormData] = useState<Partial<FreelancerProfileDTO>>({});
+  const [reviewsVersion, setReviewsVersion] = useState(0);
   
   // Education state
   const [educationList, setEducationList] = useState<Array<{ degree: string; institution: string; year: string }>>([]);
@@ -1037,10 +1040,18 @@ const FreelancerProfile: React.FC = () => {
         {activeTab === 'reviews' && (
           <div className={styles.reviewsSection}>
             <h1 className={styles.pageTitle}>Reviews</h1>
-            <FreelancerReviews 
+            <FreelancerReviews
+              key={reviewsVersion}
               freelancerId={freelancerData?.user.id || 0}
               overallRating={freelancerData?.rate || null}
             />
+
+            {viewerRole === 'client' && (
+              <AddReviewForm
+                freelancerId={freelancerData?.user.id || 0}
+                onSuccess={() => setReviewsVersion((v) => v + 1)}
+              />
+            )}
           </div>
         )}
 

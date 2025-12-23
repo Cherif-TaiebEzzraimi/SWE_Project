@@ -149,3 +149,29 @@
   line-height: 1.6;
   font-size: 14px;
 }
+
+@media (max-width: 900px) {
+  .reviewCard {
+    padding: 16px;
+  }
+
+  .reviewHeader {
+    flex-direction: column;
+    gap: 10px;
+    align-items: flex-start;
+  }
+
+  .reviewClient {
+    width: 100%;
+  }
+
+  .reviewRating {
+    align-self: flex-start;
+  }
+}
+
+@media (max-width: 480px) {
+  .ratingNumber {
+    font-size: 30px;
+  }
+}

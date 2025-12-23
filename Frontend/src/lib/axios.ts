@@ -10,7 +10,7 @@ const apiClient = axios.create({
   withCredentials: true,
 });
 
-// CSRF cookie reader
+
 function getCookie(name: string): string | null {
   let cookieValue = null;
   if (document.cookie && document.cookie !== '') {
@@ -26,7 +26,7 @@ function getCookie(name: string): string | null {
   return cookieValue;
 }
 
-// Attach CSRF token for Django
+
 apiClient.interceptors.request.use(
   (config: InternalAxiosRequestConfig) => {
     const csrfToken = getCookie('csrftoken');
@@ -38,7 +38,7 @@ apiClient.interceptors.request.use(
   (error: AxiosError) => Promise.reject(error)
 );
 
-// Handle unauthorized responses
+
 apiClient.interceptors.response.use(
   (response: AxiosResponse) => response,
   (error: AxiosError) => {

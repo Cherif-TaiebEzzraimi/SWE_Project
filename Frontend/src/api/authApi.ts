@@ -17,7 +17,7 @@ export interface RegisterClientIndividualRequest {
   password: string;
   first_name: string;
   last_name: string;
-  client: {
+  client?: {
     phone_number?: string;
     city?: string;
     wilaya?: string;

@@ -174,3 +174,29 @@
   color: #172554;
   font-weight: 500;
 }
+
+@media (max-width: 900px) {
+  .stats {
+    grid-template-columns: 1fr;
+  }
+
+  .filterButtons {
+    justify-content: flex-start;
+    flex-wrap: wrap;
+  }
+
+  .projectCard {
+    padding: 16px;
+  }
+
+  .projectHeader {
+    flex-direction: column;
+    gap: 10px;
+    align-items: flex-start;
+  }
+
+  .projectDetails {
+    grid-template-columns: 1fr;
+    gap: 14px;
+  }
+}

@@ -1,10 +1,9 @@
 import React, { useState } from 'react';
 import LogoText from '../../assets/logo/LogoText.svg';
-import WilayaDropdown from '../../components/WilayaDropdown';
 import { useNavigate } from 'react-router-dom';
 import Input from '../../components/Input';
 import { login, registerClientIndividual } from '../../api/authApi';
-import { saveAuthFlag, saveRole, saveUserId } from '../../lib/auth';
+import { saveAuthFlag, saveRole, saveUserId, saveUserProfile } from '../../lib/auth';
 import styles from './SignupClientIndividual.module.css';
 
 const SignupClientIndividual: React.FC = () => {
@@ -15,9 +14,6 @@ const SignupClientIndividual: React.FC = () => {
     email: '',
     password: '',
     confirmPassword: '',
-    phone_number: '',
-    city: '',
-    wilaya: '',
   });
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [loading, setLoading] = useState(false);
@@ -49,17 +45,6 @@ const SignupClientIndividual: React.FC = () => {
     } else if (formData.password.length < 8) {
       newErrors.password = 'Password must be at least 8 characters';
     }
-    if (!formData.phone_number.trim()) {
-      newErrors.phone_number = 'Phone number is required';
-    } else if (!/^\d{10}$/.test(formData.phone_number)) {
-      newErrors.phone_number = 'Phone number must be exactly 10 digits';
-    }
-    if (!formData.city.trim()) {
-      newErrors.city = 'City is required';
-    }
-    if (!formData.wilaya) {
-      newErrors.wilaya = 'Wilaya is required';
-    }
     if (!agreedToTerms) {
       newErrors.terms = 'You must agree to the terms of service';
     }
@@ -69,12 +54,7 @@ const SignupClientIndividual: React.FC = () => {
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
     const { name, value } = e.target;
-    if (name === 'phone_number') {
-      const digitsOnly = value.replace(/\D/g, '').slice(0, 10);
-      setFormData((prev) => ({ ...prev, [name]: digitsOnly }));
-    } else {
-      setFormData((prev) => ({ ...prev, [name]: value }));
-    }
+    setFormData((prev) => ({ ...prev, [name]: value }));
     if (errors[name]) {
       setErrors((prev) => ({ ...prev, [name]: '' }));
     }
@@ -97,28 +77,24 @@ const SignupClientIndividual: React.FC = () => {
         password: formData.password,
         first_name: formData.first_name,
         last_name: formData.last_name,
-        client: {
-          phone_number: formData.phone_number,
-          city: formData.city,
-          wilaya: formData.wilaya
-        }
       };
 
-      // 1) Register
+      // register
       await registerClientIndividual(payload);
 
-      // 2) Auto-login to establish the Django session cookie
+      // 2 Auto-login 
       const loginResponse = await login({
         email: formData.email,
         password: formData.password,
       });
 
-      // 3) Persist UI auth state
+      
       saveUserId(loginResponse.user.id);
       saveRole(loginResponse.user.role);
+      saveUserProfile(loginResponse.user);
       saveAuthFlag(true);
 
-      // 4) Redirect based on role
+      
       navigate('/dashboard');
     } catch (error: any) {
       if (error.response?.data?.detail) {
@@ -287,39 +263,6 @@ const SignupClientIndividual: React.FC = () => {
                 )}
               </svg>
             </button>
-          </div>
-          <Input
-            label="Phone Number"
-            type="tel"
-            name="phone_number"
-            value={formData.phone_number}
-            onChange={handleChange}
-            error={errors.phone_number}
-            disabled={loading}
-          />
-          <div className={styles.row}>
-            <div className={styles.formGroup}>
-              <label className={styles.label}>Wilaya</label>
-              <WilayaDropdown
-                value={formData.wilaya}
-                onChange={val => handleChange({
-                  target: { name: 'wilaya', value: typeof val === 'string' ? val : '' }
-                } as any)}
-                error={errors.wilaya}
-                disabled={loading}
-              />
-            </div>
-            <div className={styles.formGroup}>
-              <Input
-                label="City"
-                type="text"
-                name="city"
-                value={formData.city}
-                onChange={handleChange}
-                error={errors.city}
-                disabled={loading}
-              />
-            </div>
           </div>
           <div className={styles.checkboxGroup}>
             <label className={styles.checkboxLabel}>

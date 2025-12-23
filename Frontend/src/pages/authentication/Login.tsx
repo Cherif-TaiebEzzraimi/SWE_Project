@@ -1,7 +1,7 @@
-import React, { useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { login } from '../../api/authApi';
-import { saveAuthFlag, saveRole, saveUserId } from '../../lib/auth';
+import { saveAuthFlag, saveRole, saveUserId, saveUserProfile } from '../../lib/auth';
 import Input from '../../components/Input';
 import styles from './Login.module.css';
 
@@ -14,32 +14,64 @@ const Login: React.FC = () => {
   const [errors, setErrors] = useState<{ email?: string; password?: string }>({});
   const [loading, setLoading] = useState(false);
   const [apiError, setApiError] = useState('');
+  const errorTimerRef = useRef<number | null>(null);
+
+  useEffect(() => {
+    return () => {
+      if (errorTimerRef.current) {
+        window.clearTimeout(errorTimerRef.current);
+      }
+    };
+  }, []);
+
+  const validateField = (name: 'email' | 'password', value: string) => {
+    if (name === 'email') {
+      if (!value) return 'Email is required';
+      if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value)) return 'Invalid email format';
+      return undefined;
+    }
+
+    if (!value) return 'Password is required';
+    if (value.length < 8) return 'Password must be at least 8 characters';
+    return undefined;
+  };
+
+  const scheduleErrorsClear = () => {
+    if (errorTimerRef.current) {
+      window.clearTimeout(errorTimerRef.current);
+    }
+    errorTimerRef.current = window.setTimeout(() => {
+      setErrors({});
+      errorTimerRef.current = null;
+    }, 6000);
+  };
 
   const validateForm = (): boolean => {
     const newErrors: { email?: string; password?: string } = {};
 
-    if (!formData.email) {
-      newErrors.email = 'Email is required';
-    } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.email)) {
-      newErrors.email = 'Invalid email format';
-    }
+    const emailError = validateField('email', formData.email);
+    if (emailError) newErrors.email = emailError;
 
-    if (!formData.password) {
-      newErrors.password = 'Password is required';
-    } else if (formData.password.length < 8) {
-      newErrors.password = 'Password must be at least 8 characters';
-    }
+    const passwordError = validateField('password', formData.password);
+    if (passwordError) newErrors.password = passwordError;
 
     setErrors(newErrors);
+    if (Object.keys(newErrors).length > 0) {
+      scheduleErrorsClear();
+    }
     return Object.keys(newErrors).length === 0;
   };
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
     setFormData((prev) => ({ ...prev, [name]: value }));
-    // Clear error for this field
-    if (errors[name as keyof typeof errors]) {
-      setErrors((prev) => ({ ...prev, [name]: undefined }));
+
+    if (name === 'email' || name === 'password') {
+      const fieldError = validateField(name, value);
+      
+      if (!fieldError && errors[name]) {
+        setErrors((prev) => ({ ...prev, [name]: undefined }));
+      }
     }
     setApiError('');
   };
@@ -60,11 +92,12 @@ const Login: React.FC = () => {
       // Save auth data
       saveUserId(response.user.id);
       saveRole(response.user.role);
-      // Backend uses session authentication (cookies), no token returned
-      // We save a UI marker to track authentication state
+      saveUserProfile(response.user);
+      
+      
       saveAuthFlag(true);
 
-      // Redirect based on role
+      // Redirect based on role !!!!!!must be fixedddd
       const role = response.user.role;
       if (role === 'freelancer') {
         navigate('/freelancer/dashboard');
@@ -126,6 +159,7 @@ const Login: React.FC = () => {
             placeholder="Enter your password"
             error={errors.password}
             disabled={loading}
+            withPasswordToggle
           />
 
           <button
