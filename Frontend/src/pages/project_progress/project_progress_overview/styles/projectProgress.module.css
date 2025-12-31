@@ -1,12 +1,12 @@
 .pageContainer {
   min-height: 100vh;
-  background: linear-gradient(135deg, #f5f7fa 0%, #e8eef5 100%);
+  background: #f1f5f9 ; 
   padding: 32px;
 }
 
 .tabBar {
   display: flex;
-  background: #ffffff;
+  background: #ffffff ;
   border-top-left-radius: 16px;
   border-top-right-radius: 16px;
   border-bottom: 2px solid #e5e7eb;
@@ -50,7 +50,7 @@
   color: #374151;
   font-weight: 600;
   border-bottom: 3px solid #3b82f6;
-  background: #D1F2EB;
+  background: #e2e8f0;
 }
 
 .activeTab .tabIcon {
@@ -58,7 +58,7 @@
 }
 
 .tabContent {
-  background: #D1F2EB;
+  background: #f1f5f9  ;
   padding: 32px 64px;
   border-bottom-left-radius: 16px;
   border-bottom-right-radius: 16px;
