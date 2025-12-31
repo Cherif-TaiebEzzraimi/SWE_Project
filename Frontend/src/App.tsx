@@ -1,5 +1,3 @@
-<<<<<<< HEAD
-
 import { BrowserRouter, Routes, Route, useNavigate, Navigate } from 'react-router-dom';
 import { UserTypeProvider } from './context/UserTypeContext';
 import './styles/App.css';
@@ -78,20 +76,6 @@ function App() {
       </PostsProvider>
     </UserTypeProvider>
   );
-=======
-import { BrowserRouter as Router } from 'react-router-dom'
-import AppRouter from './router/AppRouter'
-import './styles/App.css'
-
-function App() {
-  return (
-    <Router>
-      <div className="app">
-        <AppRouter />
-      </div>
-    </Router>
-  )
->>>>>>> feature/authentication
 }
 
 import { Routes as NestedRoutes, Route as NestedRoute } from 'react-router-dom';
