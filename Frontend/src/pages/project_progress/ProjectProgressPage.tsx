@@ -103,6 +103,7 @@ import TabNavigation from '../../components/TabNavigation';
 import PhasesPage from './phases-section/phases';
 import ProjectProgressClientOverview from './project_progress_overview/ProjectProgressClientOverview';
 import '../../styles/index.css';
+import NotesSection from './notes/NotesSection';
 
 const ProjectProgressPage = () => {
   const location = useLocation();
@@ -153,7 +154,7 @@ const ProjectProgressPage = () => {
             <div className="notes-content">
               <div className="border-2 border-blue-500 shadow-[0_0_7px_3px_rgba(30,70,206,0.1)] dark:bg-blue-900 p-6 rounded-lg">
                 <p className="text-slate-500 dark:text-slate-400">
-                  Notes section - to be implemented
+                    <NotesSection />
                 </p>
               </div>
             </div>
