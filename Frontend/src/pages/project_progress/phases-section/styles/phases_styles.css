@@ -1,0 +1,780 @@
+/* ==================== Phases Scroll Container ==================== */
+.phases-scroll-container {
+  overflow-x: auto;
+  overflow-y: hidden;
+  margin: 1.5rem 0;
+  padding-bottom: 0.5rem;
+  scroll-behavior: smooth;
+}
+
+.phases-scroll-content {
+  display: flex;
+  gap: 1rem;
+  min-width: min-content;
+  padding-right: 1rem;
+}
+
+/* ==================== Phase Card ==================== */
+.phase-card {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+  padding: 1.5rem;
+  background: white;
+  border: 1px solid #e2e8f0;
+  border-radius: 0.75rem;
+  min-width: 320px;
+  max-width: 380px;
+  cursor: pointer;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
+}
+
+.dark .phase-card {
+  background: #1e293b;
+  border-color: #334155;
+}
+
+.phase-card:hover {
+  border-color: #bfdbfe;
+  box-shadow: 0 4px 12px rgba(59, 130, 246, 0.15);
+  transform: translateY(-2px);
+}
+
+.dark .phase-card:hover {
+  border-color: #0ea5e9;
+  box-shadow: 0 4px 12px rgba(6, 182, 212, 0.15);
+}
+
+.phase-card-active {
+  border-color: #3b82f6;
+  background: linear-gradient(135deg, rgba(59, 130, 246, 0.05) 0%, rgba(59, 130, 246, 0.02) 100%);
+  box-shadow: 0 4px 12px rgba(59, 130, 246, 0.2);
+}
+
+.dark .phase-card-active {
+  border-color: #0ea5e9;
+  background: linear-gradient(135deg, rgba(6, 182, 212, 0.1) 0%, rgba(6, 182, 212, 0.05) 100%);
+}
+
+/* Phase Card Header */
+.phase-card-header {
+  display: flex;
+  gap: 1rem;
+  align-items: flex-start;
+}
+
+.phase-icon {
+  font-size: 1.75rem !important;
+  flex-shrink: 0;
+  margin-top: 0.25rem;
+}
+
+.phase-info {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+}
+
+.phase-name {
+  font-size: 1.125rem;
+  font-weight: 600;
+  color: #1e293b;
+  margin: 0;
+}
+
+.dark .phase-name {
+  color: #f1f5f9;
+}
+
+.phase-date {
+  font-size: 0.875rem;
+  color: #64748b;
+  margin: 0;
+}
+
+.dark .phase-date {
+  color: #cbd5e1;
+}
+
+/* Phase Card Details */
+.phase-details {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.phase-detail-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
+  font-size: 0.875rem;
+}
+
+.phase-detail-item.flex-col {
+  flex-direction: column;
+  align-items: flex-start;
+}
+
+.phase-detail-label {
+  font-weight: 500;
+  color: #64748b;
+  white-space: nowrap;
+}
+
+.dark .phase-detail-label {
+  color: #94a3b8;
+}
+
+.phase-detail-value {
+  color: #1e293b;
+  font-weight: 500;
+}
+
+.dark .phase-detail-value {
+  color: #e2e8f0;
+}
+
+/* Deliverable Link */
+.phase-deliverable {
+  border-top: 1px solid #e2e8f0;
+  padding-top: 1rem;
+  margin-top: 0.5rem;
+}
+
+.dark .phase-deliverable {
+  border-top-color: #334155;
+}
+
+.deliverable-link {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  color: #3b82f6;
+  text-decoration: none;
+  font-weight: 500;
+  transition: all 0.2s ease;
+}
+
+.dark .deliverable-link {
+  color: #0ea5e9;
+}
+
+.deliverable-link:hover {
+  color: #1d4ed8;
+  text-decoration: underline;
+}
+
+.dark .deliverable-link:hover {
+  color: #06b6d4;
+}
+
+/* ==================== Phase Details Section ==================== */
+.phase-details-section {
+  background: white;
+  border: 1px solid #e2e8f0;
+  border-radius: 0.75rem;
+  margin-top: 2rem;
+  animation: fade-in 0.3s ease-out;
+  overflow: hidden;
+}
+
+.dark .phase-details-section {
+  background: #1e293b;
+  border-color: #334155;
+}
+
+.phase-details-content {
+  padding: 2rem;
+}
+
+@media (max-width: 768px) {
+  .phase-details-content {
+    padding: 1.5rem;
+  }
+}
+
+/* Phase Details Header */
+.phase-details-header {
+  margin-bottom: 2rem;
+  padding-bottom: 2rem;
+  border-bottom: 1px solid #e2e8f0;
+}
+
+.dark .phase-details-header {
+  border-bottom-color: #334155;
+}
+
+.phase-details-title {
+  font-size: 1.875rem;
+  font-weight: 700;
+  color: #1e293b;
+  margin: 0;
+  line-height: 1.2;
+}
+
+.dark .phase-details-title {
+  color: #f1f5f9;
+}
+
+.phase-details-description {
+  font-size: 0.95rem;
+  color: #64748b;
+  line-height: 1.6;
+  margin: 0.75rem 0 0 0;
+}
+
+.dark .phase-details-description {
+  color: #cbd5e1;
+}
+
+/* Phase Details Meta Grid */
+.phase-details-meta {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+  gap: 1.5rem;
+  margin-bottom: 2rem;
+  padding: 1.5rem;
+  background: #f8fafc;
+  border-radius: 0.5rem;
+}
+
+.dark .phase-details-meta {
+  background: #0f172a;
+}
+
+.meta-item {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.meta-label {
+  font-size: 0.75rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: #94a3b8;
+  display: flex;
+  align-items: center;
+  margin: 0;
+}
+
+.dark .meta-label {
+  color: #64748b;
+}
+
+.meta-value {
+  font-size: 1.125rem;
+  font-weight: 600;
+  color: #1e293b;
+}
+
+.dark .meta-value {
+  color: #e2e8f0;
+}
+
+.meta-deadline {
+  color: #1e293b;
+}
+
+.dark .meta-deadline {
+  color: #e2e8f0;
+}
+
+/* Status Badge */
+.status-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.5rem 1rem;
+  border-radius: 0.375rem;
+  font-size: 0.875rem;
+  font-weight: 500;
+  width: fit-content;
+}
+
+.status-icon {
+  font-size: 1.125rem !important;
+}
+
+/* ==================== Todos Section ==================== */
+.todos-section {
+  margin-top: 2rem;
+  padding-top: 2rem;
+  border-top: 1px solid #e2e8f0;
+}
+
+.dark .todos-section {
+  border-top-color: #334155;
+}
+
+.todos-title {
+  font-size: 1.25rem;
+  font-weight: 700;
+  color: #1e293b;
+  margin: 0 0 0 0;
+}
+
+.dark .todos-title {
+  color: #f1f5f9;
+}
+
+/* Todos List */
+.todos-list {
+  list-style: none;
+  padding: 0;
+  margin: 1rem 0 0 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+/* Todo Item */
+.todo-item {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  padding: 1rem;
+  background: #f8fafc;
+  border: 1px solid #e2e8f0;
+  border-radius: 0.5rem;
+  transition: all 0.2s ease;
+}
+
+.dark .todo-item {
+  background: #0f172a;
+  border-color: #334155;
+}
+
+.todo-item:hover {
+  background: #f1f5f9;
+  border-color: #cbd5e1;
+}
+
+.dark .todo-item:hover {
+  background: #1e293b;
+  border-color: #475569;
+}
+
+.todo-checkbox {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  width: 24px;
+  height: 24px;
+  background: none;
+  border: none;
+  padding: 0;
+  cursor: pointer;
+  color: #94a3b8;
+  transition: all 0.2s ease;
+}
+
+.dark .todo-checkbox {
+  color: #64748b;
+}
+
+.todo-checkbox:hover {
+  color: #3b82f6;
+}
+
+.dark .todo-checkbox:hover {
+  color: #0ea5e9;
+}
+
+.todo-checkbox.checked {
+  color: #14b8a6;
+}
+
+.dark .todo-checkbox.checked {
+  color: #14b8a6;
+}
+
+.todo-title {
+  flex: 1;
+  font-size: 0.95rem;
+  color: #1e293b;
+  margin: 0;
+  word-break: break-word;
+}
+
+.dark .todo-title {
+  color: #e2e8f0;
+}
+
+.todo-title.completed {
+  color: #94a3b8;
+  text-decoration: line-through;
+}
+
+.dark .todo-title.completed {
+  color: #64748b;
+}
+
+.todo-date {
+  font-size: 0.8rem;
+  color: #94a3b8;
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+
+.dark .todo-date {
+  color: #64748b;
+}
+
+.todo-menu {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  width: 28px;
+  height: 28px;
+  background: none;
+  border: none;
+  padding: 0;
+  cursor: pointer;
+  color: #cbd5e1;
+  opacity: 0;
+  transition: opacity 0.2s ease;
+  border-radius: 0.375rem;
+}
+
+.dark .todo-menu {
+  color: #475569;
+}
+
+.todo-item:hover .todo-menu,
+.todo-item.group:hover .todo-menu {
+  opacity: 1;
+}
+
+.todo-menu:hover {
+  background: #e2e8f0;
+  color: #1e293b;
+}
+
+.dark .todo-menu:hover {
+  background: #334155;
+  color: #e2e8f0;
+}
+
+/* ==================== Tab Content ==================== */
+.tab-content {
+  margin-top: 1.5rem;
+}
+
+.overview-content,
+.notes-content {
+  background: white;
+  border: 1px solid #e2e8f0;
+  border-radius: 0.75rem;
+}
+
+.dark .overview-content,
+.dark .notes-content {
+  background: #1e293b;
+  border-color: #334155;
+}
+
+/* ==================== Responsive Design ==================== */
+@media (max-width: 640px) {
+  .phase-card {
+    min-width: 280px;
+    max-width: 100%;
+  }
+
+  .phase-details-meta {
+    grid-template-columns: 1fr;
+  }
+
+  .phase-details-content {
+    padding: 1rem;
+  }
+
+  .todos-list {
+    gap: 0.5rem;
+  }
+
+  .todo-item {
+    padding: 0.75rem;
+    gap: 0.75rem;
+    flex-wrap: wrap;
+  }
+
+  .todo-date {
+    width: 100%;
+    order: 3;
+  }
+
+  .todo-menu {
+    order: 2;
+  }
+}
+
+/* ==================== Modal Styles ==================== */
+.modal-backdrop {
+  position: fixed;
+  inset: 0;
+  background-color: rgba(0, 0, 0, 0.5);
+  z-index: 40;
+  backdrop-filter: blur(4px);
+}
+
+.dark .modal-backdrop {
+  background-color: rgba(0, 0, 0, 0.7);
+}
+
+.modal-container {
+  position: fixed;
+  inset: 0;
+  z-index: 50;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 1rem;
+  overflow-y: auto;
+}
+
+.modal-content {
+  background-color: white;
+  border-radius: 0.5rem;
+  box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1);
+  width: 100%;
+  max-width: 42rem;
+  margin: 2rem 0;
+}
+
+.dark .modal-content {
+  background-color: #1e293b;
+}
+
+.modal-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 1.5rem;
+  border-bottom: 1px solid #e2e8f0;
+}
+
+.dark .modal-header {
+  border-bottom-color: #334155;
+}
+
+.modal-header h2 {
+  font-size: 1.5rem;
+  font-weight: bold;
+  color: #1e293b;
+  margin: 0;
+}
+
+.dark .modal-header h2 {
+  color: #f1f5f9;
+}
+
+.modal-body {
+  padding: 1.5rem;
+  max-height: calc(100vh - 200px);
+  overflow-y: auto;
+}
+
+.modal-footer {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 0.75rem;
+  padding: 1.5rem;
+  border-top: 1px solid #e2e8f0;
+  background-color: #f8fafc;
+}
+
+.dark .modal-footer {
+  border-top-color: #334155;
+  background-color: #334155;
+}
+
+/* Form Elements in Modal */
+.modal-content label {
+  display: block;
+  font-size: 0.875rem;
+  font-weight: 500;
+  color: #475569;
+  margin-bottom: 0.5rem;
+}
+
+.dark .modal-content label {
+  color: #cbd5e1;
+}
+
+.modal-content input,
+.modal-content textarea,
+.modal-content select {
+  width: 100%;
+  padding: 0.75rem 1rem;
+  border: 1px solid #cbd5e1;
+  border-radius: 0.5rem;
+  background-color: white;
+  color: #1e293b;
+  font-size: 0.875rem;
+  transition: all 0.2s ease;
+}
+
+.dark .modal-content input,
+.dark .modal-content textarea,
+.dark .modal-content select {
+  background-color: #0f172a;
+  border-color: #475569;
+  color: #f1f5f9;
+}
+
+.modal-content input:focus,
+.modal-content textarea:focus,
+.modal-content select:focus {
+  outline: none;
+  border-color: #3b82f6;
+  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+}
+
+.dark .modal-content input:focus,
+.dark .modal-content textarea:focus,
+.dark .modal-content select:focus {
+  border-color: #3b82f6;
+  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.2);
+}
+
+.modal-content textarea {
+  resize: none;
+}
+
+/* Task Item in Modal */
+.task-item {
+  display: flex;
+  gap: 0.75rem;
+  align-items: flex-start;
+  background-color: #f1f5f9;
+  padding: 1rem;
+  border-radius: 0.5rem;
+}
+
+.dark .task-item {
+  background-color: rgba(71, 85, 105, 0.5);
+}
+
+.task-item input {
+  font-size: 0.875rem;
+}
+
+.task-item button {
+  flex-shrink: 0;
+}
+
+/* Phase Card Edit/Delete Buttons */
+.phase-card {
+  position: relative;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.phase-card:hover {
+  position: relative;
+}
+
+.phase-card-actions {
+  position: absolute;
+  top: 1rem;
+  right: 3rem;
+  display: flex;
+  gap: 0.5rem;
+  opacity: 0;
+  transition: opacity 0.2s ease;
+}
+
+.phase-card:hover .phase-card-actions {
+  opacity: 1;
+}
+
+.phase-card-actions button {
+  padding: 0.5rem;
+  border-radius: 0.5rem;
+  color: white;
+  border: none;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.phase-card-actions button:hover {
+  transform: scale(1.1);
+}
+
+.phase-card-actions .edit-btn {
+  background-color: #3b82f6;
+}
+
+.phase-card-actions .edit-btn:hover {
+  background-color: #2563eb;
+}
+
+.phase-card-actions .delete-btn {
+  background-color: #ef4444;
+}
+
+.phase-card-actions .delete-btn:hover {
+  background-color: #dc2626;
+}
+
+/* Scrollbar Styling */
+.modal-body::-webkit-scrollbar,
+.task-item input::-webkit-scrollbar {
+  width: 6px;
+}
+
+.modal-body::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.modal-body::-webkit-scrollbar-thumb {
+  background: #cbd5e1;
+  border-radius: 3px;
+}
+
+.modal-body::-webkit-scrollbar-thumb:hover {
+  background: #94a3b8;
+}
+
+.dark .modal-body::-webkit-scrollbar-thumb {
+  background: #475569;
+}
+
+.dark .modal-body::-webkit-scrollbar-thumb:hover {
+  background: #64748b;
+}
+
+/* ==================== Animations ==================== */
+@keyframes fade-in {
+  from {
+    opacity: 0;
+    transform: translateY(-10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes slide-up {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+

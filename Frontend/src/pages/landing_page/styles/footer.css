@@ -1,0 +1,35 @@
+/* footer.css */
+
+.footer {
+  width: 100%;
+  background-color: #f1f5f9;
+  padding: 16px 40px;
+  border-top: 1px solid #e2e8f0;
+}
+
+/* Layout */
+.footer {
+  display: flex;
+  align-items: center;
+  position: relative;
+}
+
+/* Logo on the left */
+.footer-logo {
+  font-size: 18px;
+  font-weight: 700;
+  color: #172554;
+}
+
+/* Centered copyright */
+.footer-bottom {
+  position: absolute;
+  left: 50%;
+  transform: translateX(-50%);
+}
+
+.footer-bottom p {
+  font-size: 14px;
+  color: #475569;
+  margin: 0;
+}

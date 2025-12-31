@@ -1,0 +1,159 @@
+/* Reviews Section */
+.reviews-section {
+  padding: 5rem 5%;
+  background-color: #ffffff;
+}
+
+.reviews-container {
+  max-width: 1400px;
+  margin: 0 auto;
+}
+
+.reviews-title {
+  font-size: 2.5rem;
+  font-weight: 600;
+  color: #172554;
+  margin-bottom: 3rem;
+}
+
+/* Reviews Grid */
+.reviews-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(350px, 1fr));
+  gap: 2rem;
+}
+
+.review-card {
+  background: #ffffff;
+  padding: 2rem;
+  border-radius: 12px;
+  border: 1px solid #e5e7eb;
+  border-bottom: 4px solid #0a65f1;
+  position: relative;
+  overflow: hidden;
+  transition: all 0.3s ease;
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+}
+
+.review-card:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 12px 32px rgba(23, 37, 84, 0.15);
+}
+
+/* Accent element at bottom */
+.review-accent {
+  position: absolute;
+  bottom: 0;
+  right: 0;
+  width: 150px;
+  height: 150px;
+  opacity: 0.1;
+  border-radius: 50% 0 0 0;
+}
+
+/* Review Header */
+.review-header {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.review-category-icon {
+  font-size: 1.2rem;
+  color: #0a65f1;
+}
+
+.review-category {
+  font-size: 0.75rem;
+  font-weight: 700;
+  color: #172554;
+  letter-spacing: 1px;
+  text-transform: uppercase;
+}
+
+/* Review Text */
+.review-text {
+  font-size: 1rem;
+  line-height: 1.6;
+  color: #172554;
+  margin: 0;
+  flex: 1;
+}
+
+/* Rating */
+.review-rating {
+  display: flex;
+  gap: 0.25rem;
+}
+
+.star {
+  font-size: 1rem;
+}
+
+/* Review Footer */
+.review-footer {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-end;
+  gap: 1rem;
+}
+
+.review-info {
+  flex: 1;
+}
+
+.review-author {
+  font-size: 0.9rem;
+  font-weight: 600;
+  color: #172554;
+  margin: 0 0 0.25rem 0;
+}
+
+.review-project {
+  font-size: 0.85rem;
+  color: #172554;
+  margin: 0 0 0.25rem 0;
+  opacity: 0.8;
+}
+
+.review-date {
+  font-size: 0.8rem;
+  color: #172554;
+  margin: 0;
+  opacity: 0.6;
+}
+
+.review-avatar {
+  width: 60px;
+  height: 60px;
+  border-radius: 50%;
+  object-fit: cover;
+  border: 2px solid #f1f5f9;
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+  .reviews-section {
+    padding: 3rem 3%;
+  }
+
+  .reviews-title {
+    font-size: 2rem;
+  }
+
+  .reviews-grid {
+    grid-template-columns: 1fr;
+    gap: 1.5rem;
+  }
+
+  .review-card {
+    padding: 1.5rem;
+  }
+
+  .review-avatar {
+    width: 50px;
+    height: 50px;
+  }
+}

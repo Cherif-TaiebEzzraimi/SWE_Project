@@ -1,0 +1,261 @@
+.about-container {
+  min-height: 100vh;
+  background-color: #f1f5f9;
+}
+
+.about-hero {
+  background: linear-gradient(135deg, #172554 0%, #1e3a8a 50%, #0a65f1 100%);
+  padding: 80px 40px;
+  text-align: center;
+  color: #ffffff;
+}
+
+.about-hero h1 {
+  font-size: 48px;
+  font-weight: 700;
+  margin: 0;
+  letter-spacing: -0.5px;
+}
+
+.hero-underline {
+  width: 120px;
+  height: 4px;
+  background-color: #49cfe0;
+  margin: 20px auto 0;
+  border-radius: 2px;
+}
+
+.about-description {
+  max-width: 900px;
+  margin: 0 auto;
+  padding: 60px 40px;
+}
+
+.description-content h2 {
+  color: #172554;
+  font-size: 32px;
+  font-weight: 700;
+  margin-bottom: 24px;
+  text-align: center;
+}
+
+.description-content p {
+  color: #1e3a8a;
+  font-size: 17px;
+  line-height: 1.8;
+  margin-bottom: 20px;
+  text-align: justify;
+}
+
+.team-section {
+  max-width: 1400px;
+  margin: 0 auto;
+  padding: 60px 40px 80px;
+}
+
+.team-section h2 {
+  color: #172554;
+  font-size: 36px;
+  font-weight: 700;
+  text-align: center;
+  margin-bottom: 16px;
+}
+
+.team-intro {
+  color: #1e3a8a;
+  font-size: 16px;
+  text-align: center;
+  max-width: 600px;
+  margin: 0 auto 50px;
+  line-height: 1.6;
+}
+
+.team-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 380px);
+  gap: 32px;
+  margin-top: 40px;
+  justify-content: center;
+}
+
+.team-card {
+  width: 380px;
+  background-color: #ffffff;
+  border-radius: 16px;
+  padding: 32px;
+  text-align: center;
+  border: 1px solid #e0f8fb;
+  transition: all 0.3s ease;
+}
+
+.team-card:hover {
+  box-shadow: 0 10px 30px rgba(10, 101, 241, 0.15);
+  transform: translateY(-8px);
+}
+
+/* New styles for image avatars */
+.member-avatar-img {
+  position: relative;
+  width: 100px;
+  height: 100px;
+  margin: 0 auto 20px;
+}
+
+.member-avatar-img img {
+  width: 100%;
+  height: 100%;
+  border-radius: 50%;
+  object-fit: cover;
+  border: 3px solid #0a65f1;
+  display: block;
+}
+
+.member-avatar-fallback {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100px;
+  height: 100px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, #0a65f1, #49cfe0);
+  display: none;
+  align-items: center;
+  justify-content: center;
+  font-size: 36px;
+  font-weight: 700;
+  color: #ffffff;
+  border: 3px solid #0a65f1;
+}
+
+/* Keep old avatar style as backup */
+.member-avatar {
+  width: 100px;
+  height: 100px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, #0a65f1, #49cfe0);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 36px;
+  font-weight: 700;
+  color: #ffffff;
+  margin: 0 auto 20px;
+  border: 3px solid #0a65f1;
+}
+
+.team-card h3 {
+  color: #172554;
+  font-size: 22px;
+  font-weight: 600;
+  margin: 0 0 8px 0;
+}
+
+.member-role {
+  color: #0a65f1;
+  font-size: 15px;
+  font-weight: 500;
+  margin: 0 0 24px 0;
+}
+
+.contact-info {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  margin-top: 20px;
+  padding-top: 20px;
+  border-top: 1px solid #e0f8fb;
+}
+
+.contact-link {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 10px 16px;
+  border-radius: 8px;
+  text-decoration: none;
+  font-size: 14px;
+  font-weight: 500;
+  transition: all 0.3s ease;
+}
+
+.contact-link.email {
+  background-color: #e0f8fb;
+  color: #0a65f1;
+}
+
+.contact-link.email:hover {
+  background-color: #0a65f1;
+  color: #ffffff;
+}
+
+.contact-link.linkedin {
+  background-color: #e0f8fb;
+  color: #0a65f1;
+}
+
+.contact-link.linkedin:hover {
+  background-color: #0a65f1;
+  color: #ffffff;
+}
+
+.contact-link.github {
+  background-color: #f1f5f9;
+  color: #172554;
+}
+
+.contact-link.github:hover {
+  background-color: #172554;
+  color: #ffffff;
+}
+
+.contact-link svg {
+  width: 18px;
+  height: 18px;
+}
+
+@media (max-width: 1200px) {
+  .team-grid {
+    grid-template-columns: repeat(2, 380px);
+  }
+}
+
+@media (max-width: 768px) {
+  .about-hero {
+    padding: 60px 20px;
+  }
+
+  .about-hero h1 {
+    font-size: 36px;
+  }
+
+  .about-description {
+    padding: 40px 20px;
+  }
+
+  .description-content h2 {
+    font-size: 26px;
+  }
+
+  .description-content p {
+    font-size: 16px;
+  }
+
+  .team-section {
+    padding: 40px 20px 60px;
+  }
+
+  .team-section h2 {
+    font-size: 28px;
+  }
+
+  .team-grid {
+    grid-template-columns: 1fr;
+    gap: 24px;
+  }
+
+  .team-card {
+    width: 100%;
+    max-width: 380px;
+  }
+}
