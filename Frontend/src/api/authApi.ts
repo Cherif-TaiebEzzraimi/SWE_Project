@@ -17,7 +17,7 @@ export interface RegisterClientIndividualRequest {
   password: string;
   first_name: string;
   last_name: string;
-  client: {
+  client?: {
     phone_number?: string;
     city?: string;
     wilaya?: string;
@@ -55,6 +55,11 @@ export const login = async (data: LoginRequest): Promise<LoginResponse> => {
 
 export const logout = async (): Promise<void> => {
   await apiClient.post('/auth/logout/');
+};
+
+export const verifyEmail = async (token: string): Promise<{ detail: string }> => {
+  const response = await apiClient.get<{ detail: string }>(`/auth/verify-email/${token}/`);
+  return response.data;
 };
 
 export interface RegisterFreelancerRequest {

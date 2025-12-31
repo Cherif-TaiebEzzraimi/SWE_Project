@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { wilayas } from '../lib/wilayas.ts';
+import { wilayas } from '../lib/wilayas';
 import styles from '../pages/authentication/SignupFreelancer.module.css';
 
 interface WilayaSelectProps {

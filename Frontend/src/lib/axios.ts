@@ -1,6 +1,9 @@
 import axios, { AxiosError } from 'axios';
 import type { InternalAxiosRequestConfig, AxiosResponse } from 'axios';
+
 import { getToken } from './auth';
+import { clearAuth } from './auth';
+
 
 const apiClient = axios.create({
   baseURL: 'http://localhost:8000',
@@ -25,6 +28,35 @@ apiClient.interceptors.request.use(
 );
 
 // Response interceptor for error handling
+
+function getCookie(name: string): string | null {
+  let cookieValue = null;
+  if (document.cookie && document.cookie !== '') {
+    const cookies = document.cookie.split(';');
+    for (let cookie of cookies) {
+      cookie = cookie.trim();
+      if (cookie.startsWith(name + '=')) {
+        cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+        break;
+      }
+    }
+  }
+  return cookieValue;
+}
+
+
+apiClient.interceptors.request.use(
+  (config: InternalAxiosRequestConfig) => {
+    const csrfToken = getCookie('csrftoken');
+    if (csrfToken) {
+      config.headers['X-CSRFToken'] = csrfToken;
+    }
+    return config;
+  },
+  (error: AxiosError) => Promise.reject(error)
+);
+
+
 apiClient.interceptors.response.use(
   (response: AxiosResponse) => response,
   (error: AxiosError) => {
@@ -33,6 +65,7 @@ apiClient.interceptors.response.use(
       localStorage.removeItem('token');
       localStorage.removeItem('role');
       localStorage.removeItem('userId');
+      clearAuth();
       window.location.href = '/login';
     }
     return Promise.reject(error);

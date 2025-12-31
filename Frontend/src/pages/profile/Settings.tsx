@@ -1,13 +1,21 @@
 import React, { useState, useEffect } from 'react';
 import styles from './Settings.module.css';
 import apiClient from '../../lib/axios';
+<<<<<<< HEAD
+=======
+import { clearAuth } from '../../lib/auth';
+>>>>>>> feature/authentication
 
 interface Notification {
   id: number;
   content: string;
   seen: boolean;
   created_at: string;
+<<<<<<< HEAD
   receiver: {
+=======
+  receiver?: {
+>>>>>>> feature/authentication
     id: number;
     first_name: string;
     last_name: string;
@@ -60,13 +68,21 @@ const PasswordField: React.FC<PasswordFieldProps> = ({
           onClick={() => setShow((v) => !v)}
         >
           {show ? (
+<<<<<<< HEAD
             // Visible state: show open eye icon
+=======
+            
+>>>>>>> feature/authentication
             <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
               <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z" />
               <circle cx="12" cy="12" r="3" />
             </svg>
           ) : (
+<<<<<<< HEAD
             // Hidden state: show eye-off icon
+=======
+            
+>>>>>>> feature/authentication
             <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
               <path d="M17.94 17.94A10.94 10.94 0 0 1 12 20C7 20 2.73 16.11 1 12c.69-1.58 1.71-3.03 2.95-4.24M9.9 4.24A10.94 10.94 0 0 1 12 4c5 0 9.27 3.89 11 8-1.05 2.41-2.76 4.47-4.9 6.06" />
               <path d="M14.12 14.12a3 3 0 0 1-4.24-4.24" />
@@ -82,7 +98,11 @@ const PasswordField: React.FC<PasswordFieldProps> = ({
 const Settings: React.FC<SettingsProps> = ({ userId, userRole }) => {
   const [activeSection, setActiveSection] = useState<'password' | 'notifications' | 'help' | 'account'>('password');
   
+<<<<<<< HEAD
   // Password Change State
+=======
+  // password Change 
+>>>>>>> feature/authentication
   const [passwordData, setPasswordData] = useState({
     old_password: '',
     new_password: '',
@@ -91,6 +111,7 @@ const Settings: React.FC<SettingsProps> = ({ userId, userRole }) => {
   const [passwordMessage, setPasswordMessage] = useState('');
   const [newPasswordErrors, setNewPasswordErrors] = useState<string[]>([]);
 
+<<<<<<< HEAD
   // Notifications State
   const [notifications, setNotifications] = useState<Notification[]>([]);
   const [notificationsLoading, setNotificationsLoading] = useState(false);
@@ -103,6 +124,21 @@ const Settings: React.FC<SettingsProps> = ({ userId, userRole }) => {
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
 
   // Fetch notifications when section becomes active
+=======
+  // notifications 
+  const [notifications, setNotifications] = useState<Notification[]>([]);
+  const [notificationsLoading, setNotificationsLoading] = useState(false);
+  const [notificationsError, setNotificationsError] = useState('');
+
+  // Help Ticket 
+  const [helpProblem, setHelpProblem] = useState('');
+  const [helpMessage, setHelpMessage] = useState('');
+
+  // account deletion 
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+
+  
+>>>>>>> feature/authentication
   useEffect(() => {
     if (activeSection === 'notifications') {
       fetchNotifications();
@@ -111,6 +147,7 @@ const Settings: React.FC<SettingsProps> = ({ userId, userRole }) => {
 
   const fetchNotifications = async () => {
     setNotificationsLoading(true);
+<<<<<<< HEAD
     try {
       // Dummy data for UI preview
       const demo: Notification[] = [
@@ -139,6 +176,17 @@ const Settings: React.FC<SettingsProps> = ({ userId, userRole }) => {
       setNotifications(demo);
     } catch (error) {
       console.error('Error fetching notifications:', error);
+=======
+    setNotificationsError('');
+    try {
+      const res = await apiClient.get<Notification[]>('/notifications/my/');
+      setNotifications(Array.isArray(res.data) ? res.data : []);
+    } catch (error: any) {
+      console.error('Error fetching notifications:', error);
+      const msg = error?.response?.data?.detail || 'Failed to load notifications.';
+      setNotificationsError(msg);
+      setNotifications([]);
+>>>>>>> feature/authentication
     } finally {
       setNotificationsLoading(false);
     }
@@ -146,17 +194,27 @@ const Settings: React.FC<SettingsProps> = ({ userId, userRole }) => {
 
   const markAsRead = async (notificationId: number) => {
     try {
+<<<<<<< HEAD
       await apiClient.put(`/notifications/${notificationId}/`, { seen: true });
       // Update local state
       setNotifications(prev => 
         prev.map(n => n.id === notificationId ? { ...n, seen: true } : n)
       );
+=======
+      const res = await apiClient.put<Notification>(`/notifications/${notificationId}/`);
+      const updated = res.data;
+      setNotifications(prev => prev.map(n => (n.id === notificationId ? { ...n, ...updated } : n)));
+>>>>>>> feature/authentication
     } catch (error) {
       console.error('Error marking notification as read:', error);
     }
   };
 
+<<<<<<< HEAD
   // Get the correct API endpoint based on user role
+=======
+  
+>>>>>>> feature/authentication
   const getPasswordEndpoint = () => {
     const endpoints = {
       freelancer: `/freelancers/${userId}/password/`,
@@ -173,10 +231,15 @@ const Settings: React.FC<SettingsProps> = ({ userId, userRole }) => {
     // Validate new password
     const errors: string[] = [];
     if (passwordData.new_password.length < 8) errors.push('At least 8 characters');
+<<<<<<< HEAD
     if (!/[A-Z]/.test(passwordData.new_password)) errors.push('Include an uppercase letter');
     if (!/[a-z]/.test(passwordData.new_password)) errors.push('Include a lowercase letter');
     if (!/[0-9]/.test(passwordData.new_password)) errors.push('Include a number');
     if (!/[!@#$%^&*(),.?":{}|<>_\-]/.test(passwordData.new_password)) errors.push('Include a special character');
+=======
+    if (!/[a-z]/.test(passwordData.new_password)) errors.push('Include a lowercase letter');
+    if (!/[0-9]/.test(passwordData.new_password)) errors.push('Include a number');
+>>>>>>> feature/authentication
     if (passwordData.new_password !== passwordData.confirm_password) errors.push('New passwords do not match');
     setNewPasswordErrors(errors);
     if (errors.length > 0) {
@@ -207,6 +270,7 @@ const Settings: React.FC<SettingsProps> = ({ userId, userRole }) => {
     }
 
     try {
+<<<<<<< HEAD
       await apiClient.post('/help/', {
         user_id: userId,
         problem: helpProblem,
@@ -215,24 +279,49 @@ const Settings: React.FC<SettingsProps> = ({ userId, userRole }) => {
       setHelpProblem('');
     } catch (error) {
       setHelpMessage('Failed to submit help ticket');
+=======
+      await apiClient.post('/help/', { problem: helpProblem });
+      setHelpMessage('Help ticket submitted successfully.');
+      setHelpProblem('');
+    } catch (error: any) {
+      const msg = error?.response?.data?.detail || 'Failed to submit help ticket.';
+      setHelpMessage(msg);
+>>>>>>> feature/authentication
     }
   };
 
   const handleDeleteAccount = async () => {
     try {
       await apiClient.delete(`/users/${userId}/`);
+<<<<<<< HEAD
       setShowDeleteConfirm(false);
       // Clear and redirect
       localStorage.clear();
       window.location.href = '/';
     } catch (error) {
       alert('Failed to delete account');
+=======
+      try {
+        await apiClient.post('/auth/logout/');
+      } catch {
+        
+      }
+      setShowDeleteConfirm(false);
+      clearAuth();
+      window.location.href = '/login';
+    } catch (error) {
+      alert('Failed to deactivate account');
+>>>>>>> feature/authentication
     }
   };
 
   return (
     <div className={styles.settingsContainer}>
+<<<<<<< HEAD
       {/* Settings Navigation */}
+=======
+
+>>>>>>> feature/authentication
       <div className={styles.settingsNav}>
         <button
           className={activeSection === 'password' ? styles.active : ''}
@@ -280,9 +369,14 @@ const Settings: React.FC<SettingsProps> = ({ userId, userRole }) => {
         </button>
       </div>
 
+<<<<<<< HEAD
       {/* Settings Content */}
       <div className={styles.settingsContent}>
         {/* Password Section */}
+=======
+      
+      <div className={styles.settingsContent}>
+>>>>>>> feature/authentication
         {activeSection === 'password' && (
           <div className={styles.section}>
             <h2>Change Password</h2>
@@ -337,7 +431,11 @@ const Settings: React.FC<SettingsProps> = ({ userId, userRole }) => {
           </div>
         )}
 
+<<<<<<< HEAD
         {/* Notifications Section */}
+=======
+        
+>>>>>>> feature/authentication
         {activeSection === 'notifications' && (
           <div className={styles.section}>
             <h2>Notifications</h2>
@@ -348,6 +446,14 @@ const Settings: React.FC<SettingsProps> = ({ userId, userRole }) => {
               {notificationsLoading && (
                 <div className={styles.loading}>Loading notifications…</div>
               )}
+<<<<<<< HEAD
+=======
+              {!notificationsLoading && !!notificationsError && (
+                <div className={styles.emptyState}>
+                  <p>{notificationsError}</p>
+                </div>
+              )}
+>>>>>>> feature/authentication
               {!notificationsLoading && notifications.length === 0 && (
                 <div className={styles.emptyState}>
                   <p>No notifications yet</p>
@@ -377,7 +483,11 @@ const Settings: React.FC<SettingsProps> = ({ userId, userRole }) => {
           </div>
         )}
 
+<<<<<<< HEAD
         {/* Help Section */}
+=======
+        
+>>>>>>> feature/authentication
         {activeSection === 'help' && (
           <div className={styles.section}>
             <h2>Help & Support</h2>
@@ -419,7 +529,11 @@ const Settings: React.FC<SettingsProps> = ({ userId, userRole }) => {
           </div>
         )}
 
+<<<<<<< HEAD
         {/* Account Management Section */}
+=======
+        
+>>>>>>> feature/authentication
         {activeSection === 'account' && (
           <div className={styles.section}>
             <h2>Account Management</h2>
@@ -435,12 +549,25 @@ const Settings: React.FC<SettingsProps> = ({ userId, userRole }) => {
               <button
                 className={styles.secondaryButton}
                 onClick={() => {
+<<<<<<< HEAD
                   try {
                     // Optional: call backend logout
                     // await fetch('http://localhost:8000/auth/logout/', { method: 'POST', credentials: 'include' });
                   } catch {}
                   localStorage.clear();
                   window.location.href = '/';
+=======
+                  (async () => {
+                    try {
+                      await apiClient.post('/auth/logout/');
+                    } catch {
+                      
+                    } finally {
+                      clearAuth();
+                      window.location.href = '/login';
+                    }
+                  })();
+>>>>>>> feature/authentication
                 }}
               >
                 Logout
@@ -465,7 +592,11 @@ const Settings: React.FC<SettingsProps> = ({ userId, userRole }) => {
               </div>
             </div>
 
+<<<<<<< HEAD
             {/* Delete Confirmation Modal */}
+=======
+            
+>>>>>>> feature/authentication
             {showDeleteConfirm && (
               <div className={styles.modal}>
                 <div className={styles.modalContent}>
@@ -476,7 +607,11 @@ const Settings: React.FC<SettingsProps> = ({ userId, userRole }) => {
                   <ul>
                     <li>Hide your profile from others</li>
                     <li>Prevent new interactions</li>
+<<<<<<< HEAD
                     <li>Keep your data for reactivation</li>
+=======
+                    
+>>>>>>> feature/authentication
                   </ul>
                   <p className={styles.warning}>You can restore access later.</p>
                   <div className={styles.modalButtons}>

@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import apiClient from '../../lib/axios.ts';
+import apiClient from '../../lib/axios';
 import styles from './Login.module.css';
 
 const ForgotPassword: React.FC = () => {
@@ -14,7 +14,7 @@ const ForgotPassword: React.FC = () => {
     setMessage('');
     setError('');
     setBackendError('');
-    // Frontend validation
+    
     if (!email.trim()) {
       setError('Email is required');
       return;
@@ -39,7 +39,7 @@ const ForgotPassword: React.FC = () => {
       <form onSubmit={handleSubmit} className={styles.form}>
         <label style={{ fontWeight: 500, color: '#333', marginBottom: 8 }}>Email</label>
         <input
-          type="text"
+          type="email"
           value={email}
           onChange={e => {
             setEmail(e.target.value);

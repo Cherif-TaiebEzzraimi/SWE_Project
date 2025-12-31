@@ -36,13 +36,22 @@ export interface FreelancerProfile {
   }> | null;
 }
 
-// You already have this, keep it:
+export interface MediaFile {
+  id: number;
+  owner?: FreelancerUser;
+  entity_type: string;
+  entity_id: number;
+  file_url: string;
+  file_type: string;
+  created_at: string;
+}
+
+
 export const registerFreelancer = async (data: any) => {
   const response = await apiClient.post("/auth/register/freelancer/", data);
   return response.data;
 };
 
-// NEW: get profile
 export const getFreelancerProfile = async (
   userId: number
 ): Promise<FreelancerProfile> => {
@@ -52,7 +61,6 @@ export const getFreelancerProfile = async (
   return response.data;
 };
 
-// Update payload type - only fields that can be updated
 export interface UpdateFreelancerPayload {
   first_name?: string;
   last_name?: string;
@@ -64,6 +72,7 @@ export interface UpdateFreelancerPayload {
   skills?: string[] | null;
   years_experience?: number | null;
   national_id?: string | null;
+  cvatta?: string | null;
   social_links?: {
     linkedin?: string;
     github?: string;
@@ -79,7 +88,6 @@ export interface UpdateFreelancerPayload {
   }> | null;
 }
 
-// NEW: update profile (partial update)
 export const updateFreelancerProfile = async (
   userId: number,
   data: UpdateFreelancerPayload
@@ -91,32 +99,62 @@ export const updateFreelancerProfile = async (
   return response.data;
 };
 
-// Upload profile photo
 export const uploadFreelancerPhoto = async (
   userId: number,
   photoFile: File
 ): Promise<FreelancerProfile> => {
   const formData = new FormData();
-  formData.append('profile_picture', photoFile);
-  
-  const response = await apiClient.post<FreelancerProfile>(
+  formData.append('photo', photoFile);
+
+  const response = await apiClient.post(
     `/freelancers/${userId}/upload-photo/`,
     formData,
-    {
-      headers: {
-        'Content-Type': 'multipart/form-data',
-      },
-    }
+    { headers: { 'Content-Type': 'multipart/form-data' } }
   );
+
   return response.data;
 };
 
-// Delete profile photo
+
+export const uploadFreelancerCV = async (
+  userId: number,
+  file: File
+): Promise<MediaFile> => {
+  const formData = new FormData();
+  formData.append('file', file);
+  formData.append('entity_type', 'freelancer');
+  formData.append('entity_id', userId.toString());
+
+  const response = await apiClient.post<MediaFile>(
+    '/media/upload/',
+    formData,
+    { headers: { 'Content-Type': 'multipart/form-data' } }
+  );
+
+  return response.data;
+};
+
+
+export const listFreelancerMedia = async (userId: number): Promise<MediaFile[]> => {
+  const response = await apiClient.get<MediaFile[]>(`/media/freelancer/${userId}/`);
+  return response.data;
+};
+
+export const deleteMedia = async (mediaId: number): Promise<{ detail: string }> => {
+  const response = await apiClient.delete<{ detail: string }>(`/media/${mediaId}/`);
+  return response.data;
+};
+
+// Delete freelancer profile photo (via media)
 export const deleteFreelancerPhoto = async (
   userId: number
 ): Promise<{ detail: string }> => {
-  const response = await apiClient.delete<{ detail: string }>(
-    `/freelancers/${userId}/photo/`
-  );
-  return response.data;
+  const media = await listFreelancerMedia(userId);
+  const candidate = media
+    .filter((m) => (m.file_type || '').startsWith('image/'))
+    .sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime())[0];
+  if (!candidate) {
+    return { detail: 'No profile photo found' };
+  }
+  return deleteMedia(candidate.id);
 };

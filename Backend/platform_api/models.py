@@ -1,4 +1,5 @@
 from django.db import models
+from django.db.models import Avg
 from django.contrib.auth.models import AbstractBaseUser, BaseUserManager, PermissionsMixin
 from django.core.validators import MinValueValidator, MaxValueValidator
 from django.contrib.contenttypes.fields import GenericForeignKey
@@ -213,12 +214,22 @@ class Review(models.Model):
         unique_together = ['client', 'freelancer']  
     
     def __str__(self):
-        return f"Review by {self.client.user.username} for {self.freelancer.user.username} - {self.rating}★"
+        return f"Review by {self.client.user.email} for {self.freelancer.user.email} - {self.rating}★"
     
     def save(self, *args, **kwargs):
         """Override save to update freelancer rating"""
         super().save(*args, **kwargs)
-        self.freelancer_id.update_rating()
+        # `freelancer_id` is an int FK value; use the related object.
+        if self.freelancer_id is None:
+            return
+
+        avg_rating = (
+            Review.objects.filter(freelancer_id=self.freelancer_id)
+            .aggregate(avg=Avg('rating'))
+            .get('avg')
+        )
+        self.freelancer.rate = float(avg_rating) if avg_rating is not None else 0.0
+        self.freelancer.save(update_fields=['rate'])
 
 
 
@@ -299,7 +310,7 @@ class Report(models.Model):
         ]
     
     def __str__(self):
-        return f"Report by {self.reporter.username}: {self.type} (ID: {self.target_id})"
+        return f"Report by {self.reporter.email}: {self.type} (ID: {self.target_id})"
 
 
 # Notifications Model -----------------------------------------------
@@ -325,7 +336,7 @@ class Notification(models.Model):
     
     def __str__(self):
         status = "Read" if self.seen else "Unread"
-        return f"Notification for {self.receiver.username} - {status}"
+        return f"Notification for {self.receiver.email} - {status}"
     
     def mark_as_read(self):
         """Mark notification as read"""
@@ -406,7 +417,7 @@ class JobInternshipOffer(models.Model):
         ]
     
     def __str__(self):
-        return f"{self.title} ({self.type}) - {self.company.user.username}"
+        return f"{self.title} ({self.type}) - {self.company.user.email}"
 
 
 # Request Model --------------------------------------------
@@ -536,11 +547,25 @@ class Negotiation(models.Model):
         ]
     
     def __str__(self):
-        return f"Negotiation #{self.id}: {self.client.user.username} ↔ {self.freelancer.user.username} ({self.status})"
+        return f"Negotiation #{self.id}: {self.client.user.email} ↔ {self.freelancer.user.email} ({self.status})"
     
     def is_agreed(self):
         """Check if both parties agreed"""
         return self.client_agreed and self.freelancer_agreed
+    
+    def save(self, *args, **kwargs):
+        """Override save to auto-create first phase for new negotiations"""
+        is_new = self.pk is None
+        super().save(*args, **kwargs)
+        
+        # Auto-create first phase for new negotiations
+        if is_new:
+            NegotiationPhase.objects.create(
+                negotiation=self,
+                title='Initial Phase',
+                description='Initial negotiation phase',
+                status='pending'
+            )
 
 
 # Negotiation Phases Model --------------------------------------------
@@ -628,7 +653,7 @@ class NegotiationFloatingComment(models.Model):
         ]
     
     def __str__(self):
-        return f"Comment by {self.user.username} on Negotiation #{self.negotiation.id}"
+        return f"Comment by {self.user.email} on Negotiation #{self.negotiation.id}"
 
 
 # Project Model -------------------------------------------
@@ -728,6 +753,7 @@ class Deliverable(models.Model):
         on_delete=models.CASCADE,
         related_name='deliverable_items'
     )
+    title = models.CharField(max_length=255, default='Deliverable', blank=True)
     attachment = models.CharField(max_length=255, blank=True, null=True)
     textcontent = models.TextField(max_length=65535, blank=True, null=True)
     submitted_at = models.DateTimeField(blank=True, null=True)
@@ -741,4 +767,120 @@ class Deliverable(models.Model):
         ]
     
     def __str__(self):
-        return f"Deliverable: (Phase: {self.phase.title}) - {self.status}"
+        return f"Deliverable: {self.title} (Phase: {self.phase.title})"
+
+
+# Community System Models =========================================================
+
+# Community Posts Model -------------------------------------------
+class CommunityPost(models.Model):
+    """Community forum posts"""
+    
+    id = models.AutoField(primary_key=True)
+    owner = models.ForeignKey(
+        User,
+        on_delete=models.CASCADE,
+        related_name='community_posts'
+    )
+    description = models.TextField(max_length=65535)
+    attachments = models.JSONField(default=list, blank=True, null=True)
+    updated_at = models.DateTimeField(auto_now=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+    
+    class Meta:
+        db_table = 'community_posts'
+        ordering = ['-created_at']
+        indexes = [
+            models.Index(fields=['owner', 'created_at']),
+            models.Index(fields=['-created_at']),
+        ]
+    
+    def __str__(self):
+        return f"Post by {self.owner.email}: {self.description[:50]}..."
+
+
+# Community Comments Model ----------------------------------------
+class CommunityComment(models.Model):
+    """Comments on community posts and replies"""
+    
+    id = models.AutoField(primary_key=True)
+    post = models.ForeignKey(
+        CommunityPost,
+        on_delete=models.CASCADE,
+        related_name='comments'
+    )
+    user = models.ForeignKey(
+        User,
+        on_delete=models.CASCADE,
+        related_name='community_comments'
+    )
+    parent = models.ForeignKey(
+        'self',
+        on_delete=models.CASCADE,
+        related_name='replies',
+        null=True,
+        blank=True,
+        help_text="For nested/threaded replies"
+    )
+    comment = models.TextField(max_length=65535)
+    updated_at = models.DateTimeField(auto_now=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+    
+    class Meta:
+        db_table = 'community_comments'
+        ordering = ['created_at']
+        indexes = [
+            models.Index(fields=['post', 'created_at']),
+            models.Index(fields=['user', 'created_at']),
+            models.Index(fields=['parent', 'created_at']),
+        ]
+    
+    def __str__(self):
+        return f"Comment by {self.user.email} on post {self.post.id}: {self.comment[:30]}..."
+    
+    def reply(self, user, comment_text):
+        """Create a reply to this comment
+        
+        Args:
+            user: User object creating the reply
+            comment_text: Text content of the reply
+            
+        Returns:
+            CommunityComment: The newly created reply comment
+        """
+        return CommunityComment.objects.create(
+            post=self.post,
+            user=user,
+            parent=self,
+            comment=comment_text
+        )
+
+
+# Community Likes Model -------------------------------------------
+class CommunityLike(models.Model):
+    """Likes on community posts"""
+    
+    id = models.AutoField(primary_key=True)
+    post = models.ForeignKey(
+        CommunityPost,
+        on_delete=models.CASCADE,
+        related_name='likes'
+    )
+    user = models.ForeignKey(
+        User,
+        on_delete=models.CASCADE,
+        related_name='community_likes'
+    )
+    created_at = models.DateTimeField(auto_now_add=True)
+    
+    class Meta:
+        db_table = 'community_likes'
+        ordering = ['-created_at']
+        unique_together = ('post', 'user')  # Each user can like a post only once
+        indexes = [
+            models.Index(fields=['post', 'created_at']),
+            models.Index(fields=['user', 'created_at']),
+        ]
+    
+    def __str__(self):
+        return f"{self.user.email} liked post {self.post.id}"

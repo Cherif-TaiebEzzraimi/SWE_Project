@@ -1,3 +1,4 @@
+
 export const saveToken = (token: string): void => {
   localStorage.setItem('token', token);
 };
@@ -7,7 +8,31 @@ export const getToken = (): string | null => {
 };
 
 export const removeToken = (): void => {
-  localStorage.removeItem('token');
+  localStorage.removeItem('token'); 
+}; 
+
+const AUTH_FLAG_KEY = 'authFlag';
+const USER_PROFILE_KEY = 'userProfile';
+
+export type StoredUserProfile = {
+  id: number;
+  email: string;
+  first_name: string;
+  last_name: string;
+  role?: string;
+};
+
+export const saveAuthFlag = (isAuthenticated: boolean): void => {
+  localStorage.setItem(AUTH_FLAG_KEY, isAuthenticated ? 'true' : 'false');
+};
+
+export const getAuthFlag = (): boolean => {
+  return localStorage.getItem(AUTH_FLAG_KEY) === 'true';
+};
+
+export const clearAuthFlag = (): void => {
+  localStorage.removeItem(AUTH_FLAG_KEY);
+
 };
 
 export const saveRole = (role: string): void => {
@@ -27,7 +52,34 @@ export const getUserId = (): number | null => {
   return userId ? parseInt(userId, 10) : null;
 };
 
-// Save if client is a company (true) or individual (false)
+export const saveUserProfile = (user: unknown): void => {
+  try {
+    if (!user || typeof user !== 'object') return;
+    const candidate = user as Partial<StoredUserProfile>;
+    if (
+      typeof candidate.id !== 'number' ||
+      typeof candidate.email !== 'string' ||
+      typeof candidate.first_name !== 'string' ||
+      typeof candidate.last_name !== 'string'
+    ) {
+      return;
+    }
+    localStorage.setItem(USER_PROFILE_KEY, JSON.stringify(candidate));
+  } catch {
+    
+  }
+};
+
+export const getUserProfile = (): StoredUserProfile | null => {
+  const raw = localStorage.getItem(USER_PROFILE_KEY);
+  if (!raw) return null;
+  try {
+    return JSON.parse(raw) as StoredUserProfile;
+  } catch {
+    return null;
+  }
+};
+
 export const saveIsCompany = (isCompany: boolean): void => {
   localStorage.setItem('isCompany', isCompany.toString());
 };
@@ -37,12 +89,16 @@ export const getIsCompany = (): boolean => {
 };
 
 export const clearAuth = (): void => {
-  localStorage.removeItem('token');
+  localStorage.removeItem('token');  
   localStorage.removeItem('role');
   localStorage.removeItem('userId');
   localStorage.removeItem('isCompany');
+  localStorage.removeItem(USER_PROFILE_KEY);
+  clearAuthFlag();
 };
 
 export const isAuthenticated = (): boolean => {
-  return !!getToken();
+  // Backend auth = session cookie
+  // Frontend auth = UI state
+  return !!(getAuthFlag() && getRole() && getUserId()&& getToken());
 };

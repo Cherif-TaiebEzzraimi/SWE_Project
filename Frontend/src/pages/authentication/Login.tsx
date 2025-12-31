@@ -1,46 +1,74 @@
-import React, { useState } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { login } from '../../api/authApi';
-import { saveToken, saveRole, saveUserId } from '../../lib/auth.ts';
-import Input from '../../components/Input.tsx';
+// import { saveAuthFlag, saveToken, saveRole, saveUserId, saveUserProfile } from '../../lib/auth';
+ import { saveToken,saveUserId, saveUserProfile , saveRole , saveAuthFlag } from '../../lib/auth';
+import Input from '../../components/Input';
 import styles from './Login.module.css';
 
 const Login: React.FC = () => {
   const navigate = useNavigate();
-  const [formData, setFormData] = useState({
-    email: '',
-    password: '',
-  });
+  const [formData, setFormData] = useState({ email: '', password: '' });
   const [errors, setErrors] = useState<{ email?: string; password?: string }>({});
   const [loading, setLoading] = useState(false);
   const [apiError, setApiError] = useState('');
+  const errorTimerRef = useRef<number | null>(null);
+
+  useEffect(() => {
+    return () => {
+      if (errorTimerRef.current) window.clearTimeout(errorTimerRef.current);
+    };
+  }, []);
+
+  const validateField = (name: 'email' | 'password', value: string) => {
+    if (name === 'email') {
+      if (!value) return 'Email is required';
+      if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value)) return 'Invalid email format';
+      return undefined;
+    }
+    if (!value) return 'Password is required';
+    if (value.length < 8) return 'Password must be at least 8 characters';
+    return undefined;
+  };
+
+  const scheduleErrorsClear = () => {
+    if (errorTimerRef.current) window.clearTimeout(errorTimerRef.current);
+    errorTimerRef.current = window.setTimeout(() => {
+      setErrors({});
+      errorTimerRef.current = null;
+    }, 6000);
+  };
 
   const validateForm = (): boolean => {
     const newErrors: { email?: string; password?: string } = {};
+    const emailError = validateField('email', formData.email);
+    const passwordError = validateField('password', formData.password);
 
-    if (!formData.email) {
-      newErrors.email = 'Email is required';
-    } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.email)) {
-      newErrors.email = 'Invalid email format';
-    }
-
-    if (!formData.password) {
-      newErrors.password = 'Password is required';
-    } else if (formData.password.length < 8) {
-      newErrors.password = 'Password must be at least 8 characters';
-    }
+    if (emailError) newErrors.email = emailError;
+    if (passwordError) newErrors.password = passwordError;
 
     setErrors(newErrors);
+    if (Object.keys(newErrors).length > 0) scheduleErrorsClear();
+
     return Object.keys(newErrors).length === 0;
   };
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
     setFormData((prev) => ({ ...prev, [name]: value }));
+
     // Clear error for this field
     if (errors[name as keyof typeof errors]) {
       setErrors((prev) => ({ ...prev, [name]: undefined }));
     }
+
+    if (name === 'email' || name === 'password') {
+      const fieldError = validateField(name, value);
+      if (!fieldError) {
+        setErrors((prev) => ({ ...prev, [name]: undefined }));
+      }
+    }
+
     setApiError('');
   };
 
@@ -48,49 +76,39 @@ const Login: React.FC = () => {
     e.preventDefault();
     setApiError('');
 
-    if (!validateForm()) {
-      return;
-    }
+    if (!validateForm()) return;
 
     setLoading(true);
-
     try {
       const response = await login(formData);
-      
+
       // Save auth data
       saveUserId(response.user.id);
       saveRole(response.user.role);
-      // Backend uses session authentication (cookies), no token returned
-      // We save a marker to track authentication state
       saveToken('session-authenticated');
+      saveUserProfile(response.user);
+      saveAuthFlag(true);
 
       // Redirect based on role
       const role = response.user.role;
-      if (role === 'freelancer') {
-        navigate('/freelancer/dashboard');
-      } else if (role === 'client') {
-        // Client could be individual or company - backend will differentiate
-        navigate('/client/dashboard');
-      } else if (role === 'admin') {
-        navigate('/admin/dashboard');
-      } else {
-        navigate('/dashboard');
-      }
+      if (role === 'freelancer') navigate('/freelancer/dashboard');
+      else if (role === 'company') navigate('/client/company/dashboard');
+      else if (role === 'client') {
+        // Backend can differentiate individual/company
+        navigate('/client/individual/dashboard');
+      } else if (role === 'admin') navigate('/admin/dashboard');
+      else navigate('/dashboard');
+
     } catch (error: any) {
       console.error('Login error:', error);
-      if (error.response?.data?.detail) {
-        setApiError(error.response.data.detail);
-      } else {
-        setApiError('Login failed. Please check your credentials and try again.');
-      }
+      if (error.response?.data?.detail) setApiError(error.response.data.detail);
+      else setApiError('Login failed. Please check your credentials and try again.');
     } finally {
       setLoading(false);
     }
   };
 
-  const handleForgotPassword = () => {
-    navigate('/forgot-password');
-  };
+  const handleForgotPassword = () => navigate('/forgot-password');
 
   return (
     <div className={styles.container}>
@@ -98,11 +116,7 @@ const Login: React.FC = () => {
         <h1 className={styles.title}>Welcome Back</h1>
         <p className={styles.subtitle}>Sign in to your account</p>
 
-        {apiError && (
-          <div className={styles.errorAlert}>
-            {apiError}
-          </div>
-        )}
+        {apiError && <div className={styles.errorAlert}>{apiError}</div>}
 
         <form onSubmit={handleSubmit} className={styles.form}>
           <Input
@@ -125,33 +139,21 @@ const Login: React.FC = () => {
             placeholder="Enter your password"
             error={errors.password}
             disabled={loading}
+            withPasswordToggle
           />
 
-          <button
-            type="submit"
-            disabled={loading}
-            className={styles.submitButton}
-          >
+          <button type="submit" disabled={loading} className={styles.submitButton}>
             {loading ? 'Logging in...' : 'Login'}
           </button>
 
-          <button
-            type="button"
-            onClick={handleForgotPassword}
-            disabled={loading}
-            className={styles.forgotButton}
-          >
+          <button type="button" onClick={handleForgotPassword} disabled={loading} className={styles.forgotButton}>
             Forgot Password?
           </button>
         </form>
 
         <div className={styles.signupLink}>
           Don't have an account?{' '}
-          <button
-            onClick={() => navigate('/signup')}
-            className={styles.linkButton}
-            disabled={loading}
-          >
+          <button onClick={() => navigate('/signup')} className={styles.linkButton} disabled={loading}>
             Sign Up
           </button>
         </div>

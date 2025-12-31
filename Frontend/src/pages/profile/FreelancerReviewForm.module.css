@@ -1,0 +1,114 @@
+.card {
+  background: #ffffff;
+  border-radius: 14px;
+  padding: 24px;
+  max-width: 560px;
+  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.06);
+  border: 1px solid #e5e7eb;
+}
+
+.title {
+  font-size: 18px;
+  font-weight: 600;
+  color: #0f172a;
+  margin-bottom: 16px;
+}
+
+.label {
+  font-size: 14px;
+  font-weight: 600;
+  color: #334155;
+  margin-bottom: 6px;
+}
+
+.stars {
+  display: flex;
+  gap: 6px;
+  align-items: center;
+}
+
+.star {
+  font-size: 22px;
+  cursor: pointer;
+  transition: transform 0.15s ease, color 0.15s ease;
+}
+
+.star:hover {
+  transform: scale(1.15);
+}
+
+.starActive {
+  color: #f59e0b;
+}
+
+.starInactive {
+  color: #cbd5e1;
+}
+
+.ratingText {
+  font-size: 12px;
+  color: #6b7280;
+  margin-left: 10px;
+}
+
+.textarea {
+  width: 100%;
+  padding: 12px;
+  border-radius: 10px;
+  border: 1px solid #d1d5db;
+  font-size: 14px;
+  resize: vertical;
+}
+
+.textarea:focus {
+  outline: none;
+  border-color: #2563eb;
+}
+
+.button {
+  margin-top: 16px;
+  padding: 12px 20px;
+  border-radius: 10px;
+  border: none;
+  background: #2563eb;
+  color: #fff;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.15s ease;
+}
+
+.button:hover {
+  background: #1d4ed8;
+}
+
+.buttonDisabled {
+  background: #e5e7eb;
+  color: #9ca3af;
+  cursor: not-allowed;
+}
+
+.alert {
+  margin-top: 14px;
+  padding: 12px;
+  border-radius: 10px;
+  font-size: 14px;
+}
+
+.success {
+  background: #ecfeff;
+  border: 1px solid #67e8f9;
+  color: #155e75;
+}
+
+.error {
+  background: #fef2f2;
+  border: 1px solid #fecaca;
+  color: #991b1b;
+}
+
+@media (max-width: 900px) {
+  .card {
+    max-width: 100%;
+    padding: 16px;
+  }
+}

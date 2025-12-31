@@ -362,6 +362,7 @@
   border: 1px solid #e0e0e0;
 }
 
+<<<<<<< HEAD
 .cvDisplay a {
   color: var(--blue-primary);
   text-decoration: none;
@@ -373,6 +374,65 @@
   text-decoration: underline;
 }
 
+=======
+.cvList {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.cvRow {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 10px 12px;
+  background: var(--card-white);
+  border: 1px solid #e0e0e0;
+  border-radius: 8px;
+}
+
+.cvLink {
+  color: var(--blue-primary);
+  text-decoration: none;
+  font-size: 14px;
+  font-weight: 600;
+}
+
+.cvLink:hover {
+  text-decoration: underline;
+}
+
+.cvLinkContent {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.cvLinkIcon {
+  flex: 0 0 auto;
+}
+
+.cvRemoveButton {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  border-radius: 8px;
+  border: 1px solid var(--brick-red-light);
+  background: transparent;
+  color: var(--brick-red);
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.cvRemoveButton:hover {
+  background-color: var(--brick-red-light);
+  border-color: var(--brick-red);
+}
+
+>>>>>>> feature/authentication
 .fileUpload input[type="file"] {
   display: none;
 }
@@ -389,6 +449,19 @@
   transition: all 0.2s;
 }
 
+<<<<<<< HEAD
+=======
+.uploadLabelContent {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.uploadLabelIcon {
+  flex: 0 0 auto;
+}
+
+>>>>>>> feature/authentication
 .uploadLabel:hover {
   background-color: var(--teal-strong);
   border-color: var(--blue-primary);
@@ -494,3 +567,130 @@
   color: #b91c1c;
   border: 1px solid #fecaca;
 }
+<<<<<<< HEAD
+=======
+
+@media (max-width: 900px) {
+  .profileContainer {
+    flex-direction: column;
+    min-height: auto;
+  }
+
+  .sidebar {
+    position: relative;
+    width: 100%;
+    height: auto;
+    border-right: none;
+    border-bottom: 1px solid #e0e0e0;
+    padding: 12px 0;
+    overflow-y: visible;
+  }
+
+  .navMenu {
+    flex-direction: row;
+    gap: 8px;
+    padding: 0 12px;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  .navMenu button {
+    padding: 10px 14px;
+    text-align: center;
+    white-space: nowrap;
+    border-radius: 10px;
+    flex: 0 0 auto;
+  }
+
+  .navMenu button.active {
+    border-left: none;
+    border-bottom: 3px solid var(--blue-royal);
+  }
+
+  .mainContent {
+    margin-left: 0;
+    padding: 16px;
+    max-width: none;
+  }
+
+  .pageTitle {
+    font-size: 20px;
+    margin-bottom: 18px;
+  }
+
+  .profileSection,
+  .reviewsSection,
+  .historySection,
+  .settingsSection {
+    padding: 16px;
+  }
+
+  .profileHeader {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 16px;
+    padding-bottom: 16px;
+    margin-bottom: 16px;
+  }
+
+  .profileImageSection {
+    align-items: flex-start;
+  }
+
+  .profileImage {
+    width: 96px;
+    height: 96px;
+  }
+
+  .editButton {
+    position: static;
+    width: 100%;
+  }
+
+  .formGrid {
+    grid-template-columns: 1fr;
+    gap: 14px;
+  }
+
+  .inputWithButton {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .addButton {
+    width: 100%;
+  }
+
+  .actionButtons {
+    flex-direction: column;
+    gap: 10px;
+  }
+
+  .cancelButton,
+  .saveButton {
+    width: 100%;
+  }
+
+  .cvRow {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  .cvRemoveButton {
+    align-self: flex-end;
+  }
+}
+
+@media (max-width: 480px) {
+  .mainContent {
+    padding: 12px;
+  }
+
+  .profileSection,
+  .reviewsSection,
+  .historySection,
+  .settingsSection {
+    padding: 14px;
+  }
+}
+>>>>>>> feature/authentication

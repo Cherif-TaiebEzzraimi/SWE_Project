@@ -2,6 +2,7 @@ import React, { useEffect, useState } from 'react';
 import styles from './FreelancerProfile.module.css';
 import WilayaDropdown from '../../components/WilayaDropdown';
 import Settings from './Settings';
+<<<<<<< HEAD
 import ClientHistory from './ClientHistory';
 
 interface ClientData {
@@ -42,11 +43,77 @@ const ClientIndividualProfile: React.FC = () => {
 
   const handleEdit = () => setIsEditing(true);
   const handleCancel = () => {
+=======
+import { useParams } from 'react-router-dom';
+import apiClient from '../../lib/axios';
+import { getUserId } from '../../lib/auth';
+import { getClient, type Client as ClientDTO, updateClientProfile, uploadClientPhoto } from '../../api/clientApi';
+import ClientHistory from './ClientHistory';
+
+const ClientIndividualProfile: React.FC = () => {
+  const params = useParams<{ id: string }>();
+  const routeId = params.id ? Number.parseInt(params.id, 10) : null;
+  const viewerUserId = getUserId();
+
+  const isPublicView = !!(routeId && viewerUserId && routeId !== viewerUserId);
+  const profileIdToLoad = isPublicView ? routeId : viewerUserId ?? routeId;
+
+  const resolveMediaUrl = (url?: string | null) => {
+    if (!url) return null;
+    const trimmed = url.trim();
+    if (!trimmed) return null;
+    if (trimmed.startsWith('http://') || trimmed.startsWith('https://')) return trimmed;
+    if (trimmed.startsWith('//')) return `${window.location.protocol}${trimmed}`;
+
+    const base = (apiClient.defaults.baseURL || '').toString().replace(/\/$/, '');
+    if (!base) return trimmed;
+
+    if (trimmed.startsWith('/')) return `${base}${trimmed}`;
+    return `${base}/${trimmed}`;
+  };
+
+  const [activeTab, setActiveTab] = useState<'profile' | 'history' | 'settings'>('profile');
+  const [isEditing, setIsEditing] = useState(false);
+  const [clientData, setClientData] = useState<ClientDTO | null>(null);
+  const [formData, setFormData] = useState<Partial<ClientDTO>>({});
+
+  useEffect(() => {
+    if (isPublicView) {
+      setIsEditing(false);
+      setActiveTab('profile');
+    }
+    fetchClientData();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [profileIdToLoad, isPublicView]);
+
+  const fetchClientData = async () => {
+    if (!profileIdToLoad) return;
+    try {
+      const profile = await getClient(profileIdToLoad);
+      const merged: ClientDTO = {
+        ...profile,
+        profile_picture: resolveMediaUrl(profile.profile_picture),
+      };
+      setClientData(merged);
+      setFormData(merged);
+    } catch (error) {
+      console.error('Failed to load client profile', error);
+    }
+  };
+
+  const handleEdit = () => {
+    if (isPublicView) return;
+    setIsEditing(true);
+  };
+  const handleCancel = () => {
+    if (isPublicView) return;
+>>>>>>> feature/authentication
     setIsEditing(false);
     setFormData(clientData || {});
   };
 
   const handleSave = async () => {
+<<<<<<< HEAD
     // TODO: PUT /clients/<id>/update
     setClientData(prev => {
       if (!prev) return prev;
@@ -65,12 +132,36 @@ const ClientIndividualProfile: React.FC = () => {
       };
     });
     setIsEditing(false);
+=======
+    if (isPublicView) return;
+    const userId = getUserId();
+    if (!userId) return;
+
+    try {
+      const updated = await updateClientProfile(userId, {
+        first_name: formData.user?.first_name,
+        last_name: formData.user?.last_name,
+        phone_number: formData.phone_number ?? null,
+        city: formData.city ?? null,
+        wilaya: formData.wilaya ?? null,
+      });
+
+      const preservedPicture = clientData?.profile_picture || resolveMediaUrl(updated.profile_picture);
+      const merged: ClientDTO = { ...updated, profile_picture: preservedPicture };
+      setClientData(merged);
+      setFormData(merged);
+      setIsEditing(false);
+    } catch (error) {
+      console.error('Error updating client profile:', error);
+    }
+>>>>>>> feature/authentication
   };
 
   const handleChange = (field: string, value: any) => {
     setFormData(prev => ({ ...prev, [field]: value }));
   };
 
+<<<<<<< HEAD
   const handlePhotoUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
@@ -80,6 +171,28 @@ const ClientIndividualProfile: React.FC = () => {
     // TODO: POST /clients/<id>/upload-photo
   };
 
+=======
+  const handlePhotoUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
+    if (isPublicView) return;
+    const file = event.target.files?.[0];
+    if (!file) return;
+
+    const userId = getUserId();
+    if (!userId) return;
+
+    try {
+      await uploadClientPhoto(userId, file);
+      await fetchClientData();
+    } catch (error) {
+      console.error('Failed to upload client photo', error);
+    }
+  };
+
+  if (!clientData) {
+    return <div>Loading profile...</div>;
+  }
+
+>>>>>>> feature/authentication
   return (
     <>
       <div className={styles.profileContainer}>
@@ -88,12 +201,25 @@ const ClientIndividualProfile: React.FC = () => {
             <button className={activeTab === 'profile' ? styles.active : ''} onClick={() => setActiveTab('profile')}>
               My Profile
             </button>
+<<<<<<< HEAD
             <button className={activeTab === 'history' ? styles.active : ''} onClick={() => setActiveTab('history')}>
               Project History
             </button>
             <button className={activeTab === 'settings' ? styles.active : ''} onClick={() => setActiveTab('settings')}>
               Settings
             </button>
+=======
+            {!isPublicView && (
+              <>
+                <button className={activeTab === 'history' ? styles.active : ''} onClick={() => setActiveTab('history')}>
+                  History
+                </button>
+                <button className={activeTab === 'settings' ? styles.active : ''} onClick={() => setActiveTab('settings')}>
+                  Settings
+                </button>
+              </>
+            )}
+>>>>>>> feature/authentication
           </nav>
         </aside>
 
@@ -109,6 +235,10 @@ const ClientIndividualProfile: React.FC = () => {
                       alt="Profile"
                       className={styles.profileImage}
                       style={{ width: '96px', height: '96px', borderRadius: '50%' }}
+<<<<<<< HEAD
+=======
+                      onError={() => setClientData((prev) => (prev ? { ...prev, profile_picture: null } : prev))}
+>>>>>>> feature/authentication
                     />
                   ) : (
                     <div
@@ -131,6 +261,7 @@ const ClientIndividualProfile: React.FC = () => {
                       </svg>
                     </div>
                   )}
+<<<<<<< HEAD
                   <input type="file" id="photoUpload" accept="image/*" onChange={handlePhotoUpload} style={{ display: 'none' }} />
                   <label htmlFor="photoUpload" className={styles.uploadButton} aria-label="Upload photo">
                     <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
@@ -138,6 +269,25 @@ const ClientIndividualProfile: React.FC = () => {
                       <circle cx="12" cy="13" r="4" />
                     </svg>
                   </label>
+=======
+                  {!isPublicView && (
+                    <>
+                      <input
+                        type="file"
+                        id="clientPhotoUpload"
+                        accept="image/*"
+                        onChange={handlePhotoUpload}
+                        style={{ display: 'none' }}
+                      />
+                      <label htmlFor="clientPhotoUpload" className={styles.uploadButton} aria-label="Upload photo">
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                          <path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h3l2-3h8l2 3h3a2 2 0 0 1 2 2z" />
+                          <circle cx="12" cy="13" r="4" />
+                        </svg>
+                      </label>
+                    </>
+                  )}
+>>>>>>> feature/authentication
                 </div>
 
                 <div className={styles.profileInfo}>
@@ -154,7 +304,11 @@ const ClientIndividualProfile: React.FC = () => {
                   </p>
                 </div>
 
+<<<<<<< HEAD
                 {!isEditing && (
+=======
+                {!isEditing && !isPublicView && (
+>>>>>>> feature/authentication
                   <button className={styles.editButton} onClick={handleEdit} aria-label="Edit profile">
                     <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                       <path d="M12 20h9" />
@@ -173,7 +327,11 @@ const ClientIndividualProfile: React.FC = () => {
                 <div className={styles.formGrid}>
                   <div className={styles.formGroup}>
                     <label>First Name</label>
+<<<<<<< HEAD
                     {isEditing ? (
+=======
+                    {isEditing && !isPublicView ? (
+>>>>>>> feature/authentication
                       <input
                         type="text"
                         value={formData.user?.first_name || ''}
@@ -194,7 +352,11 @@ const ClientIndividualProfile: React.FC = () => {
 
                   <div className={styles.formGroup}>
                     <label>Last Name</label>
+<<<<<<< HEAD
                     {isEditing ? (
+=======
+                    {isEditing && !isPublicView ? (
+>>>>>>> feature/authentication
                       <input
                         type="text"
                         value={formData.user?.last_name || ''}
@@ -218,6 +380,7 @@ const ClientIndividualProfile: React.FC = () => {
                     <p className={styles.readOnly}>{clientData?.user.email}</p>
                   </div>
 
+<<<<<<< HEAD
                   <div className={styles.formGroup}>
                     <label>Phone</label>
                     {isEditing ? (
@@ -226,6 +389,18 @@ const ClientIndividualProfile: React.FC = () => {
                       <p>{clientData?.phone_number}</p>
                     )}
                   </div>
+=======
+                  {!isPublicView && (
+                    <div className={styles.formGroup}>
+                      <label>Phone</label>
+                      {isEditing ? (
+                        <input type="tel" value={formData.phone_number || ''} onChange={e => handleChange('phone_number', e.target.value)} />
+                      ) : (
+                        <p>{clientData?.phone_number}</p>
+                      )}
+                    </div>
+                  )}
+>>>>>>> feature/authentication
                 </div>
               </section>
 
@@ -236,7 +411,11 @@ const ClientIndividualProfile: React.FC = () => {
                 </div>
                 <div className={styles.formGroup}>
                   <label>City</label>
+<<<<<<< HEAD
                   {isEditing ? (
+=======
+                  {isEditing && !isPublicView ? (
+>>>>>>> feature/authentication
                     <input type="text" value={formData.city || ''} onChange={e => handleChange('city', e.target.value)} />
                   ) : (
                     <p>{clientData?.city}</p>
@@ -244,7 +423,11 @@ const ClientIndividualProfile: React.FC = () => {
                 </div>
                 <div className={styles.formGroup}>
                   <label>Wilaya</label>
+<<<<<<< HEAD
                   {isEditing ? (
+=======
+                  {isEditing && !isPublicView ? (
+>>>>>>> feature/authentication
                     <WilayaDropdown value={formData.wilaya || ''} onChange={val => handleChange('wilaya', typeof val === 'string' ? val : '')} error={''} disabled={false} />
                   ) : (
                     <p>{clientData?.wilaya}</p>
@@ -254,7 +437,11 @@ const ClientIndividualProfile: React.FC = () => {
 
               
 
+<<<<<<< HEAD
               {isEditing && (
+=======
+              {isEditing && !isPublicView && (
+>>>>>>> feature/authentication
                 <div className={styles.actionButtons}>
                   <button className={styles.cancelButton} onClick={handleCancel}>Cancel</button>
                   <button className={styles.saveButton} onClick={handleSave}>Save Changes</button>
@@ -263,15 +450,26 @@ const ClientIndividualProfile: React.FC = () => {
             </div>
           )}
 
+<<<<<<< HEAD
           {activeTab === 'settings' && (
+=======
+          {!isPublicView && activeTab === 'settings' && (
+>>>>>>> feature/authentication
             <div className={styles.settingsSection}>
               <h1 className={styles.pageTitle}>Settings</h1>
               <Settings userId={clientData?.user.id || 0} userRole="client" />
             </div>
           )}
+<<<<<<< HEAD
           {activeTab === 'history' && (
             <div className={styles.historySection}>
               <h1 className={styles.pageTitle}>Project History</h1>
+=======
+
+          {!isPublicView && activeTab === 'history' && (
+            <div className={styles.historySection}>
+              <h1 className={styles.pageTitle}>History</h1>
+>>>>>>> feature/authentication
               <ClientHistory userId={clientData?.user.id || 0} />
             </div>
           )}

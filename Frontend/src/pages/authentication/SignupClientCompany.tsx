@@ -1,12 +1,15 @@
 import React, { useState } from 'react';
 import LogoText from '../../assets/logo/LogoText.svg';
+
 //import WilayaDropdown from '../../components/WilayaDropdown';
 import { useNavigate } from 'react-router-dom';
 import Input from '../../components/Input.tsx';
 import { registerClientCompany } from '../../api/authApi';
-import { saveToken, saveRole, saveUserId } from '../../lib/auth.ts';
+import { saveAuthFlag ,saveToken, saveRole, saveUserId ,  saveUserProfile } from '../../lib/auth.ts';
 import styles from './SignupClientCompany.module.css';
 import { BUSINESS_TYPES } from '../../lib/businessTypes.ts';
+import { login } from '../../api/authApi';
+
 
 const SignupClientCompany: React.FC = () => {
   const navigate = useNavigate();
@@ -104,6 +107,23 @@ const SignupClientCompany: React.FC = () => {
       saveRole(response.user.role);
       saveToken('session-authenticated');
       navigate('/client/company/dashboard');
+
+      
+      await registerClientCompany(payload);
+
+      const loginResponse = await login({
+        email: formData.email,
+        password: formData.password,
+      });
+
+     
+      saveUserId(loginResponse.user.id);
+      saveRole(loginResponse.user.role);
+      saveUserProfile(loginResponse.user);
+      saveAuthFlag(true);
+
+      
+      navigate('/dashboard');
     } catch (error: any) {
       if (error.response?.data?.detail) {
         setApiError(error.response.data.detail);

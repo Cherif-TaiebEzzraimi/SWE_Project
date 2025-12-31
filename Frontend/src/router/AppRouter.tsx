@@ -7,9 +7,12 @@ import ClientTypeSelection from '../pages/authentication/ClientTypeSelection';
 import SignupFreelancer from '../pages/authentication/SignupFreelancer';
 import SignupClientIndividual from '../pages/authentication/SignupClientIndividual';
 import SignupClientCompany from '../pages/authentication/SignupClientCompany';
+import VerifyEmail from '../pages/authentication/VerifyEmail';
 import FreelancerProfile from '../pages/profile/FreelancerProfile';
 import ClientIndividualProfile from '../pages/profile/ClientIndividualProfile';
 import ClientCompanyProfile from '../pages/profile/ClientCompanyProfile';
+import RequireRole from '../lib/RequireRole';
+import RoleRedirect from './RoleRedirect';
 
 const AppRouter = () => {
   return (
@@ -21,6 +24,7 @@ const AppRouter = () => {
       <Route path="/login" element={<Login />} />
       <Route path="/forgot-password" element={<ForgotPassword />} />
       <Route path="/reset-password" element={<ResetPassword />} />
+      <Route path="/auth/verify-email/:token" element={<VerifyEmail />} />
       <Route path="/signup" element={<SelectRole />} />
       <Route path="/signup/client-type" element={<ClientTypeSelection />} />
       <Route path="/signup/freelancer" element={<SignupFreelancer />} />

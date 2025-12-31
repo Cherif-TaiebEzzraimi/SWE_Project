@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { useSearchParams, useNavigate } from 'react-router-dom';
-import apiClient from '../../lib/axios.ts';
+import apiClient from '../../lib/axios';
+
 import styles from './Login.module.css';
 
 const ResetPassword: React.FC = () => {
