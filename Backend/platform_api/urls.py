@@ -27,11 +27,15 @@ urlpatterns = [
     path('freelancers/<int:id>/', views.get_freelancer, name='get_freelancer'),
     path('freelancers/<int:id>/update/', views.update_freelancer, name='update_freelancer'),
     path('freelancers/<int:id>/password/', views.update_freelancer_password, name='update_freelancer_password'),
+    path('freelancers/<int:id>/upload-photo/', views.upload_profile_photo_freelancer, name='upload_profile_photo_freelancer'),
+    path('freelancers/<int:id>/photo/', views.delete_profile_photo_freelancer, name='delete_profile_photo_freelancer'),
 
     # Clients
     path('clients/<int:id>/', views.get_client, name='get_client'),
     path('clients/<int:id>/update/', views.update_client, name='update_client'),
     path('clients/<int:id>/password/', views.update_client_password, name='update_client_password'),
+    path('clients/<int:id>/upload-photo/', views.upload_profile_photo_client, name='upload_profile_photo_client'),
+    path('clients/<int:id>/photo/', views.delete_profile_photo_client, name='delete_profile_photo_client'),
 
     # Companies
     path('companies/<int:id>/', views.get_company, name='get_company'),
@@ -103,9 +107,34 @@ urlpatterns = [
     path('admin/reports/', views.admin_list_reports, name='admin_list_reports'),
     path('admin/reports/<int:id>/resolve/', views.admin_resolve_report, name='admin_resolve_report'),
 
+    # Community
+    path('community/posts/', views.community_posts, name='community_posts'),
+    path('community/posts/<int:post_id>/', views.community_post_detail, name='community_post_detail'),
+    path('community/posts/<int:post_id>/comments/', views.community_comments, name='community_comments'),
+    path('community/posts/<int:post_id>/comments/<int:comment_id>/', views.community_comment_detail, name='community_comment_detail'),
+    path('community/comments/<int:comment_id>/reply/', views.community_comment_reply, name='community_comment_reply'),
+    path('community/posts/<int:post_id>/like/', views.community_like, name='community_like'),
+    path('community/posts/<int:post_id>/likes/', views.community_post_likes, name='community_post_likes'),
+
+    # Offers
+    path('offers/', views.offers_list_create, name='offers_list_create'),
+    path('offers/<int:offer_id>/', views.offers_detail, name='offers_detail'),
+    path('offers/company/<int:company_id>/', views.offers_by_company, name='offers_by_company'),
+
+    # Reports
+    path('reports/', views.reports_list_create, name='reports_list_create'),
+    path('reports/<int:report_id>/', views.reports_detail, name='reports_detail'),
+    path('reports/my/', views.reports_list_create, name='reports_my'),  # Same endpoint, filtered by authenticated user
+
+    # Notifications
+    path('notifications/', views.create_notification, name='create_notification'),
+    path('notifications/my/', views.notifications_my, name='notifications_my'),
+    path('notifications/<int:notification_id>/', views.notification_detail, name='notification_detail'),
+
 ]
 urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
 # if settings.DEBUG:
 #     urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
 #     urlpatterns += static(settings.STATIC_URL, document_root=settings.STATIC_ROOT)
+
 
