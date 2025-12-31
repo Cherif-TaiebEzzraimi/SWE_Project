@@ -1,18 +1,10 @@
 import React, { useState } from 'react';
 import LogoText from '../../assets/logo/LogoText.svg';
-<<<<<<< HEAD
-import WilayaDropdown from '../../components/WilayaDropdown.tsx';
-import { useNavigate } from 'react-router-dom';
-import Input from '../../components/Input.tsx';
-import { registerFreelancer } from '../../api/authApi';
-import { saveToken, saveRole, saveUserId } from '../../lib/auth.ts';
-=======
 import WilayaDropdown from '../../components/WilayaDropdown';
 import { useNavigate } from 'react-router-dom';
 import Input from '../../components/Input';
 import { login, registerFreelancer } from '../../api/authApi';
-import { saveAuthFlag, saveRole, saveUserId, saveUserProfile } from '../../lib/auth';
->>>>>>> feature/authentication
+import { saveAuthFlag, saveRole, saveUserId, saveUserProfile  , saveToken} from '../../lib/auth';
 import styles from './SignupFreelancer.module.css';
 
 const SignupFreelancer: React.FC = () => {
@@ -126,13 +118,11 @@ const SignupFreelancer: React.FC = () => {
           wilaya: formData.wilaya
         }
       };
-<<<<<<< HEAD
       const response = await registerFreelancer(payload);
       saveUserId(response.user.id);
       saveRole(response.user.role);
       saveToken('session-authenticated');
       navigate('/freelancer/dashboard');
-=======
 
       // 1) Register
       await registerFreelancer(payload);
@@ -151,7 +141,6 @@ const SignupFreelancer: React.FC = () => {
 
       // 4) Redirect based on role
       navigate('/dashboard');
->>>>>>> feature/authentication
     } catch (error: any) {
       console.error('Registration error:', error);
       if (error.response?.data?.detail) {
