@@ -13,8 +13,10 @@ const ClientIndividualProfile: React.FC = () => {
   const routeId = params.id ? Number.parseInt(params.id, 10) : null;
   const viewerUserId = getUserId();
 
-  const isPublicView = !!(routeId && viewerUserId && routeId !== viewerUserId);
-  const profileIdToLoad = isPublicView ? routeId : viewerUserId ?? routeId;
+  // 🔧 FIX: Ensure both are numbers for comparison
+  const viewerUserIdNum = viewerUserId ? Number(viewerUserId) : null;
+  const isPublicView = !!(routeId && viewerUserIdNum && routeId !== viewerUserIdNum);
+  const profileIdToLoad = isPublicView ? routeId : viewerUserIdNum ?? routeId;
 
   const resolveMediaUrl = (url?: string | null) => {
     if (!url) return null;
@@ -34,6 +36,15 @@ const ClientIndividualProfile: React.FC = () => {
   const [isEditing, setIsEditing] = useState(false);
   const [clientData, setClientData] = useState<ClientDTO | null>(null);
   const [formData, setFormData] = useState<Partial<ClientDTO>>({});
+
+  // 🔍 DEBUG LOGGING
+  console.log('=== CLIENT PROFILE DEBUG ===');
+  console.log('routeId:', routeId, typeof routeId);
+  console.log('viewerUserId:', viewerUserId, typeof viewerUserId);
+  console.log('viewerUserIdNum:', viewerUserIdNum, typeof viewerUserIdNum);
+  console.log('isPublicView:', isPublicView);
+  console.log('activeTab:', activeTab);
+  console.log('===========================');
 
   useEffect(() => {
     if (isPublicView) {
@@ -63,6 +74,7 @@ const ClientIndividualProfile: React.FC = () => {
     if (isPublicView) return;
     setIsEditing(true);
   };
+  
   const handleCancel = () => {
     if (isPublicView) return;
     setIsEditing(false);
@@ -122,15 +134,33 @@ const ClientIndividualProfile: React.FC = () => {
       <div className={styles.profileContainer}>
         <aside className={styles.sidebar}>
           <nav className={styles.navMenu}>
-            <button className={activeTab === 'profile' ? styles.active : ''} onClick={() => setActiveTab('profile')}>
+            <button 
+              className={activeTab === 'profile' ? styles.active : ''} 
+              onClick={() => {
+                console.log('Profile tab clicked');
+                setActiveTab('profile');
+              }}
+            >
               My Profile
             </button>
             {!isPublicView && (
               <>
-                <button className={activeTab === 'history' ? styles.active : ''} onClick={() => setActiveTab('history')}>
+                <button 
+                  className={activeTab === 'history' ? styles.active : ''} 
+                  onClick={() => {
+                    console.log('History tab clicked, isPublicView:', isPublicView);
+                    setActiveTab('history');
+                  }}
+                >
                   History
                 </button>
-                <button className={activeTab === 'settings' ? styles.active : ''} onClick={() => setActiveTab('settings')}>
+                <button 
+                  className={activeTab === 'settings' ? styles.active : ''} 
+                  onClick={() => {
+                    console.log('Settings tab clicked, isPublicView:', isPublicView);
+                    setActiveTab('settings');
+                  }}
+                >
                   Settings
                 </button>
               </>
@@ -305,8 +335,6 @@ const ClientIndividualProfile: React.FC = () => {
                   )}
                 </div>
               </section>
-
-              
 
               {isEditing && !isPublicView && (
                 <div className={styles.actionButtons}>
