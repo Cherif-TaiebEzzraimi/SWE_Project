@@ -156,15 +156,36 @@ class RequestSerializer(serializers.ModelSerializer):
 
 
 class NegotiationSerializer(serializers.ModelSerializer):
-    request_id = RequestSerializer(read_only =True)
-    client_id = ClientSerializer(read_only =True)
-    freelancer_id = FreelancerSerializer(read_only =True)
+    request = RequestSerializer(read_only=True)
+    client = ClientSerializer(read_only=True)
+    freelancer = FreelancerSerializer(read_only=True)
+    request_id = serializers.IntegerField(write_only=True, required=False)
+    client_id = serializers.IntegerField(write_only=True, required=False)
+    freelancer_id = serializers.IntegerField(write_only=True, required=False)
     declined_by = UserSerializer(read_only = True)
 
 
     class Meta:
         model = Negotiation
         fields = '__all__'
+    
+    def create(self, validated_data):
+        # Handle request_id, client_id and freelancer_id if provided
+        request_id = validated_data.pop('request_id', None)
+        client_id = validated_data.pop('client_id', None)
+        freelancer_id = validated_data.pop('freelancer_id', None)
+        
+        # Get request, client and freelancer objects
+        if request_id:
+            validated_data['request'] = Request.objects.get(pk=request_id)
+        if client_id:
+            # Client uses user as primary key, so client_id is actually user_id
+            validated_data['client'] = Client.objects.get(pk=client_id)
+        if freelancer_id:
+            # Freelancer uses user as primary key, so freelancer_id is actually user_id
+            validated_data['freelancer'] = Freelancer.objects.get(pk=freelancer_id)
+        
+        return super().create(validated_data)
 
 
 class NegotiationPhaseSerializer(serializers.ModelSerializer):

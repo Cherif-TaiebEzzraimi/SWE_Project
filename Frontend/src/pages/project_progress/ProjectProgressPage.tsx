@@ -97,7 +97,7 @@
 
 
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import TabNavigation from '../../components/TabNavigation';
 import PhasesPage from './phases-section/phases';
@@ -108,13 +108,24 @@ import NotesSection from './notes/NotesSection';
 const ProjectProgressPage = () => {
   const location = useLocation();
   const navigate = useNavigate();
-  const projectState = location.state || {};
+  
+  // Use ref to persist projectState across navigations
+  const projectStateRef = useRef<any>(null);
+  
+  // Initialize projectState from location.state if available, otherwise use ref
+  const incomingState = location.state || {};
+  if (incomingState && Object.keys(incomingState).length > 0) {
+    projectStateRef.current = incomingState;
+  }
+  const projectState = projectStateRef.current || {};
 
   // Read tab from URL search param
   const searchParams = new URLSearchParams(location.search);
   const initialTab = searchParams.get('tab') as 'overview' | 'phases' | 'notes' | null;
 
-  const [activeTab, setActiveTab] = useState<'overview' | 'phases' | 'notes'>(initialTab || 'phases');
+  // If coming from direct hire, default to overview tab
+  const defaultTab = projectState.directHire && projectState.initialLoad ? 'overview' : 'phases';
+  const [activeTab, setActiveTab] = useState<'overview' | 'phases' | 'notes'>(initialTab || defaultTab);
 
   // Sync activeTab with URL changes
   useEffect(() => {
@@ -123,10 +134,13 @@ const ProjectProgressPage = () => {
     }
   }, [initialTab]);
 
-  // Function to change tab (updates both state and URL)
+  // Function to change tab (updates both state and URL, preserving projectState)
   const handleTabChange = (tab: 'overview' | 'phases' | 'notes') => {
     setActiveTab(tab);
-    navigate(`?tab=${tab}`, { replace: true });
+    navigate(`?tab=${tab}`, { 
+      replace: true,
+      state: projectState // Preserve projectState when navigating
+    });
   };
 
   return (
@@ -138,7 +152,7 @@ const ProjectProgressPage = () => {
         <div className="tab-content">
           {activeTab === 'phases' && (
             <div className="border-2 border-blue-500 shadow-[0_0_7px_3px_rgba(30,70,206,0.1)] dark:bg-blue-900 p-6 rounded-lg">
-              <PhasesPage />
+              <PhasesPage projectState={projectState} />
             </div>
           )}
 

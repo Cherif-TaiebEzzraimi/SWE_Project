@@ -395,6 +395,7 @@ import { AddNoteModalForPhases } from './components/AddNoteModelForPhae';
 import type { Phase } from './types/project';
 import { useState } from 'react';
 import { usePhasesContext, PhasesProvider } from './context/PhasesContext';
+import { useLocation } from 'react-router-dom';
 import './styles/phases_styles.css';
 
 const initialPhases: Phase[] = [
@@ -769,9 +770,19 @@ const PhasesPageContent = () => {
   );
 };
 
-const PhasesPage = () => {
+interface PhasesPageProps {
+  projectState?: any;
+}
+
+const PhasesPage = ({ projectState: propProjectState }: PhasesPageProps = {}) => {
+  const location = useLocation();
+  // Use prop if provided, otherwise fall back to location.state
+  const projectState = propProjectState || location.state || {};
+  // If coming from direct hire, start with empty phases
+  const phasesToUse = (projectState.directHire && projectState.initialLoad) ? [] : initialPhases;
+  
   return (
-    <PhasesProvider initialPhases={initialPhases}>
+    <PhasesProvider initialPhases={phasesToUse}>
       <PhasesPageContent />
     </PhasesProvider>
   );

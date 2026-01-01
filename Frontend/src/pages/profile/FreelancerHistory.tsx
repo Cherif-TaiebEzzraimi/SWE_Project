@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import styles from './FreelancerHistory.module.css';
+import { getUserProjects } from '../../api/projectApi';
 
 // Backend-aligned structures: history items are derived from negotiations
 interface Negotiation {
@@ -51,40 +52,53 @@ const FreelancerHistory: React.FC<FreelancerHistoryProps> = ({ userId }) => {
   const fetchProjects = async () => {
     try {
       setLoading(true);
-      // Dummy data for UI preview
-      const demo: WorkItem[] = [
-        {
-          id: 301,
+      const projectsData = await getUserProjects(userId);
+      
+      // Transform backend data to match the component's expected format
+      const transformedProjects: WorkItem[] = projectsData.map((project) => {
+        const negotiation = project.negotiation;
+        // Use project title if available, otherwise extract from client_description
+        const description = negotiation.client_description || '';
+        let title = project.title || `Project #${negotiation.id}`;
+        if (!project.title && description) {
+          const titleMatch = description.match(/Project Title:\s*(.+?)(?:\n|$)/i);
+          if (titleMatch) {
+            title = titleMatch[1].trim();
+          }
+        }
+        
+        return {
+          id: project.id,
           negotiation: {
-            id: 9001,
-            title: 'E-commerce frontend build',
-            description: 'React storefront for client brand',
-            client: { user: { first_name: 'Nadia', last_name: 'M.', email: 'nadia@example.com' } },
-            freelancer: { user: { first_name: 'Ahmed', last_name: 'Benali', email: 'ahmed@example.com' } },
-            final_price: 120000,
-            deadline: new Date(Date.now() - 10 * 86400000).toISOString(),
-            status: 'accepted',
+            id: negotiation.id,
+            title: title,
+            description: description,
+            client: {
+              user: {
+                first_name: negotiation.client?.user?.first_name || '',
+                last_name: negotiation.client?.user?.last_name || '',
+                email: negotiation.client?.user?.email || '',
+              },
+            },
+            freelancer: negotiation.freelancer ? {
+              user: {
+                first_name: negotiation.freelancer.user?.first_name || '',
+                last_name: negotiation.freelancer.user?.last_name || '',
+                email: negotiation.freelancer.user?.email || '',
+              },
+            } : undefined,
+            final_price: null, // Would need to be added to negotiation model
+            deadline: null, // Deadline not in negotiation model
+            status: negotiation.status,
           },
-          created_at: new Date(Date.now() - 21 * 86400000).toISOString(),
-        },
-        {
-          id: 302,
-          negotiation: {
-            id: 9002,
-            title: 'Internal dashboard',
-            description: 'Analytics dashboard for operations',
-            client: { user: { first_name: 'Karim', last_name: 'S.', email: 'karim@example.com' } },
-            freelancer: { user: { first_name: 'Ahmed', last_name: 'Benali', email: 'ahmed@example.com' } },
-            final_price: 80000,
-            deadline: new Date(Date.now() - 30 * 86400000).toISOString(),
-            status: 'in_progress',
-          },
-          created_at: new Date(Date.now() - 41 * 86400000).toISOString(),
-        },
-      ];
-      setProjects(demo);
+          created_at: negotiation.created_at,
+        };
+      });
+      
+      setProjects(transformedProjects);
     } catch (error) {
       console.error('Error fetching projects:', error);
+      setProjects([]);
     } finally {
       setLoading(false);
     }
@@ -175,7 +189,12 @@ const filteredProjects = filter === 'done'
             <div
               key={project.id}
               className={styles.projectCard}
-              onClick={() => navigate(`/project-progress?projectId=${project.negotiation.id}`)}
+              onClick={() => navigate(`/project-progress?tab=overview`, {
+                state: {
+                  negotiationId: project.negotiation.id,
+                  projectId: project.id,
+                }
+              })}
               style={{ cursor: 'pointer' }}
             >
               <div className={styles.projectHeader}>

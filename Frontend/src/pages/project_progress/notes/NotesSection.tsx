@@ -209,6 +209,7 @@
 // export default NotesSection;
 
 import { useState, useEffect } from 'react';
+import { useLocation } from 'react-router-dom';
 import { GeneralNotes } from './GeneralNotes';
 import { PreWorkNotes } from './PreWorkNotes';
 import { PrivateNotes } from './PrivateNotes';
@@ -218,10 +219,14 @@ import type { Note } from '../types/notes_types';
 import styles from './../styles.module.css';
 
 const NotesSection = () => {
+  const location = useLocation();
+  const projectState = location.state || {};
+  const isDirectHireInitialLoad = projectState.directHire && projectState.initialLoad;
+  
   const [activeNote, setActiveNote] = useState<'general' | 'prework' | 'private'>('general');
   const [isModalOpen, setIsModalOpen] = useState(false);
 
-  // Hard-coded default notes
+  // Hard-coded default notes (only used if not direct hire initial load)
   const defaultGeneralNotes: Note[] = [
     { id: '1', title: 'General Note 1', content: 'Content 1', status: 'active', date: '2025-12-31' },
     { id: '2', title: 'General Note 2', content: 'Content 2', status: 'done', date: '2025-12-30' },
@@ -242,6 +247,14 @@ const NotesSection = () => {
 
   // Function to load notes from localStorage
   const loadNotes = () => {
+    // If it's a direct hire initial load, use empty notes
+    if (isDirectHireInitialLoad) {
+      setGeneralNotes([]);
+      setPreWorkNotes([]);
+      setPrivateNotes([]);
+      return;
+    }
+
     const storedGeneral = localStorage.getItem('generalNotes');
     const storedPreWork = localStorage.getItem('preWorkNotes');
     const storedPrivate = localStorage.getItem('privateNotes');
@@ -262,10 +275,11 @@ const NotesSection = () => {
     );
   };
 
-  // Load notes on mount
+  // Load notes on mount and when direct hire state changes
   useEffect(() => {
     loadNotes();
-  }, []);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isDirectHireInitialLoad]);
 
   // Listen for the custom 'notesUpdated' event
   useEffect(() => {

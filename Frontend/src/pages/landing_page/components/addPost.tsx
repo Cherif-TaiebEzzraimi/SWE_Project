@@ -3,6 +3,8 @@ import ConfirmModal from '../../../components/ConfirmModal';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { categoriesWithSkills } from '../../../components/categories';
 import { usePosts } from '../../../context/PostsContext';
+import { createDirectHire } from '../../../api/negotiationApi';
+import { uploadMedia } from '../../../api/mediaApi';
 
 const MAX_FILES = 5;
 const MAX_FILE_SIZE_MB = 25;
@@ -23,12 +25,14 @@ const MAX_FILE_SIZE_MB = 25;
     editingPost ? editingPost.category : (directHire && directFreelancer ? directFreelancer.category : '')
   );
 
-  // Ensure category is set to freelancer's category on direct hire
+  // Ensure category is set to freelancer's category on direct hire (only on initial load)
+  const [categoryInitialized, setCategoryInitialized] = React.useState(false);
   React.useEffect(() => {
-    if (!editingPost && directHire && directFreelancer && directFreelancer.category && category !== directFreelancer.category) {
+    if (!editingPost && directHire && directFreelancer && directFreelancer.category && !categoryInitialized) {
       setCategory(directFreelancer.category);
+      setCategoryInitialized(true);
     }
-  }, [directHire, directFreelancer, editingPost]);
+  }, [directHire, directFreelancer, editingPost, categoryInitialized]);
   const [budgetMin, setBudgetMin] = useState(editingPost ? String(editingPost.minPrice) : '');
   const [budgetMax, setBudgetMax] = useState(editingPost ? String(editingPost.maxPrice) : '');
   const [description, setDescription] = useState(editingPost ? editingPost.description : '');
@@ -41,6 +45,7 @@ const MAX_FILE_SIZE_MB = 25;
     if (!editingPost) {
       setTitle(directHire && directFreelancer ? `Direct Hire: ${directFreelancer.name}` : '');
       setCategory(directHire && directFreelancer ? directFreelancer.category : '');
+      setCategoryInitialized(false); // Reset initialization flag
       setBudgetMin('');
       setBudgetMax('');
       setDescription('');
@@ -50,10 +55,12 @@ const MAX_FILE_SIZE_MB = 25;
     }
   }, [editingPost, directHire, directFreelancer]);
 
-  // Always clear neededSkills when category changes (unless direct hire or editing)
+  // Clear neededSkills when category changes (unless editing an existing post)
   React.useEffect(() => {
-    if (!directHire && !editingPost) setNeededSkills([]);
-  }, [category, directHire, editingPost]);
+    if (!editingPost) {
+      setNeededSkills([]);
+    }
+  }, [category, editingPost]);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   // Get skills for selected category
@@ -121,8 +128,12 @@ const MAX_FILE_SIZE_MB = 25;
     setNeededSkills(prev => prev.filter(s => s !== skill));
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    e.stopPropagation();
+    
+    console.log('Form submitted!', { directHire, directFreelancer, title, category, budgetMin, budgetMax, description, neededSkills });
+    
     const newErrors: {[key:string]: string} = {};
     if (!title.trim()) newErrors.title = 'Title is required.';
     if (!category) newErrors.category = 'Category is required.';
@@ -130,14 +141,20 @@ const MAX_FILE_SIZE_MB = 25;
     if (!budgetMax || isNaN(Number(budgetMax)) || Number(budgetMax) <= Number(budgetMin)) newErrors.budgetMax = 'Maximum budget must be greater than minimum budget.';
     if (!description || description.trim().length < 30) newErrors.description = 'Description must be at least 30 characters.';
     if (!neededSkills.length) newErrors.neededSkills = 'At least one needed skill is required.';
+    
+    console.log('Validation errors:', newErrors);
+    
     setErrors(newErrors);
     if (Object.keys(newErrors).length > 0) {
+      console.log('Validation failed, showing errors');
       setTimeout(() => {
         const firstErrorField = document.querySelector('[data-error="true"]');
         if (firstErrorField) firstErrorField.scrollIntoView({ behavior: 'smooth', block: 'center' });
       }, 100);
       return;
     }
+    
+    console.log('Validation passed, proceeding with submission');
     if (editingPost) {
       updatePost(editingPost.id, {
         title,
@@ -181,8 +198,61 @@ const MAX_FILE_SIZE_MB = 25;
       setNeededSkills([]);
       setErrors({});
       if (directHire && directFreelancer) {
-        navigate('/project-progress', { state: { directHire: true, freelancer: directFreelancer, post: { title, category, minPrice: Number(budgetMin), maxPrice: Number(budgetMax), description, requirements: neededSkills } } });
+        console.log('Creating direct hire negotiation...');
+        try {
+          // Prepare project details for description
+          const projectDetailsText = `Project Title: ${title}\nCategory: ${category}\nBudget: ${budgetMin} - ${budgetMax} DA\nRequired Skills: ${neededSkills.join(', ')}\n\nDescription:\n${description}`;
+          
+          // Create the negotiation with all project details
+          const negotiation = await createDirectHire(directFreelancer.id, {
+            client_description: projectDetailsText,
+            client_attachments: files.length > 0 ? files.map(f => ({ name: f.name, size: f.size, type: f.type })) : undefined
+          });
+
+          console.log('Negotiation created successfully:', negotiation.id);
+          
+          // Upload files if any were selected
+          if (files.length > 0) {
+            try {
+              console.log('Uploading files...');
+              await Promise.all(
+                files.map(file => uploadMedia(file, 'negotiation_attachment', negotiation.id))
+              );
+              console.log('Files uploaded successfully');
+            } catch (fileError) {
+              console.error('Error uploading files:', fileError);
+              // Continue navigation even if file upload fails
+            }
+          }
+          
+          navigate('/project-progress?tab=overview', { 
+            state: { 
+              directHire: true, 
+              freelancer: directFreelancer, 
+              negotiationId: negotiation.id,
+              post: { 
+                title, 
+                category, 
+                minPrice: Number(budgetMin), 
+                maxPrice: Number(budgetMax), 
+                description, 
+                requirements: neededSkills 
+              },
+              settingsMode: true,
+              initialLoad: true
+            } 
+          });
+        } catch (error: any) {
+          console.error('Error creating negotiation:', error);
+          const errorMessage = error?.response?.data?.detail || 
+                              error?.response?.data?.message || 
+                              (typeof error?.response?.data === 'string' ? error.response.data : null) ||
+                              error?.message || 
+                              'Failed to create negotiation. Please try again.';
+          alert(errorMessage);
+        }
       } else {
+        console.log('Navigating to client-dashboard');
         navigate('/client-dashboard');
       }
     }
@@ -193,7 +263,7 @@ const MAX_FILE_SIZE_MB = 25;
   return (
     <div className="min-h-screen w-full flex flex-col items-center justify-start bg-[#f5f7f8] dark:bg-[#101722] py-10 px-4 sm:px-8 md:px-20 2xl:px-[20vw] font-sans">
       {/* Page Title */}
-      <form ref={formRef} onSubmit={handleSubmit} className="w-full max-w-4xl mx-auto bg-white dark:bg-[#1C2A3B] rounded-xl border border-[#0a66f0]/20 shadow-[0_0_30px_rgba(10,102,240,0.15)] p-4 sm:p-6 md:p-8 flex flex-col gap-8 relative">
+      <form ref={formRef} onSubmit={handleSubmit} noValidate className="w-full max-w-4xl mx-auto bg-white dark:bg-[#1C2A3B] rounded-xl border border-[#0a66f0]/20 shadow-[0_0_30px_rgba(10,102,240,0.15)] p-4 sm:p-6 md:p-8 flex flex-col gap-8 relative">
         {/* Go Back/Cross Button inside modal box */}
         <button
           type="button"
@@ -230,27 +300,18 @@ const MAX_FILE_SIZE_MB = 25;
           <label className="block text-lg font-bold text-[#0a66f0] dark:text-white mb-2">
             Category <span className="text-red-500">*</span>
           </label>
-          {directHire && directFreelancer ? (
-            <input
-              className="w-full rounded-lg border border-gray-200 dark:border-slate-600 bg-[#f5f7f8] dark:bg-[#101722] text-[#425466] dark:text-slate-400 p-4 text-base transition-all"
-              value={category}
-              disabled
-              readOnly
-            />
-          ) : (
-            <select
-              className="w-full rounded-lg border border-gray-200 dark:border-slate-600 bg-[#f5f7f8] dark:bg-[#101722] text-[#425466] dark:text-slate-400 focus:ring-2 focus:ring-blue-500/50 focus:outline-none p-4 text-base transition-all"
-              value={category}
-              onChange={e => setCategory(e.target.value)}
-              required
-              data-error={!!errors.category}
-            >
-              <option value="">Select category</option>
-              {categoriesWithSkills.map(cat => (
-                <option key={cat.category} value={cat.category}>{cat.category}</option>
-              ))}
-            </select>
-          )}
+          <select
+            className="w-full rounded-lg border border-gray-200 dark:border-slate-600 bg-[#f5f7f8] dark:bg-[#101722] text-[#425466] dark:text-slate-400 focus:ring-2 focus:ring-blue-500/50 focus:outline-none p-4 text-base transition-all"
+            value={category}
+            onChange={e => setCategory(e.target.value)}
+            required
+            data-error={!!errors.category}
+          >
+            <option value="">Select category</option>
+            {categoriesWithSkills.map(cat => (
+              <option key={cat.category} value={cat.category}>{cat.category}</option>
+            ))}
+          </select>
           {errors.category && <div className="text-red-600 text-sm mt-1">{errors.category}</div>}
         </div>
         {/* Needed Skills Field */}
@@ -383,6 +444,18 @@ const MAX_FILE_SIZE_MB = 25;
           </button>
           <button
             type="submit"
+            onClick={() => {
+              console.log('Submit button clicked', { directHire, directFreelancer });
+              // Ensure form submission isn't prevented
+              if (formRef.current) {
+                const form = formRef.current;
+                const isValid = form.checkValidity();
+                console.log('Form validity:', isValid);
+                if (!isValid) {
+                  form.reportValidity();
+                }
+              }
+            }}
             className="px-8 py-2 rounded-lg font-bold text-base bg-[#0a65f1] text-white shadow-[0_0_15px_rgba(10,101,241,0.4)] border-2 border-blue-200 hover:bg-blue-800 transition-all duration-200"
           >
             {directHire && directFreelancer ? 'Confirm' : editingPost ? 'Update Post' : 'Publish Post'}

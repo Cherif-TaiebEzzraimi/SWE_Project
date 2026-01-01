@@ -32,7 +32,7 @@ export const AddNoteModal: React.FC<AddNoteModalProps> = ({ isOpen, onClose, onA
 
   return (
     <div className={styles.modalBackdrop} onClick={handleBackdropClick}>
-      <div className={styles.modalContent}>
+      <div className={styles.modalContent} onClick={(e) => e.stopPropagation()}>
         <div className={styles.modalHeader}>
           <h2 className={styles.modalTitle}>Add New Note</h2>
           <button onClick={onClose} className={styles.closeButton}>

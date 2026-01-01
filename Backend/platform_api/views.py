@@ -497,19 +497,43 @@ def create_direct_hire(request, freelancer_id):
     client = Client.objects.filter(user_id=request.user).first()
     if not client:
         return Response({'detail': 'Only clients can initiate direct hire'}, status=status.HTTP_403_FORBIDDEN)
-    freelancer = Freelancer.objects.filter(id=freelancer_id).first()
+    freelancer = Freelancer.objects.filter(pk=freelancer_id).first()
     if not freelancer:
         return Response({'detail': 'Freelancer not found'}, status=status.HTTP_404_NOT_FOUND)
     data = {
         'origin_type': 'direct_hire',
-        'client_id': client.id,
-        'freelancer_id': freelancer.id,
+        'client_id': client.pk,
+        'freelancer_id': freelancer.pk,
         'status': 'in_progress',
         'client_agreed': True,
     }
+    # Accept additional data from request body (client_description, client_attachments, etc.)
+    if 'client_description' in request.data:
+        data['client_description'] = request.data['client_description']
+    if 'client_attachments' in request.data:
+        data['client_attachments'] = request.data['client_attachments']
     serializer = NegotiationSerializer(data=data)
     if serializer.is_valid():
         negotiation = serializer.save()
+        
+        # Create Project for direct hire so it appears in history
+        from .models import Project
+        import re
+        # Extract title from client_description
+        project_title = f"Project #{negotiation.id}"
+        if negotiation.client_description:
+            title_match = re.search(r'Project Title:\s*(.+?)(?:\n|$)', negotiation.client_description, re.IGNORECASE)
+            if title_match:
+                project_title = title_match.group(1).strip()
+        
+        # Create project if it doesn't exist
+        project_exists = Project.objects.filter(negotiation=negotiation).exists()
+        if not project_exists:
+            Project.objects.create(
+                negotiation=negotiation,
+                title=project_title
+            )
+        
         return Response(NegotiationSerializer(negotiation).data, status=status.HTTP_201_CREATED)
     return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
@@ -534,9 +558,10 @@ def create_from_request(request, request_id):
     return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
 
-@api_view(['GET', 'DELETE'])
+@api_view(['GET', 'PUT', 'DELETE'])
 def negotiation_detail(request, id):
     """GET /negotiations/:id - return negotiation and its phases
+       PUT /negotiations/:id - update negotiation
        DELETE /negotiations/:id - soft delete (set status to 'declined')
     """
     negotiation = Negotiation.objects.filter(id=id).first()
@@ -553,6 +578,12 @@ def negotiation_detail(request, id):
         phases = NegotiationPhase.objects.filter(negotiation_id=negotiation)
         data['phases'] = NegotiationPhaseSerializer(phases, many=True).data
         return Response(data)
+    if request.method == 'PUT':
+        serializer = NegotiationSerializer(negotiation, data=request.data, partial=True)
+        if serializer.is_valid():
+            serializer.save()
+            return Response(serializer.data, status=status.HTTP_200_OK)
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
     # DELETE -> soft delete by setting status
     negotiation.status = 'declined'
     negotiation.save()
@@ -628,9 +659,20 @@ def agree_negotiation(request, id):
         negotiation.status = 'agreed'
         # Create project if not already created
         from .models import Project
-        project_exists = Project.objects.filter(negotiation_id=negotiation).exists()
+        import re
+        project_exists = Project.objects.filter(negotiation=negotiation).exists()
         if not project_exists:
-            project = Project.objects.create(negotiation_id=negotiation, state='active')
+            # Extract title from client_description
+            project_title = f"Project #{negotiation.id}"
+            if negotiation.client_description:
+                title_match = re.search(r'Project Title:\s*(.+?)(?:\n|$)', negotiation.client_description, re.IGNORECASE)
+                if title_match:
+                    project_title = title_match.group(1).strip()
+            
+            project = Project.objects.create(
+                negotiation=negotiation,
+                title=project_title
+            )
             # Optionally, copy phases from negotiation to project
             from .models import NegotiationPhase, ProjectPhase
             phases = NegotiationPhase.objects.filter(negotiation_id=negotiation)
