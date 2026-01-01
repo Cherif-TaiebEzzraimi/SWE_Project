@@ -14,7 +14,7 @@ const ProjectProgress: React.FC = () => {
     <div>
       <h2>Project Progress</h2>
       <p>Project ID: {projectId}</p>
-      {/* TODO: Implement project progress details here */}
+      {/* TO Implement project progress details here */}
     </div>
   );
 };

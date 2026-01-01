@@ -2,6 +2,8 @@ import React, { useState, useEffect } from 'react';
 import styles from './Settings.module.css';
 import apiClient from '../../lib/axios';
 import { clearAuth } from '../../lib/auth';
+import { useUserType } from '../../context/UserTypeContext';
+import { useNavigate } from 'react-router-dom';
 
 interface Notification {
   id: number;
@@ -104,6 +106,8 @@ const Settings: React.FC<SettingsProps> = ({ userId, userRole }) => {
   // account deletion 
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
 
+  const { setUserType } = useUserType();
+  const navigate = useNavigate();
   
   useEffect(() => {
     if (activeSection === 'notifications') {
@@ -424,10 +428,11 @@ const Settings: React.FC<SettingsProps> = ({ userId, userRole }) => {
                     try {
                       await apiClient.post('/auth/logout/');
                     } catch {
-                      
+                      // ignore
                     } finally {
                       clearAuth();
-                      window.location.href = '/login';
+                      setUserType('guest');
+                      navigate('/', { replace: true });
                     }
                   })();
                 }}
