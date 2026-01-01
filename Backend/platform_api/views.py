@@ -4,6 +4,7 @@ from rest_framework.response import Response
 from rest_framework import status
 from rest_framework.permissions import IsAuthenticated, AllowAny
 from .serializers import UserSerializer , AdminSerializer , ClientSerializer , FreelancerSerializer , CompanySerializer , FAQSerializer , SkillSerializer , CategorySerializer , ReviewSerializer , ReportSerializer , MediaFileSerializer , NotificationSerializer , HelpSerializer , JobInternshipOfferSerializer , RequestSerializer , NegotiationSerializer , NegotiationFloatingCommentSerializer , NegotiationPhaseSerializer , ProjectSerializer , ProjectPhaseSerializer  , DeliverableSerializer , CommunityPostSerializer , CommunityCommentSerializer , CommunityCommentDetailSerializer , CommunityLikeSerializer
+from .serializers import FreelancerListSerializer
 from .models import (
     User, Admin, Company, Client, Freelancer,
     Skill, Category, Review, FAQ, MediaFile, Report, Notification,
@@ -32,6 +33,7 @@ def getRoutes(request):
         {'method': 'POST', 'path': '/auth/reset-password/', 'description': 'Reset password'},
 
         {'method': 'GET', 'path': '/freelancers/<id>/', 'description': 'Get freelancer profile'},
+        {'method': 'GET', 'path': '/freelancers/', 'description': 'List freelancers with filters'},
         {'method': 'PUT', 'path': '/freelancers/<id>/update/', 'description': 'Update freelancer profile'},
         {'method': 'PUT', 'path': '/freelancers/<id>/password/', 'description': 'Update freelancer password'},
 
@@ -111,6 +113,16 @@ def soft_get_user(request):
     serializer = ClientSerializer(data , many = True)
     return Response(serializer.data)
 
+
+@api_view(['GET'])
+def list_freelancers(request):
+    print('DEBUG: list_freelancers called')
+    freelancers = Freelancer.objects.all()
+    print(f'DEBUG: Found {freelancers.count()} freelancers')
+    from .serializers import FreelancerListSerializer
+    serializer = FreelancerListSerializer(freelancers, many=True)
+    print(f'DEBUG: Serialized data: {serializer.data}')
+    return Response(serializer.data)
 
 
 @api_view(['POST'])
@@ -554,7 +566,9 @@ def add_phase(request, id):
     negotiation = Negotiation.objects.filter(id=id).first()
     if not negotiation:
         return Response({'detail': 'Negotiation not found'}, status=status.HTTP_404_NOT_FOUND)
-    # only negotiation participants or staff
+    # Prevent editing if negotiation is agreed or declined
+    if negotiation.status in ['agreed', 'declined']:
+        return Response({'detail': 'Negotiation is settled. Editing is locked.'}, status=status.HTTP_403_FORBIDDEN)
     client_user_id = negotiation.client_id.user_id.id if negotiation.client_id else None
     freelancer_user_id = negotiation.freelancer_id.user_id.id if negotiation.freelancer_id else None
     if not (request.user.is_staff or request.user.id in (client_user_id, freelancer_user_id)):
@@ -577,8 +591,11 @@ def negotiation_phase_detail(request, phase_id):
     if not phase:
         return Response({'detail': 'Phase not found'}, status=status.HTTP_404_NOT_FOUND)
     negotiation = phase.negotiation_id
+    # Prevent editing if negotiation is agreed or declined
+    if negotiation.status in ['agreed', 'declined']:
+        return Response({'detail': 'Negotiation is settled. Editing is locked.'}, status=status.HTTP_403_FORBIDDEN)
     client_user_id = negotiation.client_id.user_id.id if negotiation.client_id else None
-    freelancer_user_id = negotiation.freelancer_id.user_id.id if negotiation.freelancer_id else None
+    freelancer_user_id = negotiation.freelancer_id.user_id.id if negotiation.client_id else None
     if not (request.user.is_staff or request.user.id in (client_user_id, freelancer_user_id)):
         return Response({'detail': 'Forbidden'}, status=status.HTTP_403_FORBIDDEN)
     if request.method == 'PUT':
@@ -606,9 +623,26 @@ def agree_negotiation(request, id):
         negotiation.freelancer_agreed = True
     else:
         return Response({'detail': 'Forbidden'}, status=status.HTTP_403_FORBIDDEN)
-    # if both agreed set status
+    # if both agreed set status and create project if not exists
     if negotiation.client_agreed and negotiation.freelancer_agreed:
         negotiation.status = 'agreed'
+        # Create project if not already created
+        from .models import Project
+        project_exists = Project.objects.filter(negotiation_id=negotiation).exists()
+        if not project_exists:
+            project = Project.objects.create(negotiation_id=negotiation, state='active')
+            # Optionally, copy phases from negotiation to project
+            from .models import NegotiationPhase, ProjectPhase
+            phases = NegotiationPhase.objects.filter(negotiation_id=negotiation)
+            for phase in phases:
+                ProjectPhase.objects.create(
+                    project_id=project,
+                    title=phase.title,
+                    description=phase.description,
+                    price=phase.price,
+                    order=phase.order,
+                    status='pending',
+                )
     negotiation.save()
     return Response(NegotiationSerializer(negotiation).data)
 
@@ -1270,7 +1304,7 @@ def community_posts(request):
         posts = CommunityPost.objects.all().order_by('-created_at')
         # Optional: filter by owner
         owner_id = request.query_params.get('owner_id')
-        if owner_id:
+        if (owner_id):
             posts = posts.filter(owner_id=owner_id)
         serializer = CommunityPostSerializer(posts, many=True)
         return Response(serializer.data)
@@ -1426,7 +1460,7 @@ def community_comment_reply(request, comment_id):
 @permission_classes([IsAuthenticated])
 def community_like(request, post_id):
     """POST /community/posts/<post_id>/like - Like a post
-    DELETE /community/posts/<post_id>/like - Unlike a post
+    DELETE /community.posts/<post_id>/like - Unlike a post
     """
     post = CommunityPost.objects.filter(id=post_id).first()
     if not post:

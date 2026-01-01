@@ -24,6 +24,7 @@ urlpatterns = [
     path('auth/reset-password/', views.reset_password, name='reset_password'),
 
     # Freelancers
+    path('freelancers/', views.list_freelancers, name='list_freelancers'),
     path('freelancers/<int:id>/', views.get_freelancer, name='get_freelancer'),
     path('freelancers/<int:id>/update/', views.update_freelancer, name='update_freelancer'),
     path('freelancers/<int:id>/password/', views.update_freelancer_password, name='update_freelancer_password'),

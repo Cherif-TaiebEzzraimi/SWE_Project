@@ -42,6 +42,42 @@ class FreelancerSerializer(serializers.ModelSerializer):
         fields = '__all__'
 
 
+class FreelancerListSerializer(serializers.ModelSerializer):
+    id = serializers.IntegerField(source='pk')
+    name = serializers.SerializerMethodField()
+    avatar = serializers.SerializerMethodField()
+    bio = serializers.CharField(source='description', allow_blank=True, allow_null=True)
+    category = serializers.SerializerMethodField()
+    skills = serializers.SerializerMethodField()
+    rating = serializers.FloatField(source='rate', allow_null=True)
+
+    def get_name(self, obj):
+        if obj.user:
+            return f"{obj.user.first_name} {obj.user.last_name}".strip()
+        return ""
+    def get_avatar(self, obj):
+        if obj.profile_picture:
+            return obj.profile_picture.url if hasattr(obj.profile_picture, 'url') else obj.profile_picture
+        return None
+    def get_category(self, obj):
+        # Return first category if categories is a list, else blank
+        if isinstance(obj.categories, list) and obj.categories:
+            return obj.categories[0]
+        if isinstance(obj.categories, str):
+            return obj.categories
+        return ''
+    def get_skills(self, obj):
+        if isinstance(obj.skills, list):
+            return obj.skills
+        if isinstance(obj.skills, str):
+            return [obj.skills]
+        return []
+
+    class Meta:
+        model = Freelancer
+        fields = ['id', 'name', 'avatar', 'bio', 'category', 'skills', 'rating']
+
+
 class FAQSerializer(serializers.ModelSerializer):
     class Meta:
         model = FAQ

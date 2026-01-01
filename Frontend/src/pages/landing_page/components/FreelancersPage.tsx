@@ -1,25 +1,9 @@
 import React, { useState, useMemo, useEffect } from 'react';
 import { useUserType } from '../../../context/UserTypeContext';
-import ConfirmModal from '../../../components/ConfirmModal';
 import Layout from './Layout';
 import { categoriesWithSkills as allCategoriesWithSkills } from '../../../components/categories';
 import { useNavigate, useLocation } from 'react-router-dom';
-// import { usePosts } from '../../../context/PostsContext';
-
-// Dummy data for freelancers (keep local)
-const freelancers: Array<{
-  id: number;
-  name: string;
-  category: string;
-  skills: string[];
-  rating: number;
-  avatar: string;
-  bio: string;
-}> = [
-  { id: 1, name: 'Amina Dev', category: 'Development & IT', skills: ['Web Developers', 'Java Engineer'], rating: 4.8, avatar: 'https://randomuser.me/api/portraits/women/44.jpg', bio: 'Experienced React and backend developer. Built 10+ scalable apps. Passionate about clean code, scalable systems, and mentoring junior devs.' },
-  { id: 2, name: 'Yacine Design', category: 'Design & Creative', skills: ['Graphic Designers', 'Logo Designers'], rating: 4.6, avatar: 'https://randomuser.me/api/portraits/men/32.jpg', bio: 'Creative designer with a passion for branding and UI/UX. Has worked with 30+ startups and specializes in minimal, memorable design.' },
-  { id: 3, name: 'Sara AI', category: 'AI Services', skills: ['Machine Learning Engineers', 'Data Scientists'], rating: 4.9, avatar: 'https://randomuser.me/api/portraits/women/65.jpg', bio: 'AI/ML expert, Kaggle Grandmaster, loves solving real-world problems. Built models for healthcare, finance, and e-commerce.' },
-];
+import apiClient from '../../../lib/axios';
 
 const FreelancersPage: React.FC = () => {
   const location = useLocation();
@@ -28,9 +12,22 @@ const FreelancersPage: React.FC = () => {
   const initialSearch = params.get('search') || '';
   const [selectedCategory, setSelectedCategory] = useState<string>(initialCategory);
   const [search, setSearch] = useState(initialSearch);
-  const { userType, setUserType } = useUserType();
-  const [modal, setModal] = useState<{ open: boolean; action: null | 'hire' | 'login'; freelancer?: any }>({ open: false, action: null });
+  const { userType } = useUserType();
+  const [modal, setModal] = useState<{ open: boolean; action: null | 'login'; freelancer?: any }>({ open: false, action: null });
   const navigate = useNavigate();
+
+  // Fetch freelancers from backend with filters
+  const [freelancers, setFreelancers] = useState<any[]>([]);
+  useEffect(() => {
+    // Build query params for filters
+    const params: any = {};
+    if (selectedCategory && selectedCategory !== 'All') params.category = selectedCategory;
+    if (search) params.skill = search;
+    const query = new URLSearchParams(params).toString();
+    apiClient.get(`/freelancers${query ? '?' + query : ''}`)
+      .then((res: any) => setFreelancers(res.data))
+      .catch(() => setFreelancers([]));
+  }, [selectedCategory, search]);
 
   // Update state if URL changes (for navigation/bookmarks)
   useEffect(() => {
@@ -39,28 +36,25 @@ const FreelancersPage: React.FC = () => {
     setSearch(params.get('search') || '');
   }, [location.search]);
 
-  // Filter freelancers by category and search
+  // Filter freelancers by category and search (client-side fallback)
   const filteredFreelancers = useMemo(() => {
     const keywords = search.trim().toLowerCase().split(/\s+/).filter(Boolean);
     return freelancers.filter(f => {
       if (selectedCategory !== 'All' && f.category !== selectedCategory) return false;
-      // All keywords must be present in name, bio, or skills
       if (keywords.length > 0) {
-        const text = `${f.name} ${f.bio} ${f.skills.join(' ')}`.toLowerCase();
+        const text = `${f.name} ${f.bio} ${(f.skills || []).join(' ')}`.toLowerCase();
         if (!keywords.every(kw => text.includes(kw))) return false;
       }
       return true;
     });
-  }, [selectedCategory, search]);
+  }, [selectedCategory, search, freelancers]);
 
   return (
     <>
-      {/* <Header /> */}
       <Layout>
       <div className="w-full px-4 sm:px-8 md:px-12 lg:px-20 xl:px-40 py-8 relative min-h-screen">
- 
       {/* Search and Filters Bar */}
-  <div className="bg-white dark:bg-[#1C2A3B] rounded-xl border border-primary/20 shadow-[0_0_12px_0_rgba(96,165,250,0.10)] focus-within:shadow-[0_0_16px_2px_rgba(96,165,250,0.18)] p-4 mb-8 flex flex-col lg:flex-row gap-4 items-center justify-between">
+      <div className="bg-white dark:bg-[#1C2A3B] rounded-xl border border-primary/20 shadow-[0_0_12px_0_rgba(96,165,250,0.10)] focus-within:shadow-[0_0_16px_2px_rgba(96,165,250,0.18)] p-4 mb-8 flex flex-col lg:flex-row gap-4 items-center justify-between">
         <div className="flex-1 relative group w-full">
           <span className="absolute left-4 top-1/2 -translate-y-1/2 material-symbols-outlined text-slate-400 group-focus-within:text-primary transition-colors">search</span>
           <input
@@ -121,7 +115,7 @@ const FreelancersPage: React.FC = () => {
               <div className="text-gray-700 dark:text-gray-200 text-sm mb-2 text-center min-h-[60px] mt-2">{f.bio}</div>
               {/* Skills as pill badges with teal and blue, closer to description */}
               <div className="flex flex-wrap gap-2 justify-center mb-2">
-                {f.skills.map((skill: string) => (
+                {(f.skills || []).map((skill: string) => (
                   <span
                     key={skill}
                     className="px-3 py-1 rounded-full text-xs font-semibold border border-[var(--teal-main)] bg-[var(--teal-bg)] text-[var(--teal-main)] shadow-sm"
@@ -135,12 +129,14 @@ const FreelancersPage: React.FC = () => {
                 {userType === 'client' && (
                   <button
                     className="flex-1 px-5 py-2 rounded-lg border-2 border-blue-200 text-blue-500 font-bold text-sm shadow-sm bg-blue-50 transition-all duration-300 hover:bg-blue-100 hover:text-blue-600 hover:border-blue-300 hover:shadow-[0_0_0_3px_#bfdbfe] focus:outline-none focus:ring-2 focus:ring-blue-200"
-                    onClick={() => setModal({ open: true, action: 'hire', freelancer: f })}
+                    onClick={() => {
+                      setModal({ open: false, action: null });
+                      navigate('/client-dashboard/addPost', { state: { directHire: true, freelancer: f } });
+                    }}
                   >
                     Hire Now
                   </button>
                 )}
-                {/* Only show View Profile for guest, hide Hire Now */}
                 {(userType === 'guest' || userType === 'client' || userType === 'freelancer') && (
                   <button
                     className="flex-1 px-5 py-2 rounded-lg border-2 border-blue-200 text-blue-500 font-bold text-sm shadow-sm bg-blue-50 transition-all duration-300 hover:bg-blue-100 hover:text-blue-600 hover:border-blue-300 hover:shadow-[0_0_0_3px_#bfdbfe] focus:outline-none focus:ring-2 focus:ring-blue-200"
@@ -157,21 +153,6 @@ const FreelancersPage: React.FC = () => {
           ))
         )}
       </div>
-      {/* Confirmation Modal */}
-      <ConfirmModal
-        open={modal.open && modal.action === 'hire'}
-        title={'Hire Freelancer'}
-        message={'Are you sure you want to hire this freelancer?'}
-        confirmText={'Hire'}
-        cancelText="Cancel"
-        onCancel={() => setModal({ open: false, action: null })}
-        onConfirm={() => {
-          if (modal.action === 'hire' && modal.freelancer) {
-            navigate('/client-dashboard/addPost', { state: { directHire: true, freelancer: modal.freelancer } });
-          }
-          setModal({ open: false, action: null });
-        }}
-      />
       {/* Guest Login/Signup Modal (reuse CTASection style) */}
       {modal.open && modal.action === 'login' && (
         <div className="modal-overlay" onClick={() => setModal({ open: false, action: null })}>
