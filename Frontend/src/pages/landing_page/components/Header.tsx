@@ -5,13 +5,30 @@ import { useUserType } from '../../../context/UserTypeContext';
 
 // Header component
 const Header: React.FC = () => {
-  const { userType } = useUserType();
+  const { userType, setUserType } = useUserType();
   const navigate = useNavigate();
-  
-  // just a dummy pfp for now
-  const user = userType === 'client' 
+
+  // Determine user type from localStorage/session
+  React.useEffect(() => {
+    const storedUserType = localStorage.getItem('userType');
+    const userId = localStorage.getItem('userId');
+    // If userId is present, use storedUserType if available, else fallback to role in localStorage
+    if (!userId) {
+      setUserType('guest');
+    } else if (storedUserType) {
+      setUserType(storedUserType as 'client' | 'freelancer');
+    } else {
+      // fallback: try to infer from role
+      const role = localStorage.getItem('role');
+      if (role === 'freelancer') setUserType('freelancer');
+      else if (role === 'client' || role === 'company') setUserType('client');
+      else setUserType('guest');
+    }
+  }, [setUserType]);
+
+  const user = userType === 'client'
     ? { name: 'Client', avatar: 'https://randomuser.me/api/portraits/men/32.jpg' }
-    : userType === 'freelancer' 
+    : userType === 'freelancer'
     ? { name: 'Freelancer', avatar: 'https://randomuser.me/api/portraits/women/44.jpg' }
     : null;
 

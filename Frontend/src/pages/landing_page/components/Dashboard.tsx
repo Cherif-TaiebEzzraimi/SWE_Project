@@ -63,30 +63,7 @@ const Dashboard: React.FC = () => {
   return (
     <>
       <div className="w-full px-4 sm:px-8 md:px-12 lg:px-20 xl:px-40 py-8 relative min-h-screen">
-        {/* Toggle user type for testing - move to left margin */}
-        <div className="fixed left-0 top-1/4 z-30 flex flex-col gap-2 pl-2">
-          <button
-            className={`w-8 h-8 flex items-center justify-center rounded-md border-2 mb-1 shadow text-xs font-bold transition-all duration-200 ${userType === 'client' ? 'bg-blue-700 text-white border-blue-700' : 'bg-white text-blue-700 border-blue-700 hover:bg-blue-50'}`}
-            onClick={() => setUserType('client')}
-            aria-label="Client View"
-          >
-            C
-          </button>
-          <button
-            className={`w-8 h-8 flex items-center justify-center rounded-md border-2 mb-1 shadow text-xs font-bold transition-all duration-200 ${userType === 'freelancer' ? 'bg-blue-700 text-white border-blue-700' : 'bg-white text-blue-700 border-blue-700 hover:bg-blue-50'}`}
-            onClick={() => setUserType('freelancer')}
-            aria-label="Freelancer View"
-          >
-            F
-          </button>
-          <button
-            className={`w-8 h-8 flex items-center justify-center rounded-md border-2 shadow text-xs font-bold transition-all duration-200 ${userType === 'guest' ? 'bg-blue-700 text-white border-blue-700' : 'bg-white text-blue-700 border-blue-700 hover:bg-blue-50'}`}
-            onClick={() => setUserType('guest')}
-            aria-label="Guest View"
-          >
-            G
-          </button>
-        </div>                                                                                      
+       
         {/* Floating Add Post Button (client only, not visible in freelancers view) */}
   {/* Add Post button for client or guest */}
   {(userType === 'client' || userType === 'guest') && (

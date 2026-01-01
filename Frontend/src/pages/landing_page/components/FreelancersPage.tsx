@@ -58,30 +58,7 @@ const FreelancersPage: React.FC = () => {
       {/* <Header /> */}
       <Layout>
       <div className="w-full px-4 sm:px-8 md:px-12 lg:px-20 xl:px-40 py-8 relative min-h-screen">
-  {/* Toggle user type for testing - move to left margin */}
-      <div className="fixed left-0 top-1/4 z-30 flex flex-col gap-2 pl-2">
-        <button
-          className={`w-8 h-8 flex items-center justify-center rounded-md border-2 mb-1 shadow text-xs font-bold transition-all duration-200 ${userType === 'client' ? 'bg-blue-700 text-white border-blue-700' : 'bg-white text-blue-700 border-blue-700 hover:bg-blue-50'}`}
-          onClick={() => setUserType('client')}
-          aria-label="Client View"
-        >
-          C
-        </button>
-        <button
-          className={`w-8 h-8 flex items-center justify-center rounded-md border-2 mb-1 shadow text-xs font-bold transition-all duration-200 ${userType === 'freelancer' ? 'bg-blue-700 text-white border-blue-700' : 'bg-white text-blue-700 border-blue-700 hover:bg-blue-50'}`}
-          onClick={() => setUserType('freelancer')}
-          aria-label="Freelancer View"
-        >
-          F
-        </button>
-        <button
-          className={`w-8 h-8 flex items-center justify-center rounded-md border-2 shadow text-xs font-bold transition-all duration-200 ${userType === 'guest' ? 'bg-blue-700 text-white border-blue-700' : 'bg-white text-blue-700 border-blue-700 hover:bg-blue-50'}`}
-          onClick={() => setUserType('guest')}
-          aria-label="Guest View"
-        >
-          G
-        </button>
-      </div>
+ 
       {/* Search and Filters Bar */}
   <div className="bg-white dark:bg-[#1C2A3B] rounded-xl border border-primary/20 shadow-[0_0_12px_0_rgba(96,165,250,0.10)] focus-within:shadow-[0_0_16px_2px_rgba(96,165,250,0.18)] p-4 mb-8 flex flex-col lg:flex-row gap-4 items-center justify-between">
         <div className="flex-1 relative group w-full">
@@ -169,7 +146,7 @@ const FreelancersPage: React.FC = () => {
                     className="flex-1 px-5 py-2 rounded-lg border-2 border-blue-200 text-blue-500 font-bold text-sm shadow-sm bg-blue-50 transition-all duration-300 hover:bg-blue-100 hover:text-blue-600 hover:border-blue-300 hover:shadow-[0_0_0_3px_#bfdbfe] focus:outline-none focus:ring-2 focus:ring-blue-200"
                     onClick={() => {
                       if (userType === 'guest') setModal({ open: true, action: 'login', freelancer: f });
-                      // else: navigate to profile (to be implemented)
+                      else navigate(`/profile/freelancer/${f.id}`);
                     }}
                   >
                     View Profile
