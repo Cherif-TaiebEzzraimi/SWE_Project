@@ -13,6 +13,7 @@ import ClientIndividualProfile from '../pages/profile/ClientIndividualProfile';
 import ClientCompanyProfile from '../pages/profile/ClientCompanyProfile';
 import RequireRole from '../lib/RequireRole';
 import RoleRedirect from './RoleRedirect';
+import ProjectProgress from '../pages/project/ProjectProgress';
 
 const AppRouter = () => {
   return (
@@ -36,6 +37,9 @@ const AppRouter = () => {
       <Route path="/profile/client/:id" element={<ClientIndividualProfile />} />
       <Route path="/profile/company/:id" element={<ClientCompanyProfile />} />
       
+      {/* Project Progress Route */}
+      <Route path="/project-progress" element={<ProjectProgress />} />
+
       {/* Dashboard placeholders  */}
       <Route path="/dashboard" element={<RoleRedirect />} />
 

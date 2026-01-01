@@ -5,9 +5,11 @@ import Input from '../../components/Input';
 import { login, registerClientIndividual } from '../../api/authApi';
 import { saveAuthFlag, saveRole, saveUserId, saveUserProfile } from '../../lib/auth';
 import styles from './SignupClientIndividual.module.css';
+import { useUserType } from '../../context/UserTypeContext';
 
 const SignupClientIndividual: React.FC = () => {
   const navigate = useNavigate();
+  const { setUserType } = useUserType();
   const [formData, setFormData] = useState({
     first_name: '',
     last_name: '',
@@ -93,7 +95,7 @@ const SignupClientIndividual: React.FC = () => {
       saveRole(loginResponse.user.role);
       saveUserProfile(loginResponse.user);
       saveAuthFlag(true);
-
+      setUserType('client');
       
       navigate('/dashboard');
     } catch (error: any) {

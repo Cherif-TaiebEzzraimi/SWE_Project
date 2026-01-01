@@ -89,6 +89,7 @@ const FreelancerProfile: React.FC = () => {
 
   useEffect(() => {
     // When switching into public view, force-safe UI state.
+    if (!profileIdToLoad) return; // Prevent loading with null/undefined
     if (isPublicView) {
       setIsEditing(false);
       setActiveTab('profile');
@@ -124,7 +125,7 @@ const FreelancerProfile: React.FC = () => {
       const cvs = dedupeByFileUrl(media.filter((m) => isCvFileType(m.file_type)));
       setCvFiles(cvs);
     } catch (error) {
-      console.error('Failed to load freelancer profile', error);
+      setFreelancerData(null);
     }
   };
 
@@ -321,8 +322,11 @@ const FreelancerProfile: React.FC = () => {
     setEducationList(educationList.filter((_, i) => i !== index));
   };
 
+  if (!profileIdToLoad) {
+    return <div className={styles.profileContainer}>No freelancer selected.</div>;
+  }
   if (!freelancerData) {
-    return <div>Loading profile...</div>;
+    return <div className={styles.profileContainer}>Freelancer profile not found or failed to load.</div>;
   }
 
   return (
@@ -754,7 +758,7 @@ const FreelancerProfile: React.FC = () => {
                                       aria-hidden="true"
                                     >
                                       <path
-                                        d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8l-6-6Z"
+                                        d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8a2 2 0 0 1 2 2z"
                                         stroke="currentColor"
                                         strokeWidth="2"
                                         strokeLinecap="round"

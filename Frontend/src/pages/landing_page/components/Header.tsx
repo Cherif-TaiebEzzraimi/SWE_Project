@@ -1,32 +1,3 @@
-// import React from "react";
-// import { Link } from "react-router-dom";
-// import "../styles/header.css";
-
-// // Header component
-// const Header: React.FC = () => {
-//   return (
-//     <header className="navbar">
-//       <div className="navbar-logo">
-//         <Link to="/" style={{ textDecoration: 'none', color: 'inherit' }}>
-//           <strong>SkilLink</strong>
-//         </Link>
-//       </div>
-//       <nav className="navbar-links">
-//         <Link to="/">Home</Link>
-//         <Link to="/dashboard">Jobs</Link>
-//         <Link to="/freelancerPage">Skill Browse</Link>
-//         <Link to="/about-us">About Us</Link>
-//       </nav>
-//       <div className="navbar-actions">
-//         <button className="login-btn">Login</button>
-//         <button className="signup-btn">Sign Up</button>
-//       </div>
-//     </header>
-//   );
-// };
-
-// export default Header;
-
 import React from "react";
 import { Link } from "react-router-dom";
 import "../styles/header.css";
@@ -55,11 +26,14 @@ const Header: React.FC = () => {
       <div className="navbar-actions">
         {userType === 'guest' ? (
           <>
-            <button className="login-btn">Login</button>
-            <button className="signup-btn">Sign Up</button>
+            <button className="login-btn" onClick={() => window.location.href = '/login'}>Login</button>
+            <button className="signup-btn" onClick={() => window.location.href = '/signup'}>Sign Up</button>
           </>
         ) : (
-          <button className="profile-btn" title="Profile" style={{ background: 'none', border: 'none', padding: 0, cursor: 'pointer' }}>
+          <button className="profile-btn" title="Profile" style={{ background: 'none', border: 'none', padding: 0, cursor: 'pointer' }} onClick={() => {
+            if (userType === 'client') window.location.href = '/profile/client/1';
+            else if (userType === 'freelancer') window.location.href = '/profile/freelancer/1';
+          }}>
             <img src={user?.avatar} alt="Profile" style={{ width: 36, height: 36, borderRadius: '50%' }} />
           </button>
         )}
