@@ -6,9 +6,11 @@ import Input from '../../components/Input';
 import { login, registerFreelancer } from '../../api/authApi';
 import { saveAuthFlag, saveRole, saveUserId, saveUserProfile } from '../../lib/auth';
 import styles from './SignupFreelancer.module.css';
+import { useUserType } from '../../context/UserTypeContext';
 
 const SignupFreelancer: React.FC = () => {
   const navigate = useNavigate();
+  const { setUserType } = useUserType();
   const [formData, setFormData] = useState({
     first_name: '',
     last_name: '',
@@ -133,6 +135,7 @@ const SignupFreelancer: React.FC = () => {
       saveRole(loginResponse.user.role);
       saveUserProfile(loginResponse.user);
       saveAuthFlag(true);
+      setUserType('freelancer');
 
       // 4) Redirect based on role
       navigate('/dashboard');

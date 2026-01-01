@@ -50,10 +50,10 @@ const MAX_FILE_SIZE_MB = 25;
     }
   }, [editingPost, directHire, directFreelancer]);
 
-  // Always clear neededSkills when category changes (unless direct hire)
+  // Always clear neededSkills when category changes (unless direct hire or editing)
   React.useEffect(() => {
-    if (!directHire) setNeededSkills([]);
-  }, [category]);
+    if (!directHire && !editingPost) setNeededSkills([]);
+  }, [category, directHire, editingPost]);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   // Get skills for selected category

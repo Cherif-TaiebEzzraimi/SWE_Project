@@ -4,6 +4,7 @@ import { login } from '../../api/authApi';
 import { saveAuthFlag, saveRole, saveUserId, saveUserProfile } from '../../lib/auth';
 import Input from '../../components/Input';
 import styles from './Login.module.css';
+import { useUserType } from '../../context/UserTypeContext';
 
 const Login: React.FC = () => {
   const navigate = useNavigate();
@@ -15,6 +16,7 @@ const Login: React.FC = () => {
   const [loading, setLoading] = useState(false);
   const [apiError, setApiError] = useState('');
   const errorTimerRef = useRef<number | null>(null);
+  const { setUserType } = useUserType();
 
   useEffect(() => {
     return () => {
@@ -93,11 +95,10 @@ const Login: React.FC = () => {
       saveUserId(response.user.id);
       saveRole(response.user.role);
       saveUserProfile(response.user);
-      
-      
       saveAuthFlag(true);
-
-      // Redirect based on role !!!!!!must be fixedddd
+      // Set user view type
+      setUserType(response.user.role === 'freelancer' ? 'freelancer' : response.user.role === 'client' || response.user.role === 'company' ? 'client' : 'guest');
+      // Redirect based on role
       const role = response.user.role;
       if (role === 'freelancer') {
         navigate('/freelancer/dashboard');

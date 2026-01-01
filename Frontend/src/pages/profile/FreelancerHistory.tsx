@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import styles from './FreelancerHistory.module.css';
 
 // Backend-aligned structures: history items are derived from negotiations
@@ -41,6 +42,7 @@ const FreelancerHistory: React.FC<FreelancerHistoryProps> = ({ userId }) => {
   const [projects, setProjects] = useState<WorkItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [filter, setFilter] = useState<'all' | 'done'>('done');
+  const navigate = useNavigate();
 
   useEffect(() => {
     fetchProjects();
@@ -170,7 +172,12 @@ const filteredProjects = filter === 'done'
       ) : (
         <div className={styles.projectsList}>
           {filteredProjects.map((project) => (
-            <div key={project.id} className={styles.projectCard}>
+            <div
+              key={project.id}
+              className={styles.projectCard}
+              onClick={() => navigate(`/project-progress?projectId=${project.negotiation.id}`)}
+              style={{ cursor: 'pointer' }}
+            >
               <div className={styles.projectHeader}>
                 <div>
                   <h3 className={styles.projectTitle}>{project.negotiation.title}</h3>
