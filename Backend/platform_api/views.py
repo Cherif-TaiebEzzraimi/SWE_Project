@@ -260,6 +260,13 @@ def _is_owner_or_staff(request, profile_obj):
     return False
 
 
+def get_negotiation_user_ids(negotiation):
+    return (
+        negotiation.client.user.id if getattr(negotiation, 'client', None) else None,
+        negotiation.freelancer.user.id if getattr(negotiation, 'freelancer', None) else None,
+    )
+
+
 @api_view(['GET'])
 def get_freelancer(request, id):
     freelancer = Freelancer.objects.get(user=id)
@@ -466,7 +473,7 @@ def request_detail(request, id):
         return Response({'detail': 'Request not found'}, status=status.HTTP_404_NOT_FOUND)
 
     # check ownership or staff
-    is_owner = hasattr(req.client_id, 'user_id') and req.client_id.user_id.id == request.user.id
+    is_owner = req.client.user.id == request.user.id
     if request.method == 'GET':
         if not (is_owner or request.user.is_staff):
             return Response({'detail': 'Forbidden'}, status=status.HTTP_403_FORBIDDEN)
@@ -545,12 +552,12 @@ def create_from_request(request, request_id):
     if not req:
         return Response({'detail': 'Request not found'}, status=status.HTTP_404_NOT_FOUND)
     # Only client who created request or staff can create negotiation for it
-    if not (request.user.is_staff or req.client_id.user_id.id == request.user.id):
+    if not (request.user.is_staff or req.client.user.id == request.user.id):
         return Response({'detail': 'Forbidden'}, status=status.HTTP_403_FORBIDDEN)
     data = request.data.copy()
     data['origin_type'] = 'request'
     data['request_id'] = req.id
-    data['client_id'] = req.client_id.id
+    data['client_id'] = req.client.id
     serializer = NegotiationSerializer(data=data)
     if serializer.is_valid():
         negotiation = serializer.save()
@@ -568,14 +575,13 @@ def negotiation_detail(request, id):
     if not negotiation:
         return Response({'detail': 'Negotiation not found'}, status=status.HTTP_404_NOT_FOUND)
     # ownership: client or freelancer or staff
-    client_user_id = negotiation.client_id.user_id.id if negotiation.client_id else None
-    freelancer_user_id = negotiation.freelancer_id.user_id.id if negotiation.freelancer_id else None
+    client_user_id, freelancer_user_id = get_negotiation_user_ids(negotiation)
     is_owner = request.user.is_staff or request.user.id in (client_user_id, freelancer_user_id)
     if not is_owner:
         return Response({'detail': 'Forbidden'}, status=status.HTTP_403_FORBIDDEN)
     if request.method == 'GET':
         data = NegotiationSerializer(negotiation).data
-        phases = NegotiationPhase.objects.filter(negotiation_id=negotiation)
+        phases = NegotiationPhase.objects.filter(negotiation=negotiation)
         data['phases'] = NegotiationPhaseSerializer(phases, many=True).data
         return Response(data)
     if request.method == 'PUT':
@@ -600,8 +606,7 @@ def add_phase(request, id):
     # Prevent editing if negotiation is agreed or declined
     if negotiation.status in ['agreed', 'declined']:
         return Response({'detail': 'Negotiation is settled. Editing is locked.'}, status=status.HTTP_403_FORBIDDEN)
-    client_user_id = negotiation.client_id.user_id.id if negotiation.client_id else None
-    freelancer_user_id = negotiation.freelancer_id.user_id.id if negotiation.freelancer_id else None
+    client_user_id, freelancer_user_id = get_negotiation_user_ids(negotiation)
     if not (request.user.is_staff or request.user.id in (client_user_id, freelancer_user_id)):
         return Response({'detail': 'Forbidden'}, status=status.HTTP_403_FORBIDDEN)
     data = request.data.copy()
@@ -621,12 +626,11 @@ def negotiation_phase_detail(request, phase_id):
     phase = NegotiationPhase.objects.filter(id=phase_id).first()
     if not phase:
         return Response({'detail': 'Phase not found'}, status=status.HTTP_404_NOT_FOUND)
-    negotiation = phase.negotiation_id
+    negotiation = phase.negotiation
     # Prevent editing if negotiation is agreed or declined
     if negotiation.status in ['agreed', 'declined']:
         return Response({'detail': 'Negotiation is settled. Editing is locked.'}, status=status.HTTP_403_FORBIDDEN)
-    client_user_id = negotiation.client_id.user_id.id if negotiation.client_id else None
-    freelancer_user_id = negotiation.freelancer_id.user_id.id if negotiation.client_id else None
+    client_user_id, freelancer_user_id = get_negotiation_user_ids(negotiation)
     if not (request.user.is_staff or request.user.id in (client_user_id, freelancer_user_id)):
         return Response({'detail': 'Forbidden'}, status=status.HTTP_403_FORBIDDEN)
     if request.method == 'PUT':
@@ -646,8 +650,7 @@ def agree_negotiation(request, id):
     negotiation = Negotiation.objects.filter(id=id).first()
     if not negotiation:
         return Response({'detail': 'Negotiation not found'}, status=status.HTTP_404_NOT_FOUND)
-    client_user_id = negotiation.client_id.user_id.id if negotiation.client_id else None
-    freelancer_user_id = negotiation.freelancer_id.user_id.id if negotiation.freelancer_id else None
+    client_user_id, freelancer_user_id = get_negotiation_user_ids(negotiation)
     if request.user.id == client_user_id:
         negotiation.client_agreed = True
     elif request.user.id == freelancer_user_id:
@@ -831,9 +834,9 @@ def list_projects_for_user(request, user_id):
     freelancer = Freelancer.objects.filter(user_id=user).first()
     qs = Project.objects.none()
     if client:
-        qs = qs | Project.objects.filter(negotiation_id__client_id=client)
+        qs = qs | Project.objects.filter(negotiation__client=client)
     if freelancer:
-        qs = qs | Project.objects.filter(negotiation_id__freelancer_id=freelancer)
+        qs = qs | Project.objects.filter(negotiation__freelancer=freelancer)
     serializer = ProjectSerializer(qs.distinct(), many=True)
     return Response(serializer.data)
 
@@ -846,9 +849,8 @@ def project_phases_list_create(request, id):
     project = Project.objects.filter(id=id).first()
     if not project:
         return Response({'detail': 'Project not found'}, status=status.HTTP_404_NOT_FOUND)
-    negotiation = project.negotiation_id
-    client_user_id = negotiation.client_id.user_id.id if negotiation and negotiation.client_id else None
-    freelancer_user_id = negotiation.freelancer_id.user_id.id if negotiation and negotiation.freelancer_id else None
+    negotiation = project.negotiation
+    client_user_id, freelancer_user_id = get_negotiation_user_ids(negotiation)
     if request.method == 'GET':
         if not (request.user.is_staff or request.user.id in (client_user_id, freelancer_user_id)):
             return Response({'detail': 'Forbidden'}, status=status.HTTP_403_FORBIDDEN)
@@ -876,9 +878,8 @@ def project_phase_detail(request, id, phase_id):
     phase = ProjectPhase.objects.filter(id=phase_id, project_id=project).first()
     if not phase:
         return Response({'detail': 'Phase not found'}, status=status.HTTP_404_NOT_FOUND)
-    negotiation = project.negotiation_id
-    client_user_id = negotiation.client_id.user_id.id if negotiation and negotiation.client_id else None
-    freelancer_user_id = negotiation.freelancer_id.user_id.id if negotiation and negotiation.freelancer_id else None
+    negotiation = project.negotiation
+    client_user_id, freelancer_user_id = get_negotiation_user_ids(negotiation)
     if not (request.user.is_staff or request.user.id in (client_user_id, freelancer_user_id)):
         return Response({'detail': 'Forbidden'}, status=status.HTTP_403_FORBIDDEN)
     if request.method == 'PUT':
@@ -898,9 +899,9 @@ def start_phase(request, phase_id):
     phase = ProjectPhase.objects.filter(id=phase_id).first()
     if not phase:
         return Response({'detail': 'Phase not found'}, status=status.HTTP_404_NOT_FOUND)
-    project = phase.project_id
-    negotiation = project.negotiation_id
-    freelancer_user_id = negotiation.freelancer_id.user_id.id if negotiation and negotiation.freelancer_id else None
+    project = phase.project
+    negotiation = project.negotiation
+    _, freelancer_user_id = get_negotiation_user_ids(negotiation)
     # only freelancer can start
     if request.user.id != freelancer_user_id and not request.user.is_staff:
         return Response({'detail': 'Forbidden'}, status=status.HTTP_403_FORBIDDEN)
@@ -954,7 +955,7 @@ def next_phase(request, phase_id):
     project = phase.project
     negotiation = project.negotiation
     # allow client or system (staff)
-    client_user_id = negotiation.client_id.user_id.id if negotiation and negotiation.client_id else None
+    client_user_id, _ = get_negotiation_user_ids(negotiation)
     if request.user.id != client_user_id and not request.user.is_staff:
         return Response({'detail': 'Forbidden'}, status=status.HTTP_403_FORBIDDEN)
     # find next phase by created_at
@@ -977,7 +978,7 @@ def reject_phase(request, phase_id):
         return Response({'detail': 'Phase not found'}, status=status.HTTP_404_NOT_FOUND)
     project = phase.project
     negotiation = project.negotiation
-    client_user_id = negotiation.client.user_id.id if negotiation and negotiation.client else None
+    client_user_id = negotiation.client.user.id if negotiation and negotiation.client else None
     if request.user.id != client_user_id and not request.user.is_staff:
         return Response({'detail': 'Forbidden'}, status=status.HTTP_403_FORBIDDEN)
     # move back to in_progress so freelancer resumes work
@@ -991,9 +992,8 @@ def get_project_detail(request, id):
     project = Project.objects.filter(id=id).first()
     if not project:
         return Response({'detail': 'Project not found'}, status=status.HTTP_404_NOT_FOUND)
-    negotiation = project.negotiation_id
-    client_user_id = negotiation.client_id.user_id.id if negotiation and negotiation.client_id else None
-    freelancer_user_id = negotiation.freelancer_id.user_id.id if negotiation and negotiation.freelancer_id else None
+    negotiation = project.negotiation
+    client_user_id, freelancer_user_id = get_negotiation_user_ids(negotiation)
     if not (request.user.is_staff or request.user.id in (client_user_id, freelancer_user_id)):
         return Response({'detail': 'Forbidden'}, status=status.HTTP_403_FORBIDDEN)
     data = ProjectSerializer(project).data

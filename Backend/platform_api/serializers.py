@@ -189,21 +189,40 @@ class NegotiationSerializer(serializers.ModelSerializer):
 
 
 class NegotiationPhaseSerializer(serializers.ModelSerializer):
-    negotiation_id = NegotiationSerializer(read_only =True)
+    negotiation = NegotiationSerializer(read_only=True)
+    negotiation_id = serializers.IntegerField(write_only=True)
+
     class Meta:
         model = NegotiationPhase
         fields = '__all__'
 
+    def create(self, validated_data):
+        negotiation_id = validated_data.pop('negotiation_id', None)
+        if negotiation_id is not None:
+            validated_data['negotiation'] = Negotiation.objects.get(pk=negotiation_id)
+        return super().create(validated_data)
+
 
 class NegotiationFloatingCommentSerializer(serializers.ModelSerializer):
-    negotiation_id = NegotiationSerializer(read_only =True)
-    user_id = UserSerializer(read_only = True)
+    negotiation = NegotiationSerializer(read_only=True)
+    user = UserSerializer(read_only=True)
+    negotiation_id = serializers.IntegerField(write_only=True)
+    user_id = serializers.IntegerField(write_only=True)
 
 
 
     class Meta:
         model = NegotiationFloatingComment
         fields = '__all__'
+
+    def create(self, validated_data):
+        negotiation_id = validated_data.pop('negotiation_id', None)
+        user_id = validated_data.pop('user_id', None)
+        if negotiation_id is not None:
+            validated_data['negotiation'] = Negotiation.objects.get(pk=negotiation_id)
+        if user_id is not None:
+            validated_data['user'] = User.objects.get(pk=user_id)
+        return super().create(validated_data)
 
 
 class ProjectSerializer(serializers.ModelSerializer):

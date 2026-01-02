@@ -11,6 +11,7 @@ interface ProjectCardProps {
   userName: string;
   userRole: string;
   userPhoto: string;
+  userId?: string;
   children?: React.ReactNode;
 }
 
@@ -23,6 +24,7 @@ export function ProjectCard({
   userName,
   userRole,
   userPhoto,
+  userId,
   children
 }: ProjectCardProps) {
   return (
@@ -43,6 +45,7 @@ export function ProjectCard({
           role={userRole}
           photo={userPhoto}
           type={userType}
+          profileId={userId}
         />
 
         {/*  (files, upload, ....) */}

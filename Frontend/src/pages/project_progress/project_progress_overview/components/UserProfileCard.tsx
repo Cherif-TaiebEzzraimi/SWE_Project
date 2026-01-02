@@ -1,3 +1,4 @@
+import { useNavigate } from 'react-router-dom';
 import styles from '../styles/projectProgress.module.css';
 
 interface UserProfileCardProps {
@@ -5,10 +6,18 @@ interface UserProfileCardProps {
   role: string;
   photo: string;
   type: 'client' | 'freelancer';
+  profileId?: string;
 }
 
-export function UserProfileCard({ name, role, photo, type }: UserProfileCardProps) {
+export function UserProfileCard({ name, role, photo, type, profileId }: UserProfileCardProps) {
+  const navigate = useNavigate();
   const label = type === 'freelancer' ? 'ASSIGNED FREELANCER' : 'ASSIGNED CLIENT';
+
+  const handleViewProfile = () => {
+    if (!profileId) return;
+    const path = type === 'freelancer' ? `/profile/freelancer/${profileId}` : `/profile/client/${profileId}`;
+    navigate(path);
+  };
   
   return (
     <div className={styles.card}>
@@ -30,7 +39,14 @@ export function UserProfileCard({ name, role, photo, type }: UserProfileCardProp
           <span className={styles.label}>{label}</span>
           <h3 className={styles.freelancerName}>{name}</h3>
           <p className={styles.freelancerRole}>{role}</p>
-          <button className={styles.viewProfileBtn}>View Profile</button>
+          <button
+            className={styles.viewProfileBtn}
+            onClick={handleViewProfile}
+            disabled={!profileId}
+            type="button"
+          >
+            View Profile
+          </button>
         </div>
       </div>
     </div>

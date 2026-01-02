@@ -216,6 +216,19 @@ export default function ProjectProgressClientOverview({
     photo: ''
   } : null);
 
+  const freelancerProfileIdRaw =
+    freelancer?.id ??
+    freelancer?.user_id ??
+    freelancer?.user?.id ??
+    fetchedNegotiation?.freelancer?.user?.id ??
+    fetchedNegotiation?.freelancer?.user_id ??
+    fetchedNegotiation?.freelancer?.id;
+
+  const freelancerProfileId =
+    freelancerProfileIdRaw !== undefined && freelancerProfileIdRaw !== null
+      ? String(freelancerProfileIdRaw)
+      : undefined;
+
   // Debug logging
   useEffect(() => {
     if (negotiationId) {
@@ -540,6 +553,7 @@ export default function ProjectProgressClientOverview({
               userName={freelancerName}
               userRole={freelancerRole}
               userPhoto={freelancerPhoto}
+              userId={freelancerProfileId}
             >
               {!filesSubmitted ? (
                 <FileUploadSection

@@ -351,6 +351,7 @@ class Help(models.Model):
     STATUS_CHOICES = [
         ('pending', 'Pending'),
         ('resolved', 'Resolved'),
+        ('closed', 'Closed'),
     ]
     
     user = models.ForeignKey(
@@ -532,7 +533,7 @@ class Negotiation(models.Model):
         related_name='negotiations_declined'
     )
     decline_reason = models.TextField(max_length=65535, blank=True, null=True)
-    status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='pending')
+    status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='in_progress')
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
     
@@ -615,7 +616,7 @@ class NegotiationPhase(models.Model):
 class NegotiationFloatingComment(models.Model):
     """Comments/messages within a negotiation"""
     STATUS_CHOICES = [
-        ('pending ', 'Pending'),
+        ('pending', 'Pending'),
         ('resolved', 'Resolved')
     ]
     
@@ -639,7 +640,7 @@ class NegotiationFloatingComment(models.Model):
         help_text="For threaded/nested comments"
     )
   
-    status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='active')
+    status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='pending')
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
     
@@ -695,7 +696,7 @@ class Project(models.Model):
     @property
     def freelancer(self):
         """Get freelancer from negotiation"""
-        return self.negotiationfreelancer
+        return self.negotiation.freelancer
 
 
 
