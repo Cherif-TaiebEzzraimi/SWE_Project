@@ -10,8 +10,9 @@ interface PhaseDetailsProps {
   onEdit?: () => void;
   onDelete?: () => void; 
   canEdit?: boolean;
+  onUpdatePhase?: (updated: Phase) => void;
 }
-const PhaseDetails: FC<PhaseDetailsProps> = ({ phase, onClose, onEdit, onDelete, canEdit = false }) => {
+const PhaseDetails: FC<PhaseDetailsProps> = ({ phase, onClose, onEdit, onDelete, canEdit = false, onUpdatePhase }) => {
   const [todos, setTodos] = useState<Todo[]>(phase.todos);
   
 
@@ -29,12 +30,29 @@ const PhaseDetails: FC<PhaseDetailsProps> = ({ phase, onClose, onEdit, onDelete,
   const totalCount = todos.length;
   const completionPercentage = totalCount > 0 ? Math.round((completedCount / totalCount) * 100) : 0;
 
+  const emitTodosUpdate = (nextTodos: Todo[]) => {
+    const nextCompleted = nextTodos.filter(t => t.completed).length;
+    const nextTotal = nextTodos.length;
+
+    const updatedPhase: Phase = {
+      ...phase,
+      todos: nextTodos,
+      tasks: {
+        completed: nextCompleted,
+        total: nextTotal,
+      },
+    };
+
+    setTodos(nextTodos);
+    onUpdatePhase?.(updatedPhase);
+  };
+
   /**
    * Toggles todo completion status
    */
   const handleToggleTodo = (todoId: string) => {
-    setTodos(prevTodos =>
-      prevTodos.map(todo =>
+    emitTodosUpdate(
+      todos.map(todo =>
         todo.id === todoId ? { ...todo, completed: !todo.completed } : todo
       )
     );
@@ -44,7 +62,15 @@ const PhaseDetails: FC<PhaseDetailsProps> = ({ phase, onClose, onEdit, onDelete,
    * Deletes a todo item
    */
   const handleDeleteTodo = (todoId: string) => {
-    setTodos(prevTodos => prevTodos.filter(todo => todo.id !== todoId));
+    emitTodosUpdate(todos.filter(todo => todo.id !== todoId));
+  };
+
+  const handleEditTodo = (todoId: string, newTitle: string, newDate: string) => {
+    emitTodosUpdate(
+      todos.map(todo =>
+        todo.id === todoId ? { ...todo, title: newTitle, date: newDate } : todo
+      )
+    );
   };
 
   /**
@@ -287,6 +313,7 @@ const PhaseDetails: FC<PhaseDetailsProps> = ({ phase, onClose, onEdit, onDelete,
                   todo={todo}
                   onToggle={handleToggleTodo}
                   onDelete={handleDeleteTodo}
+                  onEdit={handleEditTodo}
                 />
               ))}
             </ul>

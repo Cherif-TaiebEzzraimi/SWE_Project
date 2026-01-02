@@ -678,14 +678,14 @@ def agree_negotiation(request, id):
             )
             # Optionally, copy phases from negotiation to project
             from .models import NegotiationPhase, ProjectPhase
-            phases = NegotiationPhase.objects.filter(negotiation_id=negotiation)
+            phases = NegotiationPhase.objects.filter(negotiation=negotiation).order_by('created_at')
             for phase in phases:
                 ProjectPhase.objects.create(
-                    project_id=project,
+                    project=project,
                     title=phase.title,
                     description=phase.description,
-                    price=phase.price,
-                    order=phase.order,
+                    budget=getattr(phase, 'budget', None),
+                    deliverables=getattr(phase, 'deliverables', None),
                     status='pending',
                 )
     negotiation.save()
@@ -860,11 +860,9 @@ def project_phases_list_create(request, id):
     # POST
     if not (request.user.is_staff or request.user.id in (client_user_id, freelancer_user_id)):
         return Response({'detail': 'Forbidden'}, status=status.HTTP_403_FORBIDDEN)
-    data = request.data.copy()
-    data['project_id'] = project.id
-    serializer = ProjectPhaseSerializer(data=data)
+    serializer = ProjectPhaseSerializer(data=request.data)
     if serializer.is_valid():
-        phase = serializer.save()
+        phase = serializer.save(project=project)
         return Response(ProjectPhaseSerializer(phase).data, status=status.HTTP_201_CREATED)
     return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
@@ -924,11 +922,19 @@ def submit_phase(request, phase_id):
     phase.save()
     # optionally create deliverable if provided
     data = request.data.copy()
-    if data.get('link') or data.get('attachment') or data.get('textcontent') or data.get('title'):
+    # normalize common client payload keys
+    if data.get('link') and not data.get('attachment'):
+        data['attachment'] = data.get('link')
+    if data.get('content') and not data.get('textcontent'):
+        data['textcontent'] = data.get('content')
+
+    if data.get('attachment') or data.get('textcontent') or data.get('title'):
         data['phase'] = phase.id
         dser = DeliverableSerializer(data=data)
         if dser.is_valid():
             dser.save()
+        else:
+            return Response(dser.errors, status=status.HTTP_400_BAD_REQUEST)
     return Response(ProjectPhaseSerializer(phase).data)
 
 
@@ -996,12 +1002,27 @@ def get_project_detail(request, id):
     client_user_id, freelancer_user_id = get_negotiation_user_ids(negotiation)
     if not (request.user.is_staff or request.user.id in (client_user_id, freelancer_user_id)):
         return Response({'detail': 'Forbidden'}, status=status.HTTP_403_FORBIDDEN)
+
+    # Backfill: if a project has no phases yet but its negotiation has phases,
+    # copy them over so progress doesn't appear empty after reload.
+    if negotiation and not ProjectPhase.objects.filter(project=project).exists():
+        neg_phases = NegotiationPhase.objects.filter(negotiation=negotiation).order_by('created_at')
+        if neg_phases.exists():
+            for phase in neg_phases:
+                ProjectPhase.objects.create(
+                    project=project,
+                    title=phase.title,
+                    description=phase.description,
+                    budget=getattr(phase, 'budget', None),
+                    deliverables=getattr(phase, 'deliverables', None),
+                    status='pending',
+                )
     data = ProjectSerializer(project).data
     phases = ProjectPhase.objects.filter(project_id=project)
     data['phases'] = ProjectPhaseSerializer(phases, many=True).data
     # include deliverables for each phase
     for p in data['phases']:
-        items = Deliverable.objects.filter(phase_id_id=p['id'])
+        items = Deliverable.objects.filter(phase_id=p['id'])
         p['deliverables'] = DeliverableSerializer(items, many=True).data
     return Response(data)
 

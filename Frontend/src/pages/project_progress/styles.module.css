@@ -191,6 +191,12 @@
   margin-top: 1rem;
 }
 
+.noteActions {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
 .noteDate {
   font-size: 0.75rem;
   color: #9ca3af;

@@ -225,7 +225,7 @@ const MAX_FILE_SIZE_MB = 25;
             }
           }
           
-          navigate('/project-progress?tab=overview', { 
+          navigate(`/project-progress?tab=overview&negotiationId=${negotiation.id}&directHire=1&settingsMode=1`, { 
             state: { 
               directHire: true, 
               freelancer: directFreelancer, 

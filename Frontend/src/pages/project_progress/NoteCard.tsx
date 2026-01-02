@@ -1,5 +1,5 @@
 import React from 'react';
-import { Circle , Check  } from 'lucide-react';
+import { Circle, Check, Pencil, Trash2 } from 'lucide-react';
 import type { Note } from './types/notes_types';
 import styles from './styles.module.css';
 
@@ -7,9 +7,11 @@ interface NoteCardProps {
   note: Note;
   onClick?: () => void;
   onToggleStatus?: (noteId: string) => void;
+  onEdit?: () => void;
+  onDelete?: () => void;
 }
 
-export const NoteCard: React.FC<NoteCardProps> = ({ note, onClick, onToggleStatus }) => {
+export const NoteCard: React.FC<NoteCardProps> = ({ note, onClick, onToggleStatus, onEdit, onDelete }) => {
   const cardClass = note.status === 'done' 
     ? `${styles.noteCard} ${styles.noteCardDone}` 
     : styles.noteCard;
@@ -31,6 +33,16 @@ export const NoteCard: React.FC<NoteCardProps> = ({ note, onClick, onToggleStatu
     onToggleStatus?.(note.id);
   };
 
+  const handleEdit = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    onEdit?.();
+  };
+
+  const handleDelete = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    onDelete?.();
+  };
+
   return (
     <div onClick={onClick} className={cardClass}>
       <div className={styles.notePin}>
@@ -43,14 +55,35 @@ export const NoteCard: React.FC<NoteCardProps> = ({ note, onClick, onToggleStatu
       <p className={contentClass}>{note.content}</p>
       <div className={styles.noteFooter}>
         <p className={dateClass}>{note.date}</p>
-        <button 
-          onClick={handleMarkDone}
-          className={note.status === 'done' ? styles.doneButtonActive : styles.doneButton}
-          title={note.status === 'done' ? 'Mark as active' : 'Mark as done'}
-        >
-          <Check size={14} />
-          {note.status === 'done' ? 'Done' : 'Mark Done'}
-        </button>
+        <div className={styles.noteActions}>
+          <button
+            onClick={handleEdit}
+            className={styles.doneButton}
+            title="Edit note"
+            type="button"
+          >
+            <Pencil size={14} />
+            Edit
+          </button>
+          <button
+            onClick={handleDelete}
+            className={styles.doneButton}
+            title="Delete note"
+            type="button"
+          >
+            <Trash2 size={14} />
+            Delete
+          </button>
+          <button 
+            onClick={handleMarkDone}
+            className={note.status === 'done' ? styles.doneButtonActive : styles.doneButton}
+            title={note.status === 'done' ? 'Mark as active' : 'Mark as done'}
+            type="button"
+          >
+            <Check size={14} />
+            {note.status === 'done' ? 'Done' : 'Mark Done'}
+          </button>
+        </div>
       </div>
     </div>
   );

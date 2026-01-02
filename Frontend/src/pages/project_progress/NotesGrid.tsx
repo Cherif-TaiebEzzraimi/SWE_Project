@@ -1,5 +1,5 @@
 import React from 'react';
-import type { Note } from '../../types/notes.types';
+import type { Note } from './types/notes_types';
 import { NoteCard } from './NoteCard';
 import styles from './styles.module.css';
 
@@ -7,9 +7,11 @@ interface NotesGridProps {
   notes: Note[];
   onNoteClick?: (note: Note) => void;
   onToggleStatus?: (noteId: string) => void;
+  onEditNote?: (note: Note) => void;
+  onDeleteNote?: (noteId: string) => void;
 }
 
-export const NotesGrid: React.FC<NotesGridProps> = ({ notes, onNoteClick, onToggleStatus }) => {
+export const NotesGrid: React.FC<NotesGridProps> = ({ notes, onNoteClick, onToggleStatus, onEditNote, onDeleteNote }) => {
   if (notes.length === 0) {
     return (
       <div className={styles.emptyState}>
@@ -27,6 +29,8 @@ export const NotesGrid: React.FC<NotesGridProps> = ({ notes, onNoteClick, onTogg
             note={note}
             onClick={() => onNoteClick?.(note)}
             onToggleStatus={onToggleStatus}
+            onEdit={() => onEditNote?.(note)}
+            onDelete={() => onDeleteNote?.(note.id)}
           />
         ))}
       </div>

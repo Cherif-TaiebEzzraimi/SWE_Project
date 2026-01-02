@@ -396,6 +396,7 @@ import type { Phase } from './types/project';
 import { useState } from 'react';
 import { usePhasesContext, PhasesProvider } from './context/PhasesContext';
 import { useLocation } from 'react-router-dom';
+import { getUserId } from '../../../lib/auth';
 import './styles/phases_styles.css';
 
 const initialPhases: Phase[] = [
@@ -615,8 +616,14 @@ const initialPhases: Phase[] = [
   }
 ];
 
-const PhasesPageContent = () => {
+type PhasesPageContentProps = {
+  storageScope?: string;
+};
+
+const PhasesPageContent = ({ storageScope }: PhasesPageContentProps) => {
   const { phases, canEditPhases, addPhase, updatePhase, deletePhase, toggleEditMode } = usePhasesContext();
+  const resolvedScope = storageScope ?? null;
+  const userId = getUserId();
 
   const [selectedPhase, setSelectedPhase] = useState<Phase | null>(null);
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
@@ -658,10 +665,21 @@ const PhasesPageContent = () => {
       date: new Date().toISOString().split('T')[0],
     };
 
-    // Save to localStorage
-    const storageKey = category === 'general' ? 'generalNotes' : 
-                       category === 'prework' ? 'preWorkNotes' : 
-                       'privateNotes';
+    // Save to localStorage (scoped per project when possible)
+    const legacyStorageKey = category === 'general' ? 'generalNotes' : 
+                 category === 'prework' ? 'preWorkNotes' : 
+                 'privateNotes';
+
+    const storageKey = (() => {
+      if (!resolvedScope) return legacyStorageKey;
+      if (category !== 'private') return `${resolvedScope}:${legacyStorageKey}`;
+      if (!userId) return null;
+      return `${resolvedScope}:privateNotes:user:${userId}`;
+    })();
+
+    if (!storageKey) {
+      return;
+    }
     
     const existingNotes = localStorage.getItem(storageKey);
     const notes = existingNotes ? JSON.parse(existingNotes) : [];
@@ -670,8 +688,6 @@ const PhasesPageContent = () => {
 
     // Dispatch custom event to notify other components
     window.dispatchEvent(new Event('notesUpdated'));
-
-    alert(`Note added successfully to ${category} notes!`);
   };
 
   return (
@@ -701,6 +717,10 @@ const PhasesPageContent = () => {
           onEdit={() => handleEditPhase(selectedPhase)}
           onDelete={() => handleDeletePhase(selectedPhase.id)}
           canEdit={canEditPhases}
+          onUpdatePhase={(updated) => {
+            updatePhase(updated);
+            setSelectedPhase(updated);
+          }}
         />
       )}
 
@@ -778,12 +798,16 @@ const PhasesPage = ({ projectState: propProjectState }: PhasesPageProps = {}) =>
   const location = useLocation();
   // Use prop if provided, otherwise fall back to location.state
   const projectState = propProjectState || location.state || {};
+  const searchParams = new URLSearchParams(location.search);
+  const projectId = projectState.projectId ?? (searchParams.get('projectId') ? Number(searchParams.get('projectId')) : undefined);
+  const negotiationId = projectState.negotiationId ?? (searchParams.get('negotiationId') ? Number(searchParams.get('negotiationId')) : undefined);
+  const phasesStorageKey = projectId ? `project:${projectId}` : negotiationId ? `negotiation:${negotiationId}` : undefined;
   // If coming from direct hire, start with empty phases
   const phasesToUse = (projectState.directHire && projectState.initialLoad) ? [] : initialPhases;
   
   return (
-    <PhasesProvider initialPhases={phasesToUse}>
-      <PhasesPageContent />
+    <PhasesProvider initialPhases={phasesToUse} storageKey={phasesStorageKey}>
+      <PhasesPageContent storageScope={phasesStorageKey} />
     </PhasesProvider>
   );
 };

@@ -1,4 +1,4 @@
-import { createContext, useContext, useState, type ReactNode, type FC } from 'react';
+import { createContext, useContext, useEffect, useMemo, useState, type ReactNode, type FC } from 'react';
 import type { Phase } from '../types/project';
 
 interface PhasesContextType {
@@ -17,11 +17,33 @@ const PhasesContext = createContext<PhasesContextType | undefined>(undefined);
 interface PhasesProviderProps {
   children: ReactNode;
   initialPhases: Phase[];
+  storageKey?: string;
 }
 
-export const PhasesProvider: FC<PhasesProviderProps> = ({ children, initialPhases }) => {
-  const [phases, setPhases] = useState<Phase[]>(initialPhases);
+export const PhasesProvider: FC<PhasesProviderProps> = ({ children, initialPhases, storageKey }) => {
+  const resolvedStorageKey = useMemo(() => (storageKey ? `projectProgress:${storageKey}:phases` : null), [storageKey]);
+
+  const [phases, setPhases] = useState<Phase[]>(() => {
+    if (!resolvedStorageKey) return initialPhases;
+    try {
+      const raw = localStorage.getItem(resolvedStorageKey);
+      if (!raw) return initialPhases;
+      const parsed = JSON.parse(raw);
+      return Array.isArray(parsed) ? (parsed as Phase[]) : initialPhases;
+    } catch {
+      return initialPhases;
+    }
+  });
   const [canEditPhases, setCanEditPhases] = useState(true);
+
+  useEffect(() => {
+    if (!resolvedStorageKey) return;
+    try {
+      localStorage.setItem(resolvedStorageKey, JSON.stringify(phases));
+    } catch {
+      // ignore storage failures
+    }
+  }, [phases, resolvedStorageKey]);
 
   const addPhase = (phase: Phase) => {
     setPhases([...phases, phase]);

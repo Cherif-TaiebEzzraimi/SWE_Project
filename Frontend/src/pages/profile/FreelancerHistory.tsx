@@ -189,7 +189,7 @@ const filteredProjects = filter === 'done'
             <div
               key={project.id}
               className={styles.projectCard}
-              onClick={() => navigate(`/project-progress?tab=overview`, {
+              onClick={() => navigate(`/project-progress?tab=overview&projectId=${project.id}&negotiationId=${project.negotiation.id}`, {
                 state: {
                   negotiationId: project.negotiation.id,
                   projectId: project.id,

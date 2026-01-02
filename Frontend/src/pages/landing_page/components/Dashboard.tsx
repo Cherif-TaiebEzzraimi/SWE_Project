@@ -293,7 +293,7 @@ const Dashboard: React.FC = () => {
               updatePost(modal.post.id, { ...modal.post, applicants: updatedApplicants });
             }
             if (modal.action === 'accept' && modal.post && modal.applicant) {
-              navigate('/project-progress', { state: { projectId: modal.post.id, applicant: modal.applicant } });
+              navigate(`/project-progress?projectId=${modal.post.id}`, { state: { projectId: modal.post.id, applicant: modal.applicant } });
             }
             if (modal.action === 'hire' && modal.freelancer) {
               navigate('/client-dashboard/addPost', { state: { directHire: true, freelancer: modal.freelancer } });

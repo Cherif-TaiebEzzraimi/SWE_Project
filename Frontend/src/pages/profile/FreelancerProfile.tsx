@@ -343,7 +343,7 @@ const FreelancerProfile: React.FC = () => {
             className={activeTab === 'profile' ? styles.active : ''}
             onClick={() => setActiveTab('profile')}
           >
-            My Profile
+            Profile
           </button>
           <button 
             className={activeTab === 'reviews' ? styles.active : ''}

@@ -237,7 +237,7 @@ const ClientCompanyProfile: React.FC = () => {
         <aside className={styles.sidebar}>
           <nav className={styles.navMenu}>
             <button className={activeTab === 'profile' ? styles.active : ''} onClick={() => setActiveTab('profile')}>
-              My Profile
+               Profile
             </button>
             {!isPublicView && (
               <button className={activeTab === 'settings' ? styles.active : ''} onClick={() => setActiveTab('settings')}>

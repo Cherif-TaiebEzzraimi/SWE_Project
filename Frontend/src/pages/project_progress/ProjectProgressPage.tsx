@@ -112,16 +112,31 @@ const ProjectProgressPage = () => {
   // Use ref to persist projectState across navigations
   const projectStateRef = useRef<any>(null);
   
-  // Initialize projectState from location.state if available, otherwise use ref
+  // Read params from URL (so refresh keeps IDs even when location.state is lost)
+  const searchParams = new URLSearchParams(location.search);
+  const initialTab = searchParams.get('tab') as 'overview' | 'phases' | 'notes' | null;
+  const urlProjectId = searchParams.get('projectId');
+  const urlNegotiationId = searchParams.get('negotiationId');
+  const urlDirectHire = searchParams.get('directHire');
+  const urlSettingsMode = searchParams.get('settingsMode');
+
+  const projectStateFromUrl: any = {
+    ...(urlProjectId ? { projectId: Number(urlProjectId) } : {}),
+    ...(urlNegotiationId ? { negotiationId: Number(urlNegotiationId) } : {}),
+    ...(urlDirectHire != null ? { directHire: urlDirectHire === '1' || urlDirectHire === 'true' } : {}),
+    ...(urlSettingsMode != null ? { settingsMode: urlSettingsMode === '1' || urlSettingsMode === 'true' } : {}),
+  };
+
+  // Initialize projectState from location.state if available, otherwise use ref, otherwise use URL params
   const incomingState = location.state || {};
   if (incomingState && Object.keys(incomingState).length > 0) {
     projectStateRef.current = incomingState;
+  } else if (!projectStateRef.current || Object.keys(projectStateRef.current).length === 0) {
+    if (Object.keys(projectStateFromUrl).length > 0) {
+      projectStateRef.current = projectStateFromUrl;
+    }
   }
   const projectState = projectStateRef.current || {};
-
-  // Read tab from URL search param
-  const searchParams = new URLSearchParams(location.search);
-  const initialTab = searchParams.get('tab') as 'overview' | 'phases' | 'notes' | null;
 
   // If coming from direct hire, default to overview tab
   const defaultTab = projectState.directHire && projectState.initialLoad ? 'overview' : 'phases';
@@ -137,7 +152,9 @@ const ProjectProgressPage = () => {
   // Function to change tab (updates both state and URL, preserving projectState)
   const handleTabChange = (tab: 'overview' | 'phases' | 'notes') => {
     setActiveTab(tab);
-    navigate(`?tab=${tab}`, { 
+    const nextParams = new URLSearchParams(location.search);
+    nextParams.set('tab', tab);
+    navigate(`?${nextParams.toString()}`, { 
       replace: true,
       state: projectState // Preserve projectState when navigating
     });
@@ -168,7 +185,7 @@ const ProjectProgressPage = () => {
             <div className="notes-content">
               <div className="border-2 border-blue-500 shadow-[0_0_7px_3px_rgba(30,70,206,0.1)] dark:bg-blue-900 p-6 rounded-lg">
                 <p className="text-slate-500 dark:text-slate-400">
-                    <NotesSection />
+                    <NotesSection projectState={projectState} />
                 </p>
               </div>
             </div>

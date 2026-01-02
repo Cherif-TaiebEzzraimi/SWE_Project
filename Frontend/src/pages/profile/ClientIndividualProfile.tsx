@@ -141,7 +141,7 @@ const ClientIndividualProfile: React.FC = () => {
                 setActiveTab('profile');
               }}
             >
-              My Profile
+              Profile
             </button>
             {!isPublicView && (
               <>
