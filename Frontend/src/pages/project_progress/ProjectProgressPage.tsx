@@ -1,118 +1,26 @@
-// // src/pages/project_progress/ProjectProgressPage.tsx
-// import { useState } from 'react';
-// import { useLocation } from 'react-router-dom';
-// import TabNavigation from '../../components/TabNavigation';
-// import  PhasesPage from './phases-section/phases'
-// import '../../styles/index.css';
-
-// const ProjectProgressPage = () => {
-//   const [activeTab, setActiveTab] = useState<'overview' | 'phases' | 'notes'>('phases');
-//   const location = useLocation();
-//   const projectState = location.state || {};
-
-
-//   return (
-//     <div className=" w-full bg-background-light dark:bg-background-dark ">
-          
-
-            
-//             <main className="px-4 space-y-0 sm:px-8 md:px-12 lg:px-20 xl:px-40">
-//               <TabNavigation activeTab={activeTab} onTabChange={setActiveTab} />
-              
-//               <div className="tab-content">
-//                 {activeTab === 'phases' && (
-//                   <div className="border-2 border-blue-500 shadow-[0_0_7px_3px_rgba(30,70,206,0.1)] dark:bg-blue-900 p-6 rounded-lg">
-//                     <PhasesPage />
-//                   </div>
-//                 )}
-                
-
-//                 {activeTab === 'overview' && (
-//                   <div className="overview-content">
-//                     <div className="border-2 border-blue-500 shadow-[0_0_7px_3px_rgba(30,70,206,0.1)] dark:bg-blue-900 p-6 rounded-lg">
-//                       <h2 className="text-2xl font-bold mb-4 text-blue-700">Project Details</h2>
-//                       {projectState.projectId && (
-//                         <div className="mb-2 text-slate-700 dark:text-slate-200">
-//                           <div><span className="font-semibold">Project ID:</span> {projectState.projectId}</div>
-//                           {projectState.applicant && (
-//                             <div className="mt-2">
-//                               <span className="font-semibold">Chosen Applicant:</span> {projectState.applicant.name}
-//                               <img src={projectState.applicant.avatar} alt={projectState.applicant.name} className="inline-block ml-2 w-8 h-8 rounded-full border" />
-//                             </div>
-//                           )}
-//                         </div>
-//                       )}
-//                       {!projectState.projectId && (
-//                         <p className="text-slate-500 dark:text-slate-400">No project details available.</p>
-//                       )}
-//                     </div>
-//                   </div>
-//                 )}
-
-//                 {activeTab === 'notes' && (
-//                   <div className="notes-content">
-//                     <div className="border-2 border-blue-500 shadow-[0_0_7px_3px_rgba(30,70,206,0.1)] dark:bg-blue-900 p-6 rounded-lg">
-//                       <p className="text-slate-500 dark:text-slate-400">
-//                         Notes section - to be implemented
-//                       </p>
-//                     </div>
-//                   </div>
-//                 )}
-//               </div>
-//             </main>
-          
-        
-      
-//     </div>
-//   );
-// };
-
-// export default ProjectProgressPage;
-
-// import { Routes, Route, NavLink } from "react-router-dom";
-// import ProjectProgressClientOverview from "./project_progress_overview/ProjectProgressClientOverview";
-// import ProjectProgressPhasesAndTasks from "./project_progress_overview/ProjectProgressPhasesAndTasks";
-// // import NotesPage if you have
-
-// export default function ProjectProgressPage() {
-//   return (
-//     <div>
-//       {/* Sub-navigation inside project progress */}
-//       <nav className="flex gap-4 mb-4">
-//         <NavLink to="overview" className={({ isActive }) => isActive ? "active" : ""}>Overview</NavLink>
-//         <NavLink to="notes" className={({ isActive }) => isActive ? "active" : ""}>Notes</NavLink>
-//         <NavLink to="phases" className={({ isActive }) => isActive ? "active" : ""}>Phases & Tasks</NavLink>
-//       </nav>
-
-//       <Routes>
-//         <Route path="overview" element={<ProjectProgressClientOverview />} />
-//         <Route path="notes" element={<div>Notes Component here</div>} />
-//         <Route path="phases" element={<ProjectProgressPhasesAndTasks />} />
-//         {/* default */}
-//         <Route index element={<ProjectProgressClientOverview />} />
-//       </Routes>
-//     </div>
-//   );
-// }
-
-
+console.log('🟠🟠🟠 ProjectProgressPage.tsx FILE LOADED 🟠🟠🟠');
 
 import { useState, useEffect, useRef } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
+import { useUserType } from '../../context/UserTypeContext';
 import TabNavigation from '../../components/TabNavigation';
 import PhasesPage from './phases-section/phases';
 import ProjectProgressClientOverview from './project_progress_overview/ProjectProgressClientOverview';
-import '../../styles/index.css';
+import ProjectProgressFreelancerOverview from './project_progress_overview/ProjectProgressFreelancerOverview';
 import NotesSection from './notes/NotesSection';
+import { PhasesProvider } from './phases-section/context/PhasesContext';
+import '../../styles/index.css';
 
 const ProjectProgressPage = () => {
+  console.log('🔴🔴🔴 ProjectProgressPage COMPONENT LOADED 🔴🔴🔴');
+  
   const location = useLocation();
   const navigate = useNavigate();
+  const { userType: contextUserType, setUserType } = useUserType();
+  const [effectiveUserType, setEffectiveUserType] = useState<'freelancer' | 'client' | null>(null);
   
-  // Use ref to persist projectState across navigations
   const projectStateRef = useRef<any>(null);
   
-  // Read params from URL (so refresh keeps IDs even when location.state is lost)
   const searchParams = new URLSearchParams(location.search);
   const initialTab = searchParams.get('tab') as 'overview' | 'phases' | 'notes' | null;
   const urlProjectId = searchParams.get('projectId');
@@ -127,7 +35,6 @@ const ProjectProgressPage = () => {
     ...(urlSettingsMode != null ? { settingsMode: urlSettingsMode === '1' || urlSettingsMode === 'true' } : {}),
   };
 
-  // Initialize projectState from location.state if available, otherwise use ref, otherwise use URL params
   const incomingState = location.state || {};
   if (incomingState && Object.keys(incomingState).length > 0) {
     projectStateRef.current = incomingState;
@@ -138,61 +45,218 @@ const ProjectProgressPage = () => {
   }
   const projectState = projectStateRef.current || {};
 
-  // If coming from direct hire, default to overview tab
+  // Track clientFilesSubmitted state centrally
+  const [clientFilesSubmitted, setClientFilesSubmitted] = useState<boolean>(
+    Boolean(projectState.clientFilesSubmitted)
+  );
+  const [submittedFiles, setSubmittedFiles] = useState<any[]>(projectState.submittedFiles || []);
+  const [isLoadingFiles, setIsLoadingFiles] = useState(false);
+
+  // Fetch negotiation data to check if client has submitted files
+  useEffect(() => {
+    const fetchNegotiationData = async () => {
+      if (!urlNegotiationId) return;
+      
+      setIsLoadingFiles(true);
+      try {
+        const response = await fetch(`/api/negotiations/${urlNegotiationId}/`, {
+          credentials: 'include'
+        });
+        
+        if (response.ok) {
+          const data = await response.json();
+          console.log('[ProjectProgressPage] Fetched negotiation data:', data);
+          
+          // Check if client has submitted files
+          const hasFiles = data.client_attachments && data.client_attachments.length > 0;
+          console.log('[ProjectProgressPage] Has client files:', hasFiles);
+          
+          setClientFilesSubmitted(hasFiles);
+          
+          // If has files, fetch the media files
+          if (hasFiles) {
+            const mediaResponse = await fetch(`/api/media/negotiation/${urlNegotiationId}/`, {
+              credentials: 'include'
+            });
+            if (mediaResponse.ok) {
+              const mediaFiles = await mediaResponse.json();
+              console.log('[ProjectProgressPage] Fetched media files:', mediaFiles);
+              setSubmittedFiles(mediaFiles);
+            }
+          }
+        }
+      } catch (error) {
+        console.error('[ProjectProgressPage] Error fetching negotiation data:', error);
+      } finally {
+        setIsLoadingFiles(false);
+      }
+    };
+
+    fetchNegotiationData();
+  }, [urlNegotiationId]);
+
+  // Update clientFilesSubmitted when location.state changes
+  useEffect(() => {
+    if (typeof location.state?.clientFilesSubmitted === 'boolean') {
+      console.log('[ProjectProgressPage] Updating clientFilesSubmitted from location.state:', location.state.clientFilesSubmitted);
+      setClientFilesSubmitted(location.state.clientFilesSubmitted);
+    }
+    if (location.state?.submittedFiles) {
+      setSubmittedFiles(location.state.submittedFiles);
+    }
+  }, [location.state?.clientFilesSubmitted, location.state?.submittedFiles]);
+
+  useEffect(() => {
+    console.log('============================================');
+    console.log('[ProjectProgressPage] DETAILED DEBUG INFO:');
+    console.log('============================================');
+    console.log('1. location.state:', location.state);
+    console.log('2. location.state?.userType:', location.state?.userType);
+    console.log('3. contextUserType:', contextUserType);
+    console.log('4. projectId:', urlProjectId);
+    console.log('5. negotiationId:', urlNegotiationId);
+    console.log('6. clientFilesSubmitted:', clientFilesSubmitted);
+    console.log('7. submittedFiles:', submittedFiles);
+    console.log('8. location.pathname:', location.pathname);
+    console.log('============================================');
+
+    if (location.state?.userType) {
+      const stateUserType = location.state.userType;
+      console.log('✅ PRIORITY 1: Using userType from location.state:', stateUserType);
+      setEffectiveUserType(stateUserType);
+      if (stateUserType !== contextUserType) {
+        console.log('   → Syncing context userType to:', stateUserType);
+        setUserType(stateUserType);
+      }
+      return;
+    }
+
+    console.log('❌ PRIORITY 1 FAILED: No userType in location.state');
+
+    if (contextUserType === 'freelancer' || contextUserType === 'client') {
+      console.log('✅ PRIORITY 2: Using userType from context:', contextUserType);
+      setEffectiveUserType(contextUserType);
+      return;
+    }
+
+    console.log('❌ PRIORITY 2 FAILED: contextUserType is not valid:', contextUserType);
+
+    if (urlNegotiationId && urlProjectId) {
+      console.log('⚠️ PRIORITY 3 (HEURISTIC): Both IDs present → defaulting to FREELANCER');
+      setEffectiveUserType('freelancer');
+      setUserType('freelancer');
+    } else if (urlProjectId) {
+      console.log('⚠️ PRIORITY 3 (HEURISTIC): Only projectId → defaulting to CLIENT');
+      setEffectiveUserType('client');
+      setUserType('client');
+    } else {
+      console.log('⚠️ PRIORITY 3 (FALLBACK): No valid params → defaulting to CLIENT');
+      setEffectiveUserType('client');
+      setUserType('client');
+    }
+  }, [location.state, contextUserType, urlNegotiationId, urlProjectId, setUserType]);
+
   const defaultTab = projectState.directHire && projectState.initialLoad ? 'overview' : 'phases';
   const [activeTab, setActiveTab] = useState<'overview' | 'phases' | 'notes'>(initialTab || defaultTab);
 
-  // Sync activeTab with URL changes
   useEffect(() => {
     if (initialTab && initialTab !== activeTab) {
       setActiveTab(initialTab);
     }
   }, [initialTab]);
 
-  // Function to change tab (updates both state and URL, preserving projectState)
   const handleTabChange = (tab: 'overview' | 'phases' | 'notes') => {
     setActiveTab(tab);
     const nextParams = new URLSearchParams(location.search);
     nextParams.set('tab', tab);
     navigate(`?${nextParams.toString()}`, { 
       replace: true,
-      state: projectState // Preserve projectState when navigating
+      state: {
+        ...projectState,
+        clientFilesSubmitted,
+        submittedFiles
+      }
     });
   };
 
-  return (
-    <div className="w-full bg-background-light dark:bg-background-dark">
-      <main className="px-4 space-y-0 sm:px-8 md:px-12 lg:px-20 xl:px-40">
-        {/* Tab Navigation */}
-        <TabNavigation activeTab={activeTab} onTabChange={handleTabChange} />
+  const showTabNavigation = true;
 
-        <div className="tab-content">
-          {activeTab === 'phases' && (
-            <div className="border-2 border-blue-500 shadow-[0_0_7px_3px_rgba(30,70,206,0.1)] dark:bg-blue-900 p-6 rounded-lg">
-              <PhasesPage projectState={projectState} />
-            </div>
-          )}
-
-          {activeTab === 'overview' && (
-            <div className="overview-content">
-              <div className="border-2 border-blue-500 shadow-[0_0_7px_3px_rgba(30,70,206,0.1)] dark:bg-blue-900 p-6 rounded-lg">
-                <ProjectProgressClientOverview projectState={projectState} />
-              </div>
-            </div>
-          )}
-
-          {activeTab === 'notes' && (
-            <div className="notes-content">
-              <div className="border-2 border-blue-500 shadow-[0_0_7px_3px_rgba(30,70,206,0.1)] dark:bg-blue-900 p-6 rounded-lg">
-                <p className="text-slate-500 dark:text-slate-400">
-                    <NotesSection projectState={projectState} />
-                </p>
-              </div>
-            </div>
-          )}
+  if (!effectiveUserType || isLoadingFiles) {
+    console.log('[ProjectProgressPage] Loading state - waiting for userType or files...');
+    return (
+      <div className="flex items-center justify-center min-h-screen">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
+          <p className="text-gray-600 dark:text-gray-400">
+            {!effectiveUserType ? 'Loading project progress...' : 'Checking file status...'}
+          </p>
         </div>
-      </main>
-    </div>
+      </div>
+    );
+  }
+
+  if (!urlProjectId) {
+    console.log('[ProjectProgressPage] ERROR: No projectId provided');
+    return (
+      <div className="flex items-center justify-center min-h-screen">
+        <div className="text-center bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg p-6 max-w-md">
+          <h2 className="text-xl font-semibold text-red-800 dark:text-red-300 mb-2">No Project Selected</h2>
+          <p className="text-red-600 dark:text-red-400">Please select a project from your history to view progress.</p>
+        </div>
+      </div>
+    );
+  }
+
+  console.log('============================================');
+  console.log('[ProjectProgressPage] 🎯 FINAL DECISION:');
+  console.log('   effectiveUserType:', effectiveUserType);
+  console.log('   projectId:', urlProjectId);
+  console.log('   clientFilesSubmitted:', clientFilesSubmitted);
+  console.log('   submittedFiles count:', submittedFiles.length);
+  console.log('   Rendering overview for:', effectiveUserType === 'freelancer' ? 'FREELANCER' : 'CLIENT');
+  console.log('============================================');
+
+  return (
+    <PhasesProvider initialPhases={[]}>
+      <div className="w-full bg-background-light dark:bg-background-dark">
+        <main className="px-4 space-y-0 sm:px-8 md:px-12 lg:px-20 xl:px-40">
+          {showTabNavigation && <TabNavigation activeTab={activeTab} onTabChange={handleTabChange} />}
+          <div className="tab-content">
+            {activeTab === 'phases' && (
+              <div className="border-2 border-blue-500 shadow-[0_0_7px_3px_rgba(30,70,206,0.1)] dark:bg-blue-900 p-6 rounded-lg">
+                <PhasesPage 
+                  projectState={{
+                    ...projectState,
+                    clientFilesSubmitted: true // Always allow editing for freelancer
+                  }} 
+                />
+              </div>
+            )}
+            {activeTab === 'overview' && (
+              <div className="overview-content">
+                <div className="border-2 border-blue-500 shadow-[0_0_7px_3px_rgba(30,70,206,0.1)] dark:bg-blue-900 p-6 rounded-lg">
+                  {effectiveUserType === 'freelancer' ? (
+                    <ProjectProgressFreelancerOverview
+                      clientFilesSubmitted={clientFilesSubmitted}
+                      submittedFiles={submittedFiles}
+                    />
+                  ) : (
+                    <ProjectProgressClientOverview projectState={projectState} />
+                  )}
+                </div>
+              </div>
+            )}
+            {activeTab === 'notes' && (
+              <div className="notes-content">
+                <div className="border-2 border-blue-500 shadow-[0_0_7px_3px_rgba(30,70,206,0.1)] dark:bg-blue-900 p-6 rounded-lg">
+                  <NotesSection projectState={projectState} />
+                </div>
+              </div>
+            )}
+          </div>
+        </main>
+      </div>
+    </PhasesProvider>
   );
 };
 

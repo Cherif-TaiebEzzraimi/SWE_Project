@@ -149,14 +149,62 @@ STATIC_ROOT = BASE_DIR / "staticfiles"
 MEDIA_ROOT = os.path.join(BASE_DIR, 'media')
 MEDIA_URL = '/media/'
 
+# --------------------------------------------------
+# CORS Configuration
+# --------------------------------------------------
 CORS_ALLOW_CREDENTIALS = True
-default_origin = os.environ.get("FRONTEND_URL", "http://localhost:5173")
-CORS_ALLOWED_ORIGINS = [default_origin]
-if default_origin.startswith("http://"):
-    CSRF_TRUSTED_ORIGINS = [default_origin, default_origin.replace("http://", "https://")]
-else:
-    CSRF_TRUSTED_ORIGINS = [default_origin]
 
+# Allow multiple frontend ports for development
+CORS_ALLOWED_ORIGINS = [
+    "http://localhost:5173",
+    "http://127.0.0.1:5173",
+    "http://localhost:5174",
+    "http://127.0.0.1:5174",
+]
+
+# You can also use environment variable for additional origins
+default_origin = os.environ.get("FRONTEND_URL", "")
+if default_origin and default_origin not in CORS_ALLOWED_ORIGINS:
+    CORS_ALLOWED_ORIGINS.append(default_origin)
+
+# CSRF trusted origins (same as CORS for development)
+CSRF_TRUSTED_ORIGINS = CORS_ALLOWED_ORIGINS.copy()
+
+# Allow necessary HTTP methods
+CORS_ALLOW_METHODS = [
+    'DELETE',
+    'GET',
+    'OPTIONS',
+    'PATCH',
+    'POST',
+    'PUT',
+]
+
+# Allow necessary headers
+CORS_ALLOW_HEADERS = [
+    'accept',
+    'accept-encoding',
+    'authorization',
+    'content-type',
+    'dnt',
+    'origin',
+    'user-agent',
+    'x-csrftoken',
+    'x-requested-with',
+]
+
+# Session and CSRF cookie settings for cross-origin requests
+SESSION_COOKIE_SAMESITE = 'Lax'
+SESSION_COOKIE_HTTPONLY = True
+SESSION_COOKIE_SECURE = False  # Set to True in production with HTTPS
+
+CSRF_COOKIE_SAMESITE = 'Lax'
+CSRF_COOKIE_HTTPONLY = False  # Must be False so JavaScript can read it
+CSRF_COOKIE_SECURE = False  # Set to True in production with HTTPS
+
+# --------------------------------------------------
+# Django REST Framework
+# --------------------------------------------------
 REST_FRAMEWORK = {
     "DEFAULT_PERMISSION_CLASSES": [
         "rest_framework.permissions.AllowAny",

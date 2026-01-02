@@ -80,15 +80,23 @@ const FreelancerHistory: React.FC<FreelancerHistoryProps> = ({ userId }) => {
                 email: negotiation.client?.user?.email || '',
               },
             },
-            freelancer: negotiation.freelancer ? {
-              user: {
-                first_name: negotiation.freelancer.user?.first_name || '',
-                last_name: negotiation.freelancer.user?.last_name || '',
-                email: negotiation.freelancer.user?.email || '',
-              },
-            } : undefined,
-            final_price: null, // Would need to be added to negotiation model
-            deadline: null, // Deadline not in negotiation model
+            freelancer: negotiation.freelancer
+              ? {
+                  user: {
+                    first_name: negotiation.freelancer.user?.first_name || '',
+                    last_name: negotiation.freelancer.user?.last_name || '',
+                    email: negotiation.freelancer.user?.email || '',
+                  },
+                }
+              : {
+                  user: {
+                    first_name: '',
+                    last_name: '',
+                    email: '',
+                  },
+                },
+            final_price: null,
+            deadline: null,
             status: negotiation.status,
           },
           created_at: negotiation.created_at,
@@ -138,9 +146,9 @@ const FreelancerHistory: React.FC<FreelancerHistoryProps> = ({ userId }) => {
     );
   }
 
-const filteredProjects = filter === 'done'
-  ? projects.filter(p => ['accepted', 'in_progress', 'done'].includes(p.negotiation.status))
-  : projects;
+  const filteredProjects = filter === 'done'
+    ? projects.filter(p => ['accepted', 'in_progress', 'done'].includes(p.negotiation.status))
+    : projects;
 
   return (
     <div className={styles.historyContainer}>
@@ -189,12 +197,24 @@ const filteredProjects = filter === 'done'
             <div
               key={project.id}
               className={styles.projectCard}
-              onClick={() => navigate(`/project-progress?tab=overview&projectId=${project.id}&negotiationId=${project.negotiation.id}`, {
-                state: {
+              onClick={() => {
+                const navState = {
                   negotiationId: project.negotiation.id,
                   projectId: project.id,
-                }
-              })}
+                  userType: 'freelancer',
+                  client: {
+                    name: `${project.negotiation.client.user.first_name} ${project.negotiation.client.user.last_name}`.trim(),
+                    role: 'Client',
+                    photo: '',
+                  },
+                };
+                
+                console.log('🟢🟢🟢 FREELANCER HISTORY: Navigating with state:', navState);
+                
+                navigate(`/project-progress?tab=overview&projectId=${project.id}&negotiationId=${project.negotiation.id}`, {
+                  state: navState
+                });
+              }}
               style={{ cursor: 'pointer' }}
             >
               <div className={styles.projectHeader}>

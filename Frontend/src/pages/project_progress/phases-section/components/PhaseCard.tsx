@@ -1,6 +1,7 @@
 // src/pages/project_progress/components/PhaseCard.tsx
 import type { FC } from 'react';
 import type { Phase } from '../types/project';
+import { useUserType } from '../../../../context/UserTypeContext';
 
 interface PhaseCardProps {
   phase: Phase;
@@ -12,6 +13,19 @@ interface PhaseCardProps {
 }
 
 const PhaseCard: FC<PhaseCardProps> = ({ phase, onClick, isSelected = false, canEdit = false, onEdit, onDelete }) => {
+  const { userType } = useUserType();
+
+  // DEBUG: Log props and context on every render
+  console.log('[PhaseCard] Render', {
+    phaseName: phase.name,
+    userType,
+    canEdit,
+    isSelected,
+    hasOnEdit: !!onEdit,
+    hasOnDelete: !!onDelete,
+    phaseStatus: phase.status,
+  });
+
   /**
    * Returns the appropriate color class based on phase status
    */
@@ -52,7 +66,7 @@ const PhaseCard: FC<PhaseCardProps> = ({ phase, onClick, isSelected = false, can
 
   return (
     <div
-      className={`phase-card ${isSelected ? 'phase-card-active' : ''}`}
+      className={`phase-card group ${isSelected ? 'phase-card-active' : ''}`}
       onClick={onClick}
       role="button"
       tabIndex={0}
@@ -64,6 +78,11 @@ const PhaseCard: FC<PhaseCardProps> = ({ phase, onClick, isSelected = false, can
       }}
       aria-label={`View details for ${phase.name} phase`}
     >
+      {/* DEBUG: Show canEdit and userType visually for quick inspection */}
+      <div style={{ fontSize: 10, color: '#888', position: 'absolute', top: 2, left: 2, zIndex: 10 }}>
+        [DBG] canEdit: {String(canEdit)} | userType: {userType}
+      </div>
+
       {/* Card Header with Icon and Title */}
       <div className="phase-card-header">
         <span
@@ -93,8 +112,6 @@ const PhaseCard: FC<PhaseCardProps> = ({ phase, onClick, isSelected = false, can
           </span>
         </div>
 
-        
-
         {/* Deliverable Link */}
         {phase.deliverable && (
           <div className="phase-detail-item phase-deliverable">
@@ -104,7 +121,6 @@ const PhaseCard: FC<PhaseCardProps> = ({ phase, onClick, isSelected = false, can
               className="deliverable-link"
               onClick={(e) => {
                 e.stopPropagation();
-                // Handle deliverable download/view
                 console.log('Opening deliverable:', phase.deliverable);
               }}
               aria-label={`Download ${phase.deliverable}`}
@@ -136,12 +152,13 @@ const PhaseCard: FC<PhaseCardProps> = ({ phase, onClick, isSelected = false, can
       )}
 
       {/* Edit/Delete Action Buttons - Only show if canEdit is true */}
-      {canEdit && (
-        <div className="absolute top-4 right-12 flex gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
+      {userType === 'freelancer' && canEdit && (onEdit || onDelete) && (
+        <div className="absolute top-4 right-12 flex gap-2 opacity-0 group-hover:opacity-100 transition-opacity z-20">
           {onEdit && (
             <button
               onClick={(e) => {
                 e.stopPropagation();
+                console.log('[PhaseCard] Edit clicked', { phaseName: phase.name });
                 onEdit();
               }}
               className="p-2 bg-brand-blue text-white rounded-lg hover:bg-blue-600 transition-colors"
@@ -156,7 +173,10 @@ const PhaseCard: FC<PhaseCardProps> = ({ phase, onClick, isSelected = false, can
               onClick={(e) => {
                 e.stopPropagation();
                 if (confirm(`Are you sure you want to delete the "${phase.name}" phase?`)) {
+                  console.log('[PhaseCard] Delete confirmed', { phaseName: phase.name });
                   onDelete();
+                } else {
+                  console.log('[PhaseCard] Delete cancelled', { phaseName: phase.name });
                 }
               }}
               className="p-2 bg-red-500 text-white rounded-lg hover:bg-red-600 transition-colors"

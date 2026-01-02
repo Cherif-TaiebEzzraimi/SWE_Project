@@ -11,18 +11,9 @@ const NotesSection = () => {
   const [isModalOpen, setIsModalOpen] = useState(false);
 
   // Hard-coded default notes
-  const defaultGeneralNotes: Note[] = [
-    { id: '1', title: 'General Note 1', content: 'Content 1', status: 'active', date: '2025-12-31' },
-    { id: '2', title: 'General Note 2', content: 'Content 2', status: 'done', date: '2025-12-30' },
-  ];
-  const defaultPreWorkNotes: Note[] = [
-    { id: '1', title: 'PreWork Note 1', content: 'Content A', status: 'active', date: '2025-12-29' },
-    { id: '2', title: 'PreWork Note 2', content: 'Content B', status: 'done', date: '2025-12-28' },
-  ];
-  const defaultPrivateNotes: Note[] = [
-    { id: '1', title: 'Private Note 1', content: 'Secret 1', status: 'active', date: '2025-12-27' },
-    { id: '2', title: 'Private Note 2', content: 'Secret 2', status: 'done', date: '2025-12-26' },
-  ];
+  const defaultGeneralNotes: Note[] = [];
+  const defaultPreWorkNotes: Note[] = [];
+  const defaultPrivateNotes: Note[] = [];
 
   // State with localStorage persistence
   const [generalNotes, setGeneralNotes] = useState<Note[]>([]);

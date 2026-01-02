@@ -71,7 +71,7 @@ const ClientHistory: React.FC<ClientHistoryProps> = ({ userId }) => {
             } : undefined,
             status: negotiation.status,
             created_at: negotiation.created_at,
-            deadline: null, // Deadline not in negotiation model, would need to be added
+            deadline: null,
           },
         };
       });
@@ -158,14 +158,23 @@ const ClientHistory: React.FC<ClientHistoryProps> = ({ userId }) => {
             <div
               key={project.id}
               className={styles.projectCard}
-              onClick={() =>
+              onClick={() => {
+                console.log('🔵 CLIENT HISTORY: Navigating with userType: client');
                 navigate(`/project-progress?tab=overview&projectId=${project.id}&negotiationId=${project.negotiation.id}`, {
                   state: {
                     negotiationId: project.negotiation.id,
                     projectId: project.id,
+                    // ✅ CRITICAL: Pass explicit userType for client
+                    userType: 'client',
+                    // Pass freelancer info for overview
+                    freelancer: project.negotiation.freelancer ? {
+                      name: `${project.negotiation.freelancer.user.first_name} ${project.negotiation.freelancer.user.last_name}`.trim(),
+                      role: 'Freelancer',
+                      photo: '',
+                    } : undefined,
                   }
-                })
-              }
+                });
+              }}
               style={{ cursor: 'pointer' }}
             >
               <div className={styles.projectHeader}>
@@ -200,7 +209,6 @@ const ClientHistory: React.FC<ClientHistoryProps> = ({ userId }) => {
                     {formatDate(project.negotiation.deadline || '')}
                   </span>
                 </div>
-                {/* Client view intentionally omits Price */}
               </div>
             </div>
           ))}
