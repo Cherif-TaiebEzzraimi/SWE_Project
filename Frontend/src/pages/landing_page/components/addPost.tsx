@@ -5,6 +5,7 @@ import { categoriesWithSkills } from '../../../components/categories';
 import { usePosts } from '../../../context/PostsContext';
 import { createDirectHire } from '../../../api/negotiationApi';
 import { uploadMedia } from '../../../api/mediaApi';
+import { createRequest } from '../../../api/requestApi';
 
 const MAX_FILES = 5;
 const MAX_FILE_SIZE_MB = 25;
@@ -178,6 +179,22 @@ const MAX_FILE_SIZE_MB = 25;
       setErrors({});
       navigate('/client-dashboard');
     } else {
+      // Save to backend first
+      try {
+        const backendRequest = await createRequest({
+          title: `${title}\n\nRequired Skills: ${neededSkills.join(', ')}\n\n${description}`,
+          category,
+          budget_min: Number(budgetMin),
+          budget_max: Number(budgetMax),
+          attachments: files.map(f => f.name),
+        });
+        console.log('Request saved to backend:', backendRequest);
+      } catch (error) {
+        console.error('Failed to save request to backend:', error);
+        // Continue anyway to keep local state working
+      }
+
+      // Also add to local state for immediate UI update
       addPost({
         title,
         category,
