@@ -439,6 +439,7 @@ class Request(models.Model):
         related_name='requests'
     )
     title = models.TextField(max_length=65535)
+    description = models.TextField(max_length=65535, blank=True, null=True)
     attachments = models.JSONField(
         blank=True,
         null=True,

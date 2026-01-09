@@ -50,6 +50,7 @@ urlpatterns = [
     path('requests/client/<int:client_id>/', views.list_client_requests, name='list_client_requests'),
     path('requests/<int:id>/', views.request_detail, name='request_detail'),
     # Negotiations
+    path('negotiations/', views.list_negotiations, name='list_negotiations'),
     path('negotiations/directhire/<int:freelancer_id>/', views.create_direct_hire, name='create_direct_hire'),
     path('negotiations/<int:request_id>/create/', views.create_from_request, name='create_from_request'),
     path('negotiations/<int:id>/', views.negotiation_detail, name='negotiation_detail'),

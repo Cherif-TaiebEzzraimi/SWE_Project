@@ -423,32 +423,55 @@ def soft_delete_user(request, id):
 @api_view(['GET', 'POST'])
 @permission_classes([IsAuthenticated])
 def requests_list_create(request):
-    """GET /requests - list requests for current user (or all if staff)
+    """GET /requests - list requests (all for freelancers, own for clients)
        POST /requests - create a new request (client only)
     """
+    # Check user role (needed for both GET and POST)
+    user_role = request.user.role
+    
     if request.method == 'GET':
-        if request.user.is_staff:
+        
+        if user_role == 'admin' or request.user.is_staff:
+            # Admin can see all requests
             qs = Request.objects.all()
-        else:
+        elif user_role == 'freelancer':
+            # Freelancers can see all PENDING requests to apply
+            qs = Request.objects.filter(status='pending')
+        elif user_role == 'client':
+            # Clients see only their own requests
             try:
                 client = Client.objects.get(user=request.user)
+                qs = Request.objects.filter(client=client)
             except Client.DoesNotExist:
                 return Response({'detail': 'No client profile for user'}, status=status.HTTP_404_NOT_FOUND)
-            qs = Request.objects.filter(client=client)
+        elif user_role == 'company':
+            # Companies might have client profile too
+            try:
+                client = Client.objects.get(user=request.user)
+                qs = Request.objects.filter(client=client)
+            except Client.DoesNotExist:
+                # If company has no client profile, they can browse like freelancers
+                qs = Request.objects.filter(status='pending')
+        else:
+            # Default: show pending requests
+            qs = Request.objects.filter(status='pending')
+        
         serializer = RequestSerializer(qs, many=True)
         return Response(serializer.data)
 
-    # POST request - create new request
+    # POST request - create new request (client only)
+    if user_role not in ['client', 'company']:
+        return Response({'detail': 'Only clients can create requests'}, status=status.HTTP_403_FORBIDDEN)
+    
     try:
-         client = Client.objects.get(user=request.user)
+        client = Client.objects.get(user=request.user)
     except Client.DoesNotExist:
         return Response({'detail': 'Only clients can create requests'}, status=status.HTTP_403_FORBIDDEN)
     
     data = request.data.copy()
-    # Don't include client in data, pass it to save() instead
     serializer = RequestSerializer(data=data)
     if serializer.is_valid():
-        serializer.save(client=client)  # Pass the client object directly
+        serializer.save(client=client)
         return Response(serializer.data, status=status.HTTP_201_CREATED)
     return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
@@ -1905,4 +1928,30 @@ def notification_detail(request, notification_id):
             status=status.HTTP_204_NO_CONTENT
         )
 
+
+#listing all negotiations
+@api_view(['GET'])
+@permission_classes([IsAuthenticated])
+def list_negotiations(request):
+    """GET /negotiations/ - List all negotiations for current user (client or freelancer)"""
+    user = request.user
+    
+    # Get client and freelancer profiles if they exist
+    client = Client.objects.filter(user=user).first()
+    freelancer = Freelancer.objects.filter(user=user).first()
+    
+    # Start with empty queryset
+    qs = Negotiation.objects.none()
+    
+    # Add negotiations where user is client
+    if client:
+        qs = qs | Negotiation.objects.filter(client=client)
+    
+    # Add negotiations where user is freelancer
+    if freelancer:
+        qs = qs | Negotiation.objects.filter(freelancer=freelancer)
+    
+    # Remove duplicates and serialize
+    serializer = NegotiationSerializer(qs.distinct(), many=True)
+    return Response(serializer.data)
 
