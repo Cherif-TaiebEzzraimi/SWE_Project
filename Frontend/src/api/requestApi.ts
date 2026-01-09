@@ -1,6 +1,4 @@
 // src/api/requestApi.ts
-import axios from 'axios';
-
 // Use your existing apiClient instead of creating new instance
 import apiClient from '../lib/axios';
 
@@ -31,12 +29,17 @@ export interface CreateRequestPayload {
  * Get all requests (for freelancers to browse)
  * or get current client's requests (for clients to manage)
  */
-export const getRequests = async (): Promise<RequestData[]> => {
+export const getRequests = async (params?: { own_only?: string }): Promise<RequestData[]> => {
   try {
-    const response = await apiClient.get('/requests/');
+    console.log('Fetching requests with params:', params);
+    const response = await apiClient.get('/requests/', { params });
+    console.log('Requests response:', response.data);
     return response.data;
   } catch (error: any) {
     console.error('Error fetching requests:', error);
+    console.error('Error response:', error.response);
+    console.error('Error status:', error.response?.status);
+    console.error('Error data:', error.response?.data);
     throw new Error(error.response?.data?.detail || 'Failed to fetch requests');
   }
 };

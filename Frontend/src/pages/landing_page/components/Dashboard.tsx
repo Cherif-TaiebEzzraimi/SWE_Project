@@ -11,9 +11,10 @@ const Dashboard: React.FC = () => {
   const [search, setSearch] = useState('');
   const [minPrice, setMinPrice] = useState('');
   const [maxPrice, setMaxPrice] = useState('');
+  const [showOwnOnly, setShowOwnOnly] = useState(false);
   const { userType } = useUserType();
-  const [currentUserId] = useState<number>(1); // Get from auth context
-  const [currentUserRole, setCurrentUserRole] = useState<string>('client'); // Will be fetched from auth
+  const [currentUserId] = useState<number | null>(null); // Get from auth context
+  const [currentUserRole, setCurrentUserRole] = useState<string>('guest'); // Will be fetched from auth
   const navigate = useNavigate();
   
   // State for requests and negotiations
@@ -51,17 +52,32 @@ const Dashboard: React.FC = () => {
       setCurrentUserRole('freelancer');
     } else if (userType === 'client') {
       setCurrentUserRole('client');
+    } else {
+      setCurrentUserRole('guest');
     }
     
     fetchData();
   }, [userType]);
+  
+  // Refetch data when showOwnOnly changes (for clients)
+  useEffect(() => {
+    if (currentUserRole === 'client') {
+      fetchData();
+    }
+  }, [showOwnOnly]);
   
   const fetchData = async () => {
     setLoading(true);
     setError(null);
     try {
       // Fetch requests - backend will return appropriate requests based on user role
-      const requestsData = await getRequests();
+      // Add own_only parameter for clients if needed
+      let requestsData;
+      if (currentUserRole === 'client') {
+        requestsData = await getRequests({ own_only: showOwnOnly ? 'true' : 'false' });
+      } else {
+        requestsData = await getRequests();
+      }
       setRequests(requestsData || []);
       
       // Fetch negotiations - only if user is client or freelancer
@@ -76,7 +92,11 @@ const Dashboard: React.FC = () => {
       }
     } catch (err: any) {
       console.error('Error fetching data:', err);
-      setError(err.message || 'Failed to load requests');
+      console.error('Response status:', err.response?.status);
+      console.error('Response data:', err.response?.data);
+      console.error('User type:', userType);
+      console.error('Current user role:', currentUserRole);
+      setError(err.response?.data?.detail || err.message || 'Failed to load requests');
     } finally {
       setLoading(false);
     }
@@ -279,6 +299,20 @@ const Dashboard: React.FC = () => {
               />
               <span className="text-xs text-slate-500 ml-1">DZD</span>
             </div>
+            {currentUserRole === 'client' && (
+              <div className="flex items-center gap-2">
+                <input
+                  type="checkbox"
+                  id="ownOnly"
+                  checked={showOwnOnly}
+                  onChange={e => setShowOwnOnly(e.target.checked)}
+                  className="w-4 h-4 text-primary border-gray-300 rounded focus:ring-primary focus:ring-2"
+                />
+                <label htmlFor="ownOnly" className="text-sm text-slate-600 dark:text-slate-300 cursor-pointer">
+                  My Posts Only
+                </label>
+              </div>
+            )}
           </div>
         </div>
         
@@ -343,12 +377,34 @@ const Dashboard: React.FC = () => {
                     </div>
                     
                     <div className="flex items-center justify-between border-t border-slate-100 dark:border-slate-700 pt-4">
-                      <div className="flex items-center gap-2">
+                      <button
+                        onClick={() => {
+                          const clientUser = r.client?.user;
+                          if (clientUser) {
+                            if (currentUserRole === 'guest') {
+                              setModal({ open: true, action: 'login' });
+                            } else {
+                              if (clientUser.role === 'company') {
+                                navigate(`/profile/company/${clientUser.id}`);
+                              } else {
+                                navigate(`/profile/client/${clientUser.id}`);
+                              }
+                            }
+                          }
+                        }}
+                        className="flex items-center gap-2 hover:bg-slate-50 dark:hover:bg-slate-700 rounded-lg px-2 py-1 transition-colors cursor-pointer"
+                        title={currentUserRole === 'guest' ? 'Login to view client profile' : 'View client profile'}
+                      >
                         <div className="w-6 h-6 rounded-full bg-slate-200 dark:bg-slate-600 flex items-center justify-center text-[10px] font-bold">
                           {r.client?.user?.first_name?.[0] || 'C'}
                         </div>
-                        <span className="text-xs text-slate-500">Client</span>
-                      </div>
+                        <span className="text-xs text-slate-600 dark:text-slate-300 hover:text-primary">
+                          {r.client?.user?.first_name && r.client?.user?.last_name 
+                            ? `${r.client.user.first_name} ${r.client.user.last_name}` 
+                            : r.client?.user?.first_name || 'Client'}
+                        </span>
+                        <span className="material-symbols-outlined text-[12px] text-slate-400">open_in_new</span>
+                      </button>
                       
                       <div className="flex gap-2">
                         {/* Client view - Edit button */}

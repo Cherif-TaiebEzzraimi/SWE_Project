@@ -443,10 +443,19 @@ def requests_list_create(request):
             # Freelancers can see all PENDING requests to apply
             qs = Request.objects.filter(status='pending')
         elif user_role == 'client':
-            # Clients see only their own requests
+            # Clients can see all pending requests, with option to filter their own
             try:
                 client = Client.objects.get(user=request.user)
-                qs = Request.objects.filter(client=client)
+                # Check if client wants to see only their own requests
+                show_own_only = request.GET.get('own_only', 'false').lower() == 'true'
+                
+                if show_own_only:
+                    qs = Request.objects.filter(client=client)
+                else:
+                    # Show all pending requests (like freelancers) plus their own
+                    qs = Request.objects.filter(
+                        Q(status='pending') | Q(client=client)
+                    ).distinct()
             except Client.DoesNotExist:
                 return Response({'detail': 'No client profile for user'}, status=status.HTTP_404_NOT_FOUND)
         elif user_role == 'company':
