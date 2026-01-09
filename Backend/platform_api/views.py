@@ -421,15 +421,20 @@ def soft_delete_user(request, id):
 
 # ---------- Request endpoints ----------
 @api_view(['GET', 'POST'])
-@permission_classes([IsAuthenticated])
+@permission_classes([AllowAny])
 def requests_list_create(request):
-    """GET /requests - list requests (all for freelancers, own for clients)
+    """GET /requests - list requests (all for freelancers, own for clients, guests see pending)
        POST /requests - create a new request (client only)
     """
-    # Check user role (needed for both GET and POST)
-    user_role = request.user.role
-    
     if request.method == 'GET':
+        # Check if user is authenticated
+        if request.user.is_authenticated:
+            user_role = request.user.role
+        else:
+            # Guest users can only see pending requests
+            qs = Request.objects.filter(status='pending')
+            serializer = RequestSerializer(qs, many=True)
+            return Response(serializer.data)
         
         if user_role == 'admin' or request.user.is_staff:
             # Admin can see all requests
@@ -460,7 +465,10 @@ def requests_list_create(request):
         return Response(serializer.data)
 
     # POST request - create new request (client only)
-    if user_role not in ['client', 'company']:
+    if not request.user.is_authenticated:
+        return Response({'detail': 'Authentication required to create requests'}, status=status.HTTP_401_UNAUTHORIZED)
+    
+    if request.user.role not in ['client', 'company']:
         return Response({'detail': 'Only clients can create requests'}, status=status.HTTP_403_FORBIDDEN)
     
     try:
