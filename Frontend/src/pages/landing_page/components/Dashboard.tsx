@@ -4,7 +4,8 @@ import ConfirmModal from '../../../components/ConfirmModal';
 import { categoriesWithSkills as allCategoriesWithSkills } from '../../../components/categories';
 import { useNavigate } from 'react-router-dom';
 import { getRequests, applyToRequest } from '../../../api/requestApi';
-import { getNegotiations } from '../../../api/negotiationApi';
+import { getNegotiations, declineNegotiation, agreeNegotiation, acceptApplicant } from '../../../api/negotiationApi';
+import { getUserId, getUserProfile } from '../../../lib/auth';
 
 const Dashboard: React.FC = () => {
   const [selectedCategory, setSelectedCategory] = useState<string>('All');
@@ -13,7 +14,7 @@ const Dashboard: React.FC = () => {
   const [maxPrice, setMaxPrice] = useState('');
   const [showOwnOnly, setShowOwnOnly] = useState(false);
   const { userType } = useUserType();
-  const [currentUserId] = useState<number | null>(null); // Get from auth context
+  const [currentUserId, setCurrentUserId] = useState<number | null>(null); // Get from auth context
   const [currentUserRole, setCurrentUserRole] = useState<string>('guest'); // Will be fetched from auth
   const navigate = useNavigate();
   
@@ -26,9 +27,10 @@ const Dashboard: React.FC = () => {
   // Modal state
   const [modal, setModal] = useState<{ 
     open: boolean; 
-    action: null | 'refuse' | 'accept' | 'apply' | 'login' | 'cancel_application'; 
+    action: null | 'refuse' | 'accept' | 'apply' | 'login' | 'cancel_application' | 'view_applicants'; 
     request?: any; 
     negotiation?: any;
+    negotiations?: any[];
   }>({ open: false, action: null });
   
   // Category icon mapping
@@ -47,6 +49,10 @@ const Dashboard: React.FC = () => {
   
   // Fetch requests and negotiations on mount
   useEffect(() => {
+    // Get current user ID from auth
+    const userId = getUserId();
+    setCurrentUserId(userId);
+    
     // Set user role based on userType context
     if (userType === 'freelancer') {
       setCurrentUserRole('freelancer');
@@ -111,12 +117,96 @@ const Dashboard: React.FC = () => {
     );
   };
   
-  // Get negotiation for a request if exists
+  // Get negotiation for a request if exists (return the most recent one)
   const getNegotiationForRequest = (requestId: number) => {
-    return negotiations.find(
+    const relevantNegotiations = negotiations.filter(
       neg => neg.request?.id === requestId && 
              neg.freelancer?.user?.id === currentUserId
     );
+    
+    if (relevantNegotiations.length === 0) return null;
+    
+    // Sort by created_at descending and return the most recent
+    const mostRecent = relevantNegotiations.sort((a, b) => 
+      new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
+    )[0];
+    
+    // Debug log for the most recent negotiation
+    console.log(`Most recent negotiation for request ${requestId}:`, {
+      id: mostRecent.id,
+      status: mostRecent.status,
+      client_agreed: mostRecent.client_agreed,
+      freelancer_agreed: mostRecent.freelancer_agreed,
+      created_at: mostRecent.created_at
+    });
+    
+    return mostRecent;
+  };
+
+  // Get the button text and style for freelancer's application status
+  const getFreelancerButtonInfo = (requestId: number) => {
+    const negotiation = getNegotiationForRequest(requestId);
+    if (!negotiation) {
+      console.log(`No negotiation found for request ${requestId} - showing Apply Now`);
+      return { text: 'Apply Now', className: 'border-blue-600 text-blue-700 hover:bg-blue-50', action: 'apply' };
+    }
+
+    console.log(`Getting button info for request ${requestId}:`, {
+      negotiationId: negotiation.id,
+      status: negotiation.status,
+      client_agreed: negotiation.client_agreed,
+      freelancer_agreed: negotiation.freelancer_agreed
+    });
+
+    switch (negotiation.status) {
+      case 'agreed':
+        return { 
+          text: `${negotiation.client?.user?.first_name || 'Client'} approved your application`, 
+          className: 'border-green-600 text-green-700 bg-green-50 cursor-default',
+          action: null 
+        };
+      case 'completed':
+        return { 
+          text: 'Project Completed', 
+          className: 'border-gray-600 text-gray-700 bg-gray-50 cursor-default',
+          action: null 
+        };
+      case 'declined':
+        return { 
+          text: 'Application Declined', 
+          className: 'border-gray-400 text-gray-600 bg-gray-50 cursor-default',
+          action: null 
+        };
+      case 'in_progress':
+        // For job applications: freelancer already agreed when applying
+        // So check if client has agreed yet
+        if (negotiation.client_agreed && negotiation.freelancer_agreed) {
+          return { 
+            text: 'Both parties agreed - Project starting', 
+            className: 'border-green-600 text-green-700 bg-green-50 cursor-default',
+            action: null 
+          };
+        } else if (!negotiation.client_agreed && negotiation.freelancer_agreed) {
+          // Freelancer applied (agreed) but waiting for client to accept
+          return { 
+            text: 'Waiting for client response', 
+            className: 'border-yellow-600 text-yellow-700 bg-yellow-50 cursor-default',
+            action: null 
+          };
+        }
+        // If freelancer hasn't agreed (shouldn't happen for job applications)
+        return { 
+          text: 'Cancel Application', 
+          className: 'border-red-600 text-red-700 hover:bg-red-50',
+          action: 'cancel_application' 
+        };
+      default:
+        return { 
+          text: 'Cancel Application', 
+          className: 'border-red-600 text-red-700 hover:bg-red-50',
+          action: 'cancel_application' 
+        };
+    }
   };
   
   // Get count of applicants (negotiations) for a request
@@ -168,27 +258,51 @@ const Dashboard: React.FC = () => {
     }
   };
   
-  // Handle cancel application
+  // Handle cancel application (freelancer)
   const handleCancelApplication = async (negotiationId: number) => {
     try {
-      // You'll need to implement declineNegotiation in negotiationApi
-      // await declineNegotiation(negotiationId, 'Freelancer cancelled application');
+      await declineNegotiation(negotiationId, 'Freelancer cancelled application');
       await fetchData();
       setModal({ open: false, action: null });
     } catch (err: any) {
       alert(err.message || 'Failed to cancel application');
     }
   };
+
+  // Handle refuse applicant (client)
+  const handleRefuseApplicant = async (negotiationId: number) => {
+    try {
+      console.log('Refusing applicant with negotiation ID:', negotiationId);
+      await declineNegotiation(negotiationId, 'Client refused application');
+      console.log('Successfully refused applicant, refreshing data');
+      await fetchData();
+      setModal({ open: false, action: null });
+    } catch (err: any) {
+      console.error('Error refusing applicant:', err);
+      alert(err.message || 'Failed to refuse applicant');
+    }
+  };
   
   // Handle accept applicant (client accepts freelancer)
   const handleAcceptApplicant = async (negotiationId: number) => {
     try {
+      console.log('Accepting applicant with negotiation ID:', negotiationId);
+      
+      // Use the new accept_applicant endpoint that handles the complete flow
+      await acceptApplicant(negotiationId);
+      console.log('Successfully accepted applicant, refreshing data');
+      
+      // Refresh data to get updated negotiations
+      await fetchData();
+      
+      console.log('Data refreshed, navigating to project progress');
       // Navigate to project progress with negotiation
       navigate(`/project-progress?negotiationId=${negotiationId}`, { 
         state: { negotiationId } 
       });
       setModal({ open: false, action: null });
     } catch (err: any) {
+      console.error('Error accepting applicant:', err);
       alert(err.message || 'Failed to accept applicant');
     }
   };
@@ -344,8 +458,23 @@ const Dashboard: React.FC = () => {
                     </div>
                     <div className="flex items-center gap-1 text-xs text-slate-500">
                       <span className="material-symbols-outlined text-[16px]">person</span>
-                      <span>{applicantsCount} applicant{applicantsCount !== 1 ? 's' : ''}</span>
-                    </div>
+<span>{applicantsCount} applicant{applicantsCount !== 1 ? 's' : ''}</span>
+                      </div>
+                      
+                      {/* View Applicants button for request owners */}
+                      {isOwner && applicantsCount > 0 && (
+                        <button
+                          className="text-xs text-blue-600 dark:text-blue-400 hover:text-blue-700 dark:hover:text-blue-300 font-medium"
+                          onClick={() => setModal({ 
+                            open: true, 
+                            action: 'view_applicants', 
+                            request: r,
+                            negotiations: requestNegotiations 
+                          })}
+                        >
+                          View Applicants
+                        </button>
+                      )}
                   </div>
                   
                   <h3 className="text-lg font-bold text-[#0A2540] dark:text-white mb-2 group-hover:text-primary transition-colors">
@@ -417,23 +546,26 @@ const Dashboard: React.FC = () => {
                           </button>
                         )}
                         
-                        {/* Freelancer view - Apply/Cancel button */}
+                        {/* Freelancer view - Apply/Status button */}
                         {userType === 'freelancer' && !isOwner && (
-                          applied ? (
-                            <button
-                              className="px-3 py-1.5 rounded-lg border-2 border-red-600 text-red-700 font-bold text-xs shadow-sm bg-white transition-all duration-300 hover:bg-red-50"
-                              onClick={() => setModal({ open: true, action: 'cancel_application', negotiation })}
-                            >
-                              Cancel Application
-                            </button>
-                          ) : (
-                            <button
-                              className="px-3 py-1.5 rounded-lg border-2 border-blue-600 text-blue-700 font-bold text-xs shadow-sm bg-white transition-all duration-300 hover:bg-blue-50"
-                              onClick={() => setModal({ open: true, action: 'apply', request: r })}
-                            >
-                              Apply Now
-                            </button>
-                          )
+                          (() => {
+                            const buttonInfo = getFreelancerButtonInfo(r.id);
+                            return (
+                              <button
+                                className={`px-3 py-1.5 rounded-lg border-2 font-bold text-xs shadow-sm bg-white transition-all duration-300 ${buttonInfo.className}`}
+                                onClick={() => {
+                                  if (buttonInfo.action === 'apply') {
+                                    setModal({ open: true, action: 'apply', request: r });
+                                  } else if (buttonInfo.action === 'cancel_application') {
+                                    setModal({ open: true, action: 'cancel_application', negotiation });
+                                  }
+                                }}
+                                disabled={!buttonInfo.action}
+                              >
+                                {buttonInfo.text}
+                              </button>
+                            );
+                          })()
                         )}
                         
                         {/* Guest view - Login prompt */}
@@ -456,13 +588,20 @@ const Dashboard: React.FC = () => {
                           {requestNegotiations.map((neg: any) => (
                             <div key={neg.id} className="flex items-center gap-2 group/applicant">
                               <img 
-                                src={neg.freelancer?.profile_picture || 'https://randomuser.me/api/portraits/lego/1.jpg'} 
+                                src={neg.freelancer?.profile_picture ? `http://localhost:8000${neg.freelancer.profile_picture}` : 'https://randomuser.me/api/portraits/lego/1.jpg'} 
                                 alt={neg.freelancer?.user?.first_name || 'Freelancer'} 
                                 className="w-7 h-7 rounded-full border-2 border-white dark:border-slate-900 shadow" 
                               />
-                              <span className="text-xs text-slate-700 dark:text-slate-200 font-medium mr-2">
+                              <button
+                                className="text-xs text-slate-700 dark:text-slate-200 font-medium mr-2 hover:text-blue-600 dark:hover:text-blue-400 transition-colors"
+                                onClick={() => {
+                                  if (neg.freelancer?.user?.id) {
+                                    navigate(`/profile/freelancer/${neg.freelancer.user.id}`);
+                                  }
+                                }}
+                              >
                                 {neg.freelancer?.user?.first_name} {neg.freelancer?.user?.last_name}
-                              </span>
+                              </button>
                               <button
                                 className="ml-auto w-6 h-6 flex items-center justify-center border border-blue-400 text-blue-500 rounded-full hover:bg-blue-50 transition-colors"
                                 title="Accept"
@@ -490,6 +629,70 @@ const Dashboard: React.FC = () => {
         </div>
         
         {/* Modals */}
+        {modal.open && modal.action === 'view_applicants' && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-20" onClick={() => setModal({ open: false, action: null })}>
+            <div className="bg-white dark:bg-[#1C2A3B] rounded-xl p-6 max-w-2xl mx-4 max-h-[80vh] overflow-y-auto" onClick={e => e.stopPropagation()}>
+              <h3 className="text-2xl font-bold mb-4 text-gray-800 dark:text-white">Applicants for "{modal.request?.title}"</h3>
+              <p className="text-gray-600 dark:text-gray-400 mb-6">
+                {modal.negotiations?.length || 0} applicant{(modal.negotiations?.length || 0) !== 1 ? 's' : ''}
+              </p>
+              
+              <div className="space-y-4">
+                {modal.negotiations?.map((neg: any) => (
+                  <div key={neg.id} className="flex items-center justify-between p-4 border border-gray-200 dark:border-gray-700 rounded-lg">
+                    <div className="flex items-center gap-3">
+                      <img 
+                        src={neg.freelancer?.profile_picture ? `http://localhost:8000${neg.freelancer.profile_picture}` : 'https://randomuser.me/api/portraits/lego/1.jpg'} 
+                        alt={neg.freelancer?.user?.first_name || 'Freelancer'} 
+                        className="w-10 h-10 rounded-full border-2 border-white dark:border-slate-900 shadow"
+                      />
+                      <div>
+                        <button
+                          className="font-medium text-gray-800 dark:text-white hover:text-blue-600 dark:hover:text-blue-400 transition-colors"
+                          onClick={() => {
+                            if (neg.freelancer?.user?.id) {
+                              navigate(`/profile/freelancer/${neg.freelancer.user.id}`);
+                            }
+                          }}
+                        >
+                          {neg.freelancer?.user?.first_name} {neg.freelancer?.user?.last_name}
+                        </button>
+                        <p className="text-sm text-gray-500 dark:text-gray-400">
+                          {neg.freelancer?.user?.email}
+                        </p>
+                      </div>
+                    </div>
+                    
+                    <div className="flex gap-2">
+                      <button
+                        className="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors"
+                        onClick={() => handleAcceptApplicant(neg.id)}
+                      >
+                        Accept
+                      </button>
+                      <button
+                        className="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors"
+                        onClick={() => handleRefuseApplicant(neg.id)}
+                      >
+                        Refuse
+                      </button>
+                    </div>
+                  </div>
+                ))}
+              </div>
+              
+              <div className="mt-6 flex justify-end">
+                <button
+                  className="px-6 py-3 border-2 border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors"
+                  onClick={() => setModal({ open: false, action: null })}
+                >
+                  Close
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
+        
         {modal.open && modal.action === 'login' && (
           <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-20" onClick={() => setModal({ open: false, action: null })}>
             <div className="bg-white dark:bg-[#1C2A3B] rounded-xl p-8 max-w-md mx-4" onClick={e => e.stopPropagation()}>
@@ -520,6 +723,7 @@ const Dashboard: React.FC = () => {
             modal.action === 'cancel_application' ? 'Cancel Application' :
             modal.action === 'accept' ? 'Accept Applicant' :
             modal.action === 'refuse' ? 'Refuse Applicant' :
+            modal.action === 'view_applicants' ? 'View Applicants' :
             'Confirmation'
           }
           message={
@@ -527,6 +731,7 @@ const Dashboard: React.FC = () => {
             modal.action === 'cancel_application' ? 'Are you sure you want to cancel your application?' :
             modal.action === 'accept' ? 'This will create a project with this freelancer.' :
             modal.action === 'refuse' ? 'This will remove the applicant from this request.' :
+            modal.action === 'view_applicants' ? 'Here are all the applicants for this request.' :
             ''
           }
           confirmText={
@@ -534,6 +739,7 @@ const Dashboard: React.FC = () => {
             modal.action === 'cancel_application' ? 'Cancel Application' :
             modal.action === 'accept' ? 'Accept' :
             modal.action === 'refuse' ? 'Refuse' :
+            modal.action === 'view_applicants' ? 'Close' :
             'Confirm'
           }
           cancelText="Back"
@@ -546,7 +752,7 @@ const Dashboard: React.FC = () => {
             } else if (modal.action === 'accept' && modal.negotiation) {
               await handleAcceptApplicant(modal.negotiation.id);
             } else if (modal.action === 'refuse' && modal.negotiation) {
-              await handleCancelApplication(modal.negotiation.id);
+              await handleRefuseApplicant(modal.negotiation.id);
             }
           }}
         />

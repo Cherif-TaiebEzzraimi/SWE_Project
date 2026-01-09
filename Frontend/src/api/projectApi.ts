@@ -42,7 +42,9 @@ export interface ProjectResponse {
  * GET /projects/user/:user_id/
  */
 export const getUserProjects = async (userId: number): Promise<ProjectResponse[]> => {
+  console.log('🔍 Fetching projects for user:', userId);
   const response = await apiClient.get<ProjectResponse[]>(`/projects/user/${userId}/`);
+  console.log('📊 Projects response:', response.data);
   return response.data;
 };
 

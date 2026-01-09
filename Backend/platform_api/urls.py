@@ -57,6 +57,7 @@ urlpatterns = [
     path('negotiations/<int:id>/phases/', views.add_phase, name='add_phase'),
     path('negotiations/phases/<int:phase_id>/', views.negotiation_phase_detail, name='negotiation_phase_detail'),
     path('negotiations/<int:id>/agree/', views.agree_negotiation, name='agree_negotiation'),
+    path('negotiations/<int:id>/accept-applicant/', views.accept_applicant, name='accept_applicant'),
     path('negotiations/<int:id>/decline/', views.decline_negotiation, name='decline_negotiation'),
     # Projects
     path('projects/user/<int:user_id>/', views.list_projects_for_user, name='list_projects_for_user'),

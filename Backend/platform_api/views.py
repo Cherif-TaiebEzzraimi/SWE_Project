@@ -591,16 +591,33 @@ def create_from_request(request, request_id):
     req = Request.objects.filter(id=request_id).first()
     if not req:
         return Response({'detail': 'Request not found'}, status=status.HTTP_404_NOT_FOUND)
-    # Only client who created request or staff can create negotiation for it
-    if not (request.user.is_staff or req.client.user.id == request.user.id):
+    # Allow staff, client who created request, or freelancers to create negotiation
+    # Client can create negotiation to hire directly, freelancer can create negotiation to apply
+    if not (request.user.is_staff or req.client.user.id == request.user.id or request.user.role == 'freelancer'):
         return Response({'detail': 'Forbidden'}, status=status.HTTP_403_FORBIDDEN)
     data = request.data.copy()
     data['origin_type'] = 'request'
     data['request_id'] = req.id
-    data['client_id'] = req.client.id
+    data['client_id'] = req.client.user.id
+    # If freelancer is applying, set the freelancer_id and mark as agreed
+    if request.user.role == 'freelancer':
+        try:
+            freelancer = Freelancer.objects.get(user=request.user)
+            data['freelancer_id'] = freelancer.user.id
+            data['freelancer_agreed'] = True  # Freelancer agrees by applying
+            data['status'] = 'in_progress'  # Keep as in_progress, but freelancer has agreed
+        except Freelancer.DoesNotExist:
+            return Response({'detail': 'Freelancer profile not found'}, status=status.HTTP_404_NOT_FOUND)
     serializer = NegotiationSerializer(data=data)
     if serializer.is_valid():
         negotiation = serializer.save()
+        
+        # Update request status to 'accepted' if it gets applicants
+        req.refresh_from_db()
+        if req.status == 'pending':
+            req.status = 'accepted'
+            req.save()
+        
         return Response(NegotiationSerializer(negotiation).data, status=status.HTTP_201_CREATED)
     return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
@@ -700,6 +717,12 @@ def agree_negotiation(request, id):
     # if both agreed set status and create project if not exists
     if negotiation.client_agreed and negotiation.freelancer_agreed:
         negotiation.status = 'agreed'
+        
+        # Update the request status to 'completed' since a project is being created
+        if negotiation.request:
+            negotiation.request.status = 'completed'
+            negotiation.request.save()
+        
         # Create project if not already created
         from .models import Project
         import re
@@ -728,6 +751,63 @@ def agree_negotiation(request, id):
                     deliverables=getattr(phase, 'deliverables', None),
                     status='pending',
                 )
+    negotiation.save()
+    return Response(NegotiationSerializer(negotiation).data)
+
+
+@api_view(['POST'])
+def accept_applicant(request, id):
+    """POST /negotiations/:id/accept-applicant - client accepts freelancer application and creates project"""
+    negotiation = Negotiation.objects.filter(id=id).first()
+    if not negotiation:
+        return Response({'detail': 'Negotiation not found'}, status=status.HTTP_404_NOT_FOUND)
+    
+    # Check if user is the client
+    client_user_id, freelancer_user_id = get_negotiation_user_ids(negotiation)
+    if request.user.id != client_user_id:
+        return Response({'detail': 'Only the client can accept applicants'}, status=status.HTTP_403_FORBIDDEN)
+    
+    # Set both parties as agreed and create project immediately
+    negotiation.client_agreed = True
+    negotiation.freelancer_agreed = True  # Freelancer already agreed by applying
+    negotiation.status = 'agreed'
+    
+    # Update the request status to 'completed' since a project is being created
+    if negotiation.request:
+        negotiation.request.status = 'completed'
+        negotiation.request.save()
+    
+    # Create project if not already created
+    from .models import Project
+    import re
+    project_exists = Project.objects.filter(negotiation=negotiation).exists()
+    if not project_exists:
+        # Extract title from client_description or use request title
+        project_title = f"Project #{negotiation.id}"
+        if negotiation.request:
+            project_title = negotiation.request.title
+        elif negotiation.client_description:
+            title_match = re.search(r'Project Title:\s*(.+?)(?:\n|$)', negotiation.client_description, re.IGNORECASE)
+            if title_match:
+                project_title = title_match.group(1).strip()
+        
+        project = Project.objects.create(
+            negotiation=negotiation,
+            title=project_title
+        )
+        # Optionally, copy phases from negotiation to project
+        from .models import NegotiationPhase, ProjectPhase
+        phases = NegotiationPhase.objects.filter(negotiation=negotiation).order_by('created_at')
+        for phase in phases:
+            ProjectPhase.objects.create(
+                project=project,
+                title=phase.title,
+                description=phase.description,
+                budget=getattr(phase, 'budget', None),
+                deliverables=getattr(phase, 'deliverables', None),
+                status='pending',
+            )
+    
     negotiation.save()
     return Response(NegotiationSerializer(negotiation).data)
 
@@ -865,6 +945,7 @@ def reply_to_comment(request, id):
 
 # ---------- Project endpoints ----------
 @api_view(['GET'])
+@permission_classes([IsAuthenticated])
 def list_projects_for_user(request, user_id):
     """GET /projects/:user_id - list projects where the user is client or freelancer"""
     user = User.objects.filter(id=user_id).first()
@@ -1970,5 +2051,8 @@ def list_negotiations(request):
     
     # Remove duplicates and serialize
     serializer = NegotiationSerializer(qs.distinct(), many=True)
+    print(f"🔍 Backend: Returning {len(serializer.data)} negotiations for user {user.email}")
+    for i, neg in enumerate(serializer.data):
+        print(f"  {i+1}. Negotiation {neg.get('id')} - Status: {neg.get('status')} - Client: {neg.get('client', {}).get('user', {}).get('email')} - Freelancer: {neg.get('freelancer', {}).get('user', {}).get('email')}")
     return Response(serializer.data)
 

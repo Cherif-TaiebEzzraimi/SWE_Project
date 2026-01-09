@@ -52,7 +52,9 @@ const FreelancerHistory: React.FC<FreelancerHistoryProps> = ({ userId }) => {
   const fetchProjects = async () => {
     try {
       setLoading(true);
+      console.log('🚀 FreelancerHistory: Fetching projects for userId:', userId);
       const projectsData = await getUserProjects(userId);
+      console.log('📈 FreelancerHistory: Received projects data:', projectsData);
       
       // Transform backend data to match the component's expected format
       const transformedProjects: WorkItem[] = projectsData.map((project) => {
@@ -128,8 +130,11 @@ const FreelancerHistory: React.FC<FreelancerHistoryProps> = ({ userId }) => {
 
   const getStatusBadge = (status: string) => {
     const statusConfig: Record<string, { label: string; className: string }> = {
-      done: { label: 'Completed', className: styles.statusCompleted },
+      agreed: { label: 'Agreed', className: styles.statusPending },
+      completed: { label: 'Completed', className: styles.statusCompleted },
       in_progress: { label: 'In Progress', className: styles.statusInProgress },
+      declined: { label: 'Declined', className: styles.statusCancelled },
+      done: { label: 'Completed', className: styles.statusCompleted },
       pending: { label: 'Pending', className: styles.statusPending },
       accepted: { label: 'Accepted', className: styles.statusPending },
     };
@@ -147,7 +152,7 @@ const FreelancerHistory: React.FC<FreelancerHistoryProps> = ({ userId }) => {
   }
 
   const filteredProjects = filter === 'done'
-    ? projects.filter(p => ['accepted', 'in_progress', 'done'].includes(p.negotiation.status))
+    ? projects.filter(p => ['agreed', 'in_progress', 'completed'].includes(p.negotiation.status))
     : projects;
 
   return (

@@ -54,6 +54,7 @@ export const getNegotiations = async (): Promise<NegotiationResponse[]> => {
   try {
     // This endpoint may not exist yet - you'll need to add it to backend
     const response = await apiClient.get<NegotiationResponse[]>('/negotiations/');
+    console.log('📊 Negotiations API response:', response.data);
     return response.data;
   } catch (error: any) {
     console.error('Error fetching negotiations:', error);
@@ -134,6 +135,22 @@ export const agreeNegotiation = async (negotiationId: number): Promise<Negotiati
   } catch (error: any) {
     console.error('Error agreeing to negotiation:', error);
     throw new Error(error.response?.data?.detail || 'Failed to agree to negotiation');
+  }
+};
+
+/**
+ * Accept applicant (client accepts freelancer application)
+ * POST /negotiations/:id/accept-applicant/
+ */
+export const acceptApplicant = async (negotiationId: number): Promise<NegotiationResponse> => {
+  try {
+    const response = await apiClient.post<NegotiationResponse>(
+      `/negotiations/${negotiationId}/accept-applicant/`
+    );
+    return response.data;
+  } catch (error: any) {
+    console.error('Error accepting applicant:', error);
+    throw new Error(error.response?.data?.detail || 'Failed to accept applicant');
   }
 };
 

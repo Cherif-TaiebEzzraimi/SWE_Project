@@ -97,12 +97,15 @@ const ClientHistory: React.FC<ClientHistoryProps> = ({ userId }) => {
 
   const getStatusBadge = (status: string) => {
     const statusConfig: Record<string, { label: string; className: string }> = {
-      done: { label: 'Completed', className: styles.statusCompleted },
+      agreed: { label: 'Agreed', className: styles.statusPending },
+      completed: { label: 'Completed', className: styles.statusCompleted },
       in_progress: { label: 'In Progress', className: styles.statusInProgress },
+      declined: { label: 'Declined', className: styles.statusCancelled },
+      done: { label: 'Completed', className: styles.statusCompleted },
       pending: { label: 'Pending', className: styles.statusPending },
       accepted: { label: 'Accepted', className: styles.statusPending },
       open: { label: 'Open', className: styles.statusPending },
-      cancelled: { label: 'Cancelled', className: styles.statusPending },
+      cancelled: { label: 'Cancelled', className: styles.statusCancelled },
     };
 
     const config = statusConfig[status] || { label: status, className: '' };
@@ -112,7 +115,7 @@ const ClientHistory: React.FC<ClientHistoryProps> = ({ userId }) => {
   const filteredProjects =
     filter === 'done'
       ? projects.filter((p) =>
-          ['accepted', 'in_progress', 'done'].includes(p.negotiation.status)
+          ['agreed', 'in_progress', 'completed'].includes(p.negotiation.status)
         )
       : projects;
 
