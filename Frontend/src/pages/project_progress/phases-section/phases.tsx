@@ -28,8 +28,9 @@ const PhasesPageContent = ({ storageScope, clientFilesSubmitted: propClientFiles
   // Get clientFilesSubmitted from props first, then fallback to location.state
   const clientFilesSubmitted = propClientFilesSubmitted ?? Boolean(location.state?.clientFilesSubmitted);
   
-  // Determine if freelancer can edit based on client file submission
-  const isFreelancerEditingAllowed = userType === 'freelancer' ? clientFilesSubmitted : canEditPhases;
+  // Determine editing permissions
+  const canEditThisSection = userType === 'freelancer' ? clientFilesSubmitted : 
+                                (userType === 'client' ? false : canEditPhases);
 
   console.log('[PhasesPageContent] Render with:', {
     userType,
@@ -37,7 +38,7 @@ const PhasesPageContent = ({ storageScope, clientFilesSubmitted: propClientFiles
     locationClientFilesSubmitted: location.state?.clientFilesSubmitted,
     clientFilesSubmitted,
     canEditPhases,
-    isFreelancerEditingAllowed
+    canEditThisSection
   });
 
   const [selectedPhase, setSelectedPhase] = useState<Phase | null>(null);
@@ -51,13 +52,13 @@ const PhasesPageContent = ({ storageScope, clientFilesSubmitted: propClientFiles
   };
 
   const handleEditPhase = (phase: Phase) => {
-    console.log('[PhasesPageContent] handleEditPhase called', { phase, isFreelancerEditingAllowed });
+     console.log('[PhasesPageContent] handleEditPhase called', { phase, canEditThisSection });
     setPhaseToEdit(phase);
     setIsEditModalOpen(true);
   };
 
   const handleDeletePhase = (phaseId: string) => {
-    console.log('[PhasesPageContent] handleDeletePhase called', { phaseId, isFreelancerEditingAllowed });
+     console.log('[PhasesPageContent] handleDeletePhase called', { phaseId, canEditThisSection });
     deletePhase(phaseId);
     if (selectedPhase?.id === phaseId) {
       setSelectedPhase(null);
@@ -116,7 +117,7 @@ const PhasesPageContent = ({ storageScope, clientFilesSubmitted: propClientFiles
               phase={phase}
               onClick={() => handlePhaseClick(phase)}
               isSelected={selectedPhase?.id === phase.id}
-              canEdit={isFreelancerEditingAllowed}
+              canEdit={canEditThisSection}
               onEdit={() => handleEditPhase(phase)}
               onDelete={() => handleDeletePhase(phase.id)}
             />
@@ -131,7 +132,7 @@ const PhasesPageContent = ({ storageScope, clientFilesSubmitted: propClientFiles
           onClose={() => setSelectedPhase(null)}
           onEdit={() => handleEditPhase(selectedPhase)}
           onDelete={() => handleDeletePhase(selectedPhase.id)}
-          canEdit={isFreelancerEditingAllowed}
+          canEdit={canEditThisSection}
           onUpdatePhase={(updated) => {
             updatePhase(updated);
             setSelectedPhase(updated);
@@ -143,8 +144,8 @@ const PhasesPageContent = ({ storageScope, clientFilesSubmitted: propClientFiles
 
       {/* Action buttons */}
       <div className="flex justify-center gap-5 flex-wrap">
-        {/* Only show note and add phase buttons for freelancer, and only if editing is allowed */}
-        {userType === 'freelancer' && isFreelancerEditingAllowed && (
+         {/* Only show note and add phase buttons for freelancer, and only if editing is allowed */}
+        {userType === 'freelancer' && canEditThisSection && (
           <button
             onClick={() => setIsNoteModalOpen(true)}
             className="px-6 py-3 bg-transparent text-red-400 border border-red-400 rounded-lg 
@@ -155,8 +156,8 @@ const PhasesPageContent = ({ storageScope, clientFilesSubmitted: propClientFiles
             Leave a Note
           </button>
         )}
-        {/* Add phase button for freelancer only, and only if editing is allowed */}
-        {userType === 'freelancer' && isFreelancerEditingAllowed && (
+         {/* Add phase button for freelancer only, and only if editing is allowed */}
+        {userType === 'freelancer' && canEditThisSection && (
           <button
             onClick={() => setIsAddModalOpen(true)}
             className="px-6 py-3 bg-transparent text-blue-400 border border-blue-600 rounded-lg 

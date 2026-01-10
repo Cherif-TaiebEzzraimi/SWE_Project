@@ -77,6 +77,7 @@ urlpatterns = [
 
     # Media / Files
     path('media/upload/', views.upload_media, name='upload_media'),
+    path('media/check_negotiation/<int:negotiation_id>/', views.check_negotiation_files, name='check_negotiation_files'),
     path('media/<str:entity_type>/<int:entity_id>/', views.list_media, name='list_media'),
     path('media/<int:id>/', views.delete_media, name='delete_media'),
 

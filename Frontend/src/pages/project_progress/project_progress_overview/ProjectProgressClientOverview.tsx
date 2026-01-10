@@ -113,7 +113,7 @@
 
 
 import { useState, useEffect } from 'react';
-import { useLocation } from 'react-router-dom';
+import { useLocation, useNavigate } from 'react-router-dom';
 import { ProjectCard } from './components/ProjectCard';
 import { FileUploadSection } from './components/FileUploadSection';
 import { FileDisplaySection } from './components/FileDisplaySection';
@@ -132,6 +132,7 @@ export default function ProjectProgressClientOverview({
   projectState,
 }: ProjectProgressClientOverviewProps) {
   const location = useLocation();
+  const navigate = useNavigate();
 
   /* ✅ 3. Safe fallback logic */
   const effectiveProjectState = projectState || location.state || {};
@@ -188,11 +189,25 @@ export default function ProjectProgressClientOverview({
           console.log('Fetched negotiation:', negotiation);
           setFetchedNegotiation(negotiation);
           
-          // Parse project data from client_description
+          // Parse project data from client_description or request data
           if (negotiation.client_description) {
             const parsed = parseProjectData(negotiation.client_description);
-            console.log('Parsed project data:', parsed);
+            console.log('Parsed project data from client_description:', parsed);
             setParsedProjectData(parsed);
+          } else if (negotiation.request) {
+            // Use request data for projects created from requests
+            const parsedFromRequest = {
+              title: negotiation.request.title,
+              category: negotiation.request.category || '',
+              minPrice: negotiation.request.budget_min,
+              maxPrice: negotiation.request.budget_max,
+              description: negotiation.request.description || '',
+              requirements: [] // TODO: Extract from attachments if needed
+            };
+            console.log('Parsed project data from request:', parsedFromRequest);
+            setParsedProjectData(parsedFromRequest);
+          } else {
+            console.log('No client_description or request data found');
           }
         } catch (error) {
           console.error('Error fetching negotiation:', error);
@@ -349,18 +364,28 @@ export default function ProjectProgressClientOverview({
   }, [showSuccessMessage]);
 
   const handleSubmitFiles = async () => {
+    console.log('[ProjectProgressClientOverview] 🚀 handleSubmitFiles STARTED');
+    console.log(`   - negotiationId: ${negotiationId}`);
+    console.log(`   - files to upload: ${files.length}`);
+    
     if (!negotiationId || files.length === 0) {
+      console.log('[ProjectProgressClientOverview] ❌ Missing negotiationId or files');
       return;
     }
 
     setIsUploading(true);
     try {
+      console.log('[ProjectProgressClientOverview] 📤 Starting file uploads...');
+      
       // Upload all files - FileForUpload has a 'file' property with the actual File
       const uploadPromises = files.map(fileForUpload => {
+        console.log(`   - Uploading: ${fileForUpload.file.name} (${fileForUpload.file.size} bytes)`);
         return uploadMedia(fileForUpload.file, 'negotiation_attachment', negotiationId);
       });
 
+      console.log('[ProjectProgressClientOverview] ⏳ Waiting for all uploads to complete...');
       const uploadedMediaFiles = await Promise.all(uploadPromises);
+      console.log('[ProjectProgressClientOverview] ✅ All uploads completed:', uploadedMediaFiles);
       
       // Transform to match expected format
       const transformedFiles: MediaFile[] = uploadedMediaFiles.map(mf => ({
@@ -376,6 +401,26 @@ export default function ProjectProgressClientOverview({
       setFiles([]);
       setFilesSubmitted(true);
       setShowSuccessMessage(true);
+      
+      console.log('[ProjectProgressClientOverview] 🔥 DATABASE-DRIVEN STATE UPDATE');
+      console.log(`   - Local state updated with ${transformedFiles.length} files`);
+      
+      // Force database check after upload to trigger polling detection
+      setTimeout(() => {
+        console.log('[ProjectProgressClientOverview] 🔔 Triggering immediate database check...');
+        
+        // Navigate to same page to force ProjectProgressPage to recheck database
+        const params = new URLSearchParams(location.search);
+        navigate(`?${params.toString()}&refresh=${Date.now()}`, { 
+          replace: true,
+          state: {
+            ...effectiveProjectState,
+            forceRefresh: true,
+            clientFilesSubmitted: true,
+            submittedFiles: [...(effectiveProjectState.submittedFiles || []), ...transformedFiles]
+          }
+        });
+      }, 1000); // Give the backend a moment to save the files
     } catch (error) {
       console.error('Error uploading files:', error);
       alert('Failed to upload files. Please try again.');

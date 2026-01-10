@@ -9,6 +9,7 @@ import ProjectProgressClientOverview from './project_progress_overview/ProjectPr
 import ProjectProgressFreelancerOverview from './project_progress_overview/ProjectProgressFreelancerOverview';
 import NotesSection from './notes/NotesSection';
 import { PhasesProvider } from './phases-section/context/PhasesContext';
+import apiClient from '../../lib/axios';
 import '../../styles/index.css';
 
 const ProjectProgressPage = () => {
@@ -52,48 +53,66 @@ const ProjectProgressPage = () => {
   const [submittedFiles, setSubmittedFiles] = useState<any[]>(projectState.submittedFiles || []);
   const [isLoadingFiles, setIsLoadingFiles] = useState(false);
 
-  // Fetch negotiation data to check if client has submitted files
+  // Fetch negotiation data to check if client has submitted files using new database-driven approach
   useEffect(() => {
-    const fetchNegotiationData = async () => {
+    const checkNegotiationFiles = async () => {
       if (!urlNegotiationId) return;
+      
+      const refreshParam = searchParams.get('refresh');
+      console.log('[ProjectProgressPage] 🔍 DATABASE-DRIVEN FILE CHECK STARTING');
+      console.log(`   - Negotiation ID: ${urlNegotiationId}`);
+      console.log(`   - Force refresh: ${refreshParam ? 'YES' : 'NO'}`);
+      console.log(`   - Current clientFilesSubmitted state: ${clientFilesSubmitted}`);
       
       setIsLoadingFiles(true);
       try {
-        const response = await fetch(`/api/negotiations/${urlNegotiationId}/`, {
-          credentials: 'include'
+        // Use the new endpoint to check if negotiation has files
+        const checkEndpoint = `/media/check_negotiation/${urlNegotiationId}/`;
+        console.log(`   - Checking endpoint: ${checkEndpoint}`);
+        
+        const response = await apiClient.get(checkEndpoint);
+        
+        console.log('[ProjectProgressPage] 📊 CHECK RESPONSE:', {
+          status: response.status,
+          statusText: response.statusText
         });
         
-        if (response.ok) {
-          const data = await response.json();
-          console.log('[ProjectProgressPage] Fetched negotiation data:', data);
+        if (response.status === 200) {
+          const data = response.data;
+          console.log('[ProjectProgressPage] ✅ DATABASE CHECK RESULT:', data);
           
-          // Check if client has submitted files
-          const hasFiles = data.client_attachments && data.client_attachments.length > 0;
-          console.log('[ProjectProgressPage] Has client files:', hasFiles);
+          const hasFiles = data.has_files;
+          const fileCount = data.file_count;
+          const files = data.files;
+          
+          console.log('[ProjectProgressPage] 🎯 FILE STATUS DETERMINED:');
+          console.log(`   - Has files: ${hasFiles}`);
+          console.log(`   - File count: ${fileCount}`);
+          console.log(`   - Files:`, files);
+          console.log(`   - Setting clientFilesSubmitted to: ${hasFiles}`);
           
           setClientFilesSubmitted(hasFiles);
+          setSubmittedFiles(files);
           
-          // If has files, fetch the media files
-          if (hasFiles) {
-            const mediaResponse = await fetch(`/api/media/negotiation/${urlNegotiationId}/`, {
-              credentials: 'include'
-            });
-            if (mediaResponse.ok) {
-              const mediaFiles = await mediaResponse.json();
-              console.log('[ProjectProgressPage] Fetched media files:', mediaFiles);
-              setSubmittedFiles(mediaFiles);
-            }
-          }
+          console.log('[ProjectProgressPage] ✅ State updated successfully');
+        } else {
+          console.error('[ProjectProgressPage] ❌ FAILED - Check response:', await response.text());
+          setClientFilesSubmitted(false);
+          setSubmittedFiles([]);
         }
       } catch (error) {
-        console.error('[ProjectProgressPage] Error fetching negotiation data:', error);
+        console.error('[ProjectProgressPage] ❌ ERROR checking negotiation files:', error);
+        setClientFilesSubmitted(false);
+        setSubmittedFiles([]);
       } finally {
         setIsLoadingFiles(false);
       }
     };
 
-    fetchNegotiationData();
+    checkNegotiationFiles();
   }, [urlNegotiationId]);
+
+
 
   // Update clientFilesSubmitted when location.state changes
   useEffect(() => {
@@ -108,7 +127,14 @@ const ProjectProgressPage = () => {
 
   useEffect(() => {
     console.log('============================================');
-    console.log('[ProjectProgressPage] DETAILED DEBUG INFO:');
+    console.log('[ProjectProgressPage] 🎯 FINAL RENDERING DECISION:');
+    console.log('   - effectiveUserType:', effectiveUserType);
+    console.log('   - projectId:', urlProjectId);
+    console.log('   - negotiationId:', urlNegotiationId);
+    console.log('   - clientFilesSubmitted state:', clientFilesSubmitted);
+    console.log('   - submittedFiles array:', submittedFiles);
+    console.log('   - submittedFiles count:', submittedFiles.length);
+    console.log('   - Rendering for:', effectiveUserType === 'freelancer' ? 'FREELANCER' : 'CLIENT');
     console.log('============================================');
     console.log('1. location.state:', location.state);
     console.log('2. location.state?.userType:', location.state?.userType);
@@ -164,6 +190,47 @@ const ProjectProgressPage = () => {
       setActiveTab(initialTab);
     }
   }, [initialTab]);
+
+  // Poll for file updates every 5 seconds when on overview tab
+  useEffect(() => {
+    if (!urlNegotiationId || activeTab !== 'overview') return;
+    
+    console.log('[ProjectProgressPage] 🔄 Starting file status polling');
+    
+    const interval = setInterval(async () => {
+      console.log('[ProjectProgressPage] 🔄 Polling for file updates...');
+       try {
+        const checkEndpoint = `/media/check_negotiation/${urlNegotiationId}/`;
+        const response = await apiClient.get(checkEndpoint);
+        
+        if (response.status === 200) {
+          const data = response.data;
+          const hasFiles = data.has_files;
+          const files = data.files;
+          
+          console.log('[ProjectProgressPage] 🔄 POLL RESULT:', {
+            hasFiles,
+            fileCount: data.file_count,
+            currentState: clientFilesSubmitted
+          });
+          
+          // Update state if files status changed
+          if (hasFiles !== clientFilesSubmitted) {
+            console.log('[ProjectProgressPage] 🔄 FILE STATUS CHANGED - Updating state');
+            setClientFilesSubmitted(hasFiles);
+            setSubmittedFiles(files);
+          }
+        }
+      } catch (error) {
+        console.error('[ProjectProgressPage] 🔄 ERROR polling for updates:', error);
+      }
+    }, 5000); // Poll every 5 seconds
+
+    return () => {
+      console.log('[ProjectProgressPage] 🔄 Stopping file status polling');
+      clearInterval(interval);
+    };
+  }, [urlNegotiationId, activeTab, clientFilesSubmitted]);
 
   const handleTabChange = (tab: 'overview' | 'phases' | 'notes') => {
     setActiveTab(tab);
@@ -227,7 +294,7 @@ const ProjectProgressPage = () => {
                 <PhasesPage 
                   projectState={{
                     ...projectState,
-                    clientFilesSubmitted: true // Always allow editing for freelancer
+                    clientFilesSubmitted: clientFilesSubmitted // Use actual file submission status
                   }} 
                 />
               </div>

@@ -612,11 +612,16 @@ def create_from_request(request, request_id):
     if serializer.is_valid():
         negotiation = serializer.save()
         
-        # Update request status to 'accepted' if it gets applicants
-        req.refresh_from_db()
-        if req.status == 'pending':
-            req.status = 'accepted'
-            req.save()
+        # Populate client_description with request data for consistency
+        if req and not negotiation.client_description:
+            negotiation.client_description = f"""Project Title: {req.title}
+Category: {req.category or ''}
+Budget: {req.budget_min} - {req.budget_max} DA
+Description: {req.description or ''}"""
+            negotiation.save()
+        
+        # DON'T update request status here - keep it 'pending' until client accepts an applicant
+        # This allows multiple freelancers to apply to same request
         
         return Response(NegotiationSerializer(negotiation).data, status=status.HTTP_201_CREATED)
     return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
@@ -1305,10 +1310,22 @@ def upload_media(request):
     Accepts multipart form with 'file' (or 'attachment'), 'entity_type' and 'entity_id'.
     Saves file using default storage and creates a MediaFile record.
     """
+    print(f"🚀 DEBUG: upload_media called")
+    print(f"   - User: {request.user}")
+    print(f"   - FILES: {dict(request.FILES)}")
+    print(f"   - POST data: {dict(request.data)}")
+    
     upload = request.FILES.get('file') or request.FILES.get('attachment')
     entity_type = request.data.get('entity_type')
     entity_id = request.data.get('entity_id')
+    
+    print(f"🔍 DEBUG: Parsed data:")
+    print(f"   - upload: {upload}")
+    print(f"   - entity_type: {entity_type}")
+    print(f"   - entity_id: {entity_id}")
+    
     if not upload or not entity_type or entity_id is None:
+        print(f"❌ DEBUG: Missing required fields")
         return Response({'detail': 'file, entity_type and entity_id are required'}, status=status.HTTP_400_BAD_REQUEST)
     try:
         entity_id = int(entity_id)
@@ -1332,6 +1349,13 @@ def upload_media(request):
 
     file_type = getattr(upload, 'content_type', '') or os.path.splitext(saved_name)[1].lstrip('.')
 
+    print(f"💾 DEBUG: Creating MediaFile:")
+    print(f"   - owner: {request.user} (id: {request.user.id})")
+    print(f"   - entity_type: {entity_type}")
+    print(f"   - entity_id: {entity_id}")
+    print(f"   - file_url: {file_url}")
+    print(f"   - file_type: {file_type}")
+    
     media = MediaFile.objects.create(
         owner=request.user,
         entity_type=entity_type,
@@ -1339,6 +1363,15 @@ def upload_media(request):
         file_url=file_url,
         file_type=file_type,
     )
+    
+    print(f"✅ DEBUG: MediaFile created with id: {media.id}")
+    
+    # Check existing media for this entity_type/entity_id after creation
+    existing_media = MediaFile.objects.filter(entity_type=entity_type, entity_id=entity_id).exclude(file_type='deleted')
+    print(f"📊 DEBUG: Total media files for {entity_type}/{entity_id}: {existing_media.count()}")
+    for mf in existing_media:
+        print(f"   - MediaFile {mf.id}: {mf.file_type} ({mf.file_url})")
+    
     return Response(MediaFileSerializer(media).data, status=status.HTTP_201_CREATED)
 
 
@@ -1347,9 +1380,59 @@ def list_media(request, entity_type, entity_id):
     """GET /media/:entityType/:entityId - list media for given entity
     Excludes items marked as deleted (we mark deleted media by setting file_type='deleted').
     """
+    print(f"🔍 DEBUG: list_media called")
+    print(f"   - entity_type: {entity_type}")
+    print(f"   - entity_id: {entity_id}")
+    
     qs = MediaFile.objects.filter(entity_type=entity_type, entity_id=entity_id).exclude(file_type='deleted')
+    
+    print(f"📊 DEBUG: Found {qs.count()} media files for {entity_type}/{entity_id}")
+    for mf in qs:
+        print(f"   - MediaFile {mf.id}: {mf.file_type} by user {mf.owner}")
+    
     serializer = MediaFileSerializer(qs, many=True)
     return Response(serializer.data)
+
+
+@api_view(['GET'])
+def check_negotiation_files(request, negotiation_id):
+    """GET /media/check_negotiation/:id - Check if negotiation has any files
+    Returns boolean indicating if files exist and the actual files list.
+    """
+    print(f"🔍 DEBUG: check_negotiation_files called for negotiation_id: {negotiation_id}")
+    
+    try:
+        negotiation_id = int(negotiation_id)
+    except ValueError:
+        print(f"❌ DEBUG: Invalid negotiation_id: {negotiation_id}")
+        return Response({'detail': 'Invalid negotiation_id'}, status=status.HTTP_400_BAD_REQUEST)
+    
+    # Check for files with entity_type='negotiation_attachment' and this negotiation_id
+    files = MediaFile.objects.filter(
+        entity_type='negotiation_attachment',
+        entity_id=negotiation_id
+    ).exclude(file_type='deleted')
+    
+    has_files = files.exists()
+    file_count = files.count()
+    
+    print(f"📊 DEBUG: Negotiation {negotiation_id} file status:")
+    print(f"   - has_files: {has_files}")
+    print(f"   - file_count: {file_count}")
+    
+    if has_files:
+        print(f"   - files:")
+        for mf in files:
+            print(f"     * MediaFile {mf.id}: {mf.file_type} by user {mf.owner}")
+    
+    # Serialize the files
+    serializer = MediaFileSerializer(files, many=True)
+    
+    return Response({
+        'has_files': has_files,
+        'file_count': file_count,
+        'files': serializer.data
+    })
 
 
 @api_view(['DELETE'])
